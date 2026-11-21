@@ -1,5 +1,7 @@
+#include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layouts/layout_input_session.hpp"
 
+#include <filesystem>
 #include <gtest/gtest.h>
 
 namespace {
@@ -114,3 +116,30 @@ TEST(LayoutInputSessionTest, EnforcesTheSharedInputLimit) {
 }
 
 }  // namespace
+
+
+TEST(LayoutInputSessionTest, SharedCandidateEngineAddsDictionaryMatchesForFixedLayouts) {
+    const std::filesystem::path db_path =
+        std::filesystem::temp_directory_path() / "suborno_layout_session_dictionary.sqlite";
+    std::filesystem::remove(db_path);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path.string());
+        dictionary.add_entry("কখ", "কখ", 7);
+        dictionary.add_entry("শব্দ", "ab", 5);
+
+        TestStatelessLayout layout;
+        auto session = layout.create_session(&dictionary, {.candidate_limit = 2});
+        ASSERT_NE(session, nullptr);
+        ASSERT_EQ(session->append_utf8("ab"), suborno::layout::InputStatus::updated);
+
+        const auto snapshot = session->snapshot();
+        ASSERT_EQ(snapshot.candidates.size(), 2U);
+        EXPECT_EQ(snapshot.candidates[0].text, "কখ");
+        EXPECT_EQ(snapshot.candidates[1].text, "শব্দ");
+        EXPECT_EQ(snapshot.candidates[0].source, suborno::layout::CandidateSource::system_dictionary);
+        EXPECT_EQ(snapshot.candidates[1].source, suborno::layout::CandidateSource::system_dictionary);
+    }
+
+    std::filesystem::remove(db_path);
+}

@@ -430,7 +430,7 @@ TEST(EngineTest, SessionCandidatesIncludePhoneticDictionaryMatches) {
         const auto snapshot = session->snapshot();
         ASSERT_FALSE(snapshot.candidates.empty());
         EXPECT_EQ(snapshot.candidates.front().text, "আমি");
-        EXPECT_EQ(snapshot.candidates.front().rationale, "phonetic dictionary match");
+        EXPECT_EQ(snapshot.candidates.front().rationale, "input dictionary match");
     }
 
     std::filesystem::remove(dictionary_path);

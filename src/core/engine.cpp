@@ -33,8 +33,14 @@ Engine::Engine(const EngineConfig& config)
         const settings::SettingsLoadResult result = settings_store_->load();
         if (result.status == settings::SettingsStatus::ok) {
             current_settings_ = result.settings;
-            if (!layouts_.set_active(current_settings_.active_layout_id)) {
+            const std::string_view restored_layout =
+                current_settings_.general.remember_last_input_layout
+                    ? std::string_view(current_settings_.active_layout_id)
+                    : std::string_view("suborno-phonetic");
+            if (!layouts_.set_active(restored_layout)) {
                 current_settings_.active_layout_id = std::string(layouts_.active_id());
+            } else {
+                current_settings_.active_layout_id = std::string(restored_layout);
             }
         }
     }

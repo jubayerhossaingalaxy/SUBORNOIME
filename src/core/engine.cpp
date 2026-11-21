@@ -1,6 +1,8 @@
 #include "suborno/core/engine.hpp"
 
+#include <algorithm>
 #include <string>
+#include <system_error>
 
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layouts/khipro/khipro_layout.hpp"
@@ -57,6 +59,20 @@ Engine::Engine(const EngineConfig& config)
         const std::u8string dictionary_path = config.dictionary_path.u8string();
         dictionary_ = std::make_unique<dictionary::Dictionary>(std::string(
             reinterpret_cast<const char*>(dictionary_path.data()), dictionary_path.size()));
+        if (!config.dictionary_word_lists.empty() && !config.dictionary_corpus_version.empty()) {
+            bool corpus_available = true;
+            for (const auto& word_list_path : config.dictionary_word_lists) {
+                std::error_code error;
+                if (!std::filesystem::is_regular_file(word_list_path, error) || error) {
+                    corpus_available = false;
+                    break;
+                }
+            }
+            if (corpus_available) {
+                dictionary_->import_word_lists_if_needed(
+                    config.dictionary_word_lists, config.dictionary_corpus_version);
+            }
+        }
     }
 }
 

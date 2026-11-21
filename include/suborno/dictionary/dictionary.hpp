@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace suborno::dictionary {
@@ -38,6 +40,9 @@ class Dictionary {
     Dictionary& operator=(const Dictionary&) = delete;
 
     void add_entry(const std::string& word, const std::string& normalized, int frequency = 1);
+    std::size_t import_word_lists_if_needed(
+        const std::vector<std::filesystem::path>& word_list_paths,
+        std::string_view corpus_version);
     void record_commit(const std::string& word, const std::string& normalized);
     void record_commit(const std::string& word,
                        const std::string& canonical_normalized,

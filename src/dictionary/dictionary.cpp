@@ -1,8 +1,11 @@
 #include "suborno/dictionary/dictionary.hpp"
 
+#include "suborno/unicode/bengali.hpp"
+
 #include <algorithm>
 #include <charconv>
 #include <filesystem>
+#include <fstream>
 #include <limits>
 #include <sqlite3.h>
 #include <stdexcept>
@@ -13,6 +16,43 @@
 
 namespace suborno::dictionary {
 namespace {
+
+std::string read_dictionary_metadata(sqlite3* database, const char* key) {
+    sqlite3_stmt* statement = nullptr;
+    const int prepare_result = sqlite3_prepare_v2(
+        database, "SELECT value FROM dictionary_metadata WHERE key = ?", -1, &statement, nullptr);
+    if (prepare_result != SQLITE_OK) {
+        throw DictionaryError(
+            DictionaryErrorCategory::prepare, prepare_result, sqlite3_errmsg(database));
+    }
+
+    if (sqlite3_bind_text(statement, 1, key, -1, SQLITE_STATIC) != SQLITE_OK) {
+        sqlite3_finalize(statement);
+        throw DictionaryError(DictionaryErrorCategory::bind,
+                              sqlite3_extended_errcode(database),
+                              "Unable to bind dictionary metadata key");
+    }
+
+    const int step_result = sqlite3_step(statement);
+    std::string value;
+    if (step_result == SQLITE_ROW) {
+        const auto* text = sqlite3_column_text(statement, 0);
+        if (text != nullptr) {
+            value = reinterpret_cast<const char*>(text);
+        }
+    } else if (step_result != SQLITE_DONE) {
+        sqlite3_finalize(statement);
+        throw DictionaryError(
+            DictionaryErrorCategory::step, step_result, sqlite3_errmsg(database));
+    }
+
+    sqlite3_finalize(statement);
+    return value;
+}
+
+void rollback_dictionary_transaction(sqlite3* database) noexcept {
+    static_cast<void>(sqlite3_exec(database, "ROLLBACK;", nullptr, nullptr, nullptr));
+}
 
 std::string escape_like_prefix(const std::string& prefix) {
     std::string escaped;
@@ -119,7 +159,7 @@ struct Dictionary::Impl {
                 text == nullptr ? "Unable to open dictionary database" : std::string(text));
         }
 
-        sqlite3_busy_timeout(db, 5000);
+        sqlite3_busy_timeout(db, 30000);
     }
 
     ~Impl() {
@@ -333,6 +373,131 @@ void Dictionary::initialize_schema() {
         throw DictionaryError(DictionaryErrorCategory::schema,
                               SQLITE_SCHEMA,
                               "Dictionary database schema is newer than this engine");
+    }
+}
+
+std::size_t Dictionary::import_word_lists_if_needed(
+    const std::vector<std::filesystem::path>& word_list_paths,
+    std::string_view corpus_version) {
+    if (word_list_paths.empty() || corpus_version.empty() || corpus_version.size() > 128
+        || corpus_version.find_first_of("\r\n") != std::string_view::npos) {
+        throw DictionaryError(
+            DictionaryErrorCategory::integrity, SQLITE_MISUSE, "Invalid system wordlist metadata");
+    }
+
+    constexpr char kImportMetadataKey[] = "system_wordlist_version";
+    const std::string requested_version(corpus_version);
+    if (read_dictionary_metadata(impl_->db, kImportMetadataKey) == requested_version) {
+        return 0;
+    }
+
+    begin_dictionary_transaction(impl_->db);
+    sqlite3_stmt* insert_statement = nullptr;
+    try {
+        // Another Suborno process may have completed the same import while this one waited
+        // for SQLite's write lock.
+        if (read_dictionary_metadata(impl_->db, kImportMetadataKey) == requested_version) {
+            commit_dictionary_transaction(impl_->db);
+            return 0;
+        }
+
+        constexpr char kInsertSql[] =
+            "INSERT OR IGNORE INTO dictionary_entries(word, normalized, frequency, source) "
+            "VALUES(?, ?, 1, 'system')";
+        const int prepare_result =
+            sqlite3_prepare_v2(impl_->db, kInsertSql, -1, &insert_statement, nullptr);
+        if (prepare_result != SQLITE_OK) {
+            throw DictionaryError(
+                DictionaryErrorCategory::prepare, prepare_result, sqlite3_errmsg(impl_->db));
+        }
+
+        std::size_t imported_count = 0;
+        for (const std::filesystem::path& word_list_path : word_list_paths) {
+            std::ifstream input(word_list_path, std::ios::binary);
+            if (!input.is_open()) {
+                throw DictionaryError(DictionaryErrorCategory::open,
+                                      SQLITE_CANTOPEN,
+                                      "Unable to open the bundled Bengali wordlist");
+            }
+
+            std::string word;
+            while (std::getline(input, word)) {
+                if (!word.empty() && word.back() == '\r') {
+                    word.pop_back();
+                }
+                if (word.empty()) {
+                    continue;
+                }
+                if (word.size() > 512 || !suborno::unicode::is_valid_utf8(word)) {
+                    throw DictionaryError(DictionaryErrorCategory::integrity,
+                                          SQLITE_MISMATCH,
+                                          "The bundled Bengali wordlist contains invalid UTF-8");
+                }
+
+                const std::string normalized = suborno::unicode::normalize_nfc(word);
+                if (normalized.empty()) {
+                    continue;
+                }
+
+                if (sqlite3_bind_text(insert_statement,
+                                      1,
+                                      word.data(),
+                                      static_cast<int>(word.size()),
+                                      SQLITE_TRANSIENT)
+                        != SQLITE_OK
+                    || sqlite3_bind_text(insert_statement,
+                                         2,
+                                         normalized.data(),
+                                         static_cast<int>(normalized.size()),
+                                         SQLITE_TRANSIENT)
+                           != SQLITE_OK) {
+                    throw DictionaryError(DictionaryErrorCategory::bind,
+                                          sqlite3_extended_errcode(impl_->db),
+                                          "Unable to bind bundled Bengali word");
+                }
+
+                const int step_result = sqlite3_step(insert_statement);
+                if (step_result != SQLITE_DONE) {
+                    throw DictionaryError(
+                        DictionaryErrorCategory::step, step_result, sqlite3_errmsg(impl_->db));
+                }
+                if (sqlite3_changes(impl_->db) > 0) {
+                    ++imported_count;
+                }
+
+                const int reset_result = sqlite3_reset(insert_statement);
+                if (reset_result != SQLITE_OK
+                    || sqlite3_clear_bindings(insert_statement) != SQLITE_OK) {
+                    throw DictionaryError(DictionaryErrorCategory::step,
+                                          sqlite3_extended_errcode(impl_->db),
+                                          "Unable to reset bundled Bengali word insert");
+                }
+            }
+
+            if (input.bad()) {
+                throw DictionaryError(DictionaryErrorCategory::open,
+                                      SQLITE_IOERR_READ,
+                                      "Unable to read the bundled Bengali wordlist");
+            }
+        }
+
+        sqlite3_finalize(insert_statement);
+        insert_statement = nullptr;
+        execute_two_text_statement(
+            impl_->db,
+            "INSERT INTO dictionary_metadata(key, value) VALUES(?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            kImportMetadataKey,
+            requested_version,
+            "system wordlist version");
+        commit_dictionary_transaction(impl_->db);
+        return imported_count;
+    } catch (...) {
+        if (insert_statement != nullptr) {
+            sqlite3_finalize(insert_statement);
+        }
+        rollback_dictionary_transaction(impl_->db);
+        throw;
     }
 }
 

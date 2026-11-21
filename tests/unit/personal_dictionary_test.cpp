@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <sqlite3.h>
 #include <string>
@@ -191,6 +192,47 @@ TEST(PersonalDictionaryTest, LimitsFindMatchesAtTheSqlQueryBoundary) {
     EXPECT_TRUE(dictionary.find_matches("shared", 0).empty());
 
     std::remove(db_path.c_str());
+}
+
+TEST(PersonalDictionaryTest, ImportsSystemWordListsOnceAndPreservesThemWhenClearingUserData) {
+    const std::filesystem::path root =
+        std::filesystem::temp_directory_path() / "suborno_system_wordlist_import_test";
+    const std::filesystem::path database_path = root / "dictionary.sqlite";
+    const std::filesystem::path first_list = root / "part-01.txt";
+    const std::filesystem::path second_list = root / "part-02.txt";
+    std::filesystem::remove_all(root);
+    std::filesystem::create_directories(root);
+
+    {
+        std::ofstream first(first_list, std::ios::binary | std::ios::trunc);
+        ASSERT_TRUE(first.is_open());
+        first << "বাংলা\nবাংলাদেশ\n";
+        std::ofstream second(second_list, std::ios::binary | std::ios::trunc);
+        ASSERT_TRUE(second.is_open());
+        second << "বাংলা\nনদী\n";
+    }
+
+    {
+        suborno::dictionary::Dictionary dictionary(database_path.u8string().empty()
+                                                        ? database_path.string()
+                                                        : std::string(reinterpret_cast<const char*>(
+                                                              database_path.u8string().data()),
+                                                                      database_path.u8string().size()));
+        const std::vector<std::filesystem::path> word_lists{first_list, second_list};
+        EXPECT_EQ(dictionary.import_word_lists_if_needed(word_lists, "test-wordlist-v1"), 3U);
+        EXPECT_EQ(dictionary.find_matches("বাংলা"), std::vector<std::string>{"বাংলা"});
+        EXPECT_EQ(dictionary.find_matches("বাংলাদেশ"), std::vector<std::string>{"বাংলাদেশ"});
+        EXPECT_EQ(dictionary.import_word_lists_if_needed(word_lists, "test-wordlist-v1"), 0U);
+
+        dictionary.add_user_word("নিজস্ব", "nijoshsho");
+        dictionary.clear_user_entries();
+        EXPECT_TRUE(dictionary.list_user_words().empty());
+        EXPECT_TRUE(dictionary.find_matches("nijoshsho").empty());
+        EXPECT_EQ(dictionary.find_matches("বাংলা"), std::vector<std::string>{"বাংলা"});
+        EXPECT_EQ(dictionary.find_matches("নদী"), std::vector<std::string>{"নদী"});
+    }
+
+    std::filesystem::remove_all(root);
 }
 
 TEST(PersonalDictionaryTest, PinningAndRemovingSystemWordPreservesSystemDictionaryEntry) {

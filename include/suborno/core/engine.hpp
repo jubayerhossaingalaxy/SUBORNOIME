@@ -2,7 +2,9 @@
 
 #include <filesystem>
 #include <memory>
+#include <string>
 #include <string_view>
+#include <vector>
 
 #include "suborno/layout-api/input_session.hpp"
 #include "suborno/layout-api/layout_registry.hpp"
@@ -17,6 +19,8 @@ namespace suborno::core {
 struct EngineConfig {
     std::filesystem::path settings_path;
     std::filesystem::path dictionary_path;
+    std::vector<std::filesystem::path> dictionary_word_lists;
+    std::string dictionary_corpus_version;
 };
 
 class Engine {

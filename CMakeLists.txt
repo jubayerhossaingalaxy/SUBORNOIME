@@ -32,7 +32,7 @@ target_link_libraries(suborno_layout_registry PUBLIC suborno_layout_api suborno_
 
 add_library(suborno_dictionary STATIC src/dictionary/dictionary.cpp)
 target_include_directories(suborno_dictionary PUBLIC "${PROJECT_SOURCE_DIR}/include")
-target_link_libraries(suborno_dictionary PUBLIC unofficial::sqlite3::sqlite3)
+target_link_libraries(suborno_dictionary PUBLIC unofficial::sqlite3::sqlite3 suborno_unicode)
 
 add_library(suborno_layout_sessions STATIC
     src/layouts/layout_input_session.cpp

@@ -26,12 +26,18 @@ TEST(ProbhatLayoutTest, MapsPhysicalLetterKeysAndShiftLayer) {
     EXPECT_EQ(layout.transliterate("K"), "খ");
     EXPECT_EQ(layout.transliterate("f"), "ত");
     EXPECT_EQ(layout.transliterate("F"), "থ");
-    EXPECT_EQ(layout.transliterate("a"), "া");
+    EXPECT_EQ(layout.transliterate("a"), "আ");
     EXPECT_EQ(layout.transliterate("A"), "অ");
     EXPECT_EQ(layout.transliterate("q"), "দ");
     EXPECT_EQ(layout.transliterate("Q"), "ধ");
     EXPECT_EQ(layout.transliterate("z"), "য়");
     EXPECT_EQ(layout.transliterate("Z"), "য");
+    EXPECT_EQ(layout.transliterate("y"), "এ");
+    EXPECT_EQ(layout.transliterate("Y"), "ঐ");
+    EXPECT_EQ(layout.transliterate("ka"), "কা");
+    EXPECT_EQ(layout.transliterate("ki"), "কি");
+    EXPECT_EQ(layout.transliterate("ke"), "কে");
+    EXPECT_EQ(layout.transliterate("ko"), "কো");
 }
 
 TEST(ProbhatLayoutTest, MapsDigitsSignsAndPunctuation) {

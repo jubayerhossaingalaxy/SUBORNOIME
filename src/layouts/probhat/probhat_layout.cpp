@@ -18,6 +18,8 @@ struct ProbhatKeyMapping {
     std::uint8_t scan_code;
     std::string_view unshifted;
     std::string_view shifted;
+    std::string_view unshifted_dependent;
+    std::string_view shifted_dependent;
 };
 
 // Independently authored mapping from the published Probhat key chart.
@@ -35,19 +37,19 @@ constexpr ProbhatKeyMapping kProbhatMappings[] = {
     {0x0B, "০", ")"},
     {0x0C, "-", "_"},
     {0x0D, "=", "+"},
-    {0x10, "দ", "ধ"},
-    {0x11, "ূ", "ঊ"},
-    {0x12, "ী", "ঈ"},
-    {0x13, "র", "ড়"},
-    {0x14, "ট", "ঠ"},
-    {0x15, "ে", "ৈ"},
-    {0x16, "ু", "উ"},
-    {0x17, "ি", "ই"},
-    {0x18, "ও", "ঔ"},
-    {0x19, "প", "ফ"},
-    {0x1A, "ে", "ৈ"},
-    {0x1B, "ো", "ৌ"},
-    {0x1E, "া", "অ"},
+    {0x10, "দ", "ধ", {}, {}},
+    {0x11, "উ", "ঊ", "ূ", "ূ"},
+    {0x12, "ই", "ঈ", "ী", "ী"},
+    {0x13, "র", "ড়", {}, {}},
+    {0x14, "ট", "ঠ", {}, {}},
+    {0x15, "এ", "ঐ", "ে", "ৈ"},
+    {0x16, "উ", "উ", "ু", "ু"},
+    {0x17, "ই", "ই", "ি", "ি"},
+    {0x18, "ও", "ঔ", "ো", "ৌ"},
+    {0x19, "প", "ফ", {}, {}},
+    {0x1A, "এ", "ঐ", "ে", "ৈ"},
+    {0x1B, "ও", "ঔ", "ো", "ৌ"},
+    {0x1E, "আ", "অ", "া", "অ"},
     {0x1F, "স", "ষ"},
     {0x20, "ড", "ঢ"},
     {0x21, "ত", "থ"},
@@ -136,7 +138,26 @@ bool ascii_key_to_event(char value, layout::KeyEvent& event) noexcept {
     }
 }
 
-std::string output_for_event(const layout::KeyEvent& event) {
+bool ends_with_bengali_consonant(std::string_view text) {
+    const auto graphemes = suborno::unicode::split_graphemes(text);
+    if (graphemes.empty()) {
+        return false;
+    }
+
+    const std::string& last_grapheme = graphemes.back();
+    if (last_grapheme.size() < 3) {
+        return false;
+    }
+    const auto* bytes = reinterpret_cast<const unsigned char*>(last_grapheme.data());
+    if (bytes[0] < 0xE0 || bytes[0] > 0xEF) {
+        return false;
+    }
+    const char32_t code_point = static_cast<char32_t>(
+        ((bytes[0] & 0x0FU) << 12U) | ((bytes[1] & 0x3FU) << 6U) | (bytes[2] & 0x3FU));
+    return code_point >= 0x0995 && code_point <= 0x09B9;
+}
+
+std::string output_for_event(const layout::KeyEvent& event, bool after_consonant) {
     if (!event.key_down || event.modifiers.control || event.modifiers.alt
         || event.modifiers.windows) {
         return {};
@@ -158,6 +179,10 @@ std::string output_for_event(const layout::KeyEvent& event) {
     if (mapping == nullptr) {
         return {};
     }
+    if (after_consonant && !mapping->unshifted_dependent.empty()) {
+        return std::string(event.modifiers.shift ? mapping->shifted_dependent
+                                                  : mapping->unshifted_dependent);
+    }
     return std::string(event.modifiers.shift ? mapping->shifted : mapping->unshifted);
 }
 
@@ -171,7 +196,7 @@ std::string transliterate_probhat(std::string_view input) {
     for (const char value : input) {
         layout::KeyEvent event;
         if (ascii_key_to_event(value, event)) {
-            output.append(output_for_event(event));
+            output.append(output_for_event(event, ends_with_bengali_consonant(output)));
         } else {
             output.push_back(value);
         }
@@ -192,7 +217,7 @@ class ProbhatInputSession final : public layout::InputSession {
     }
 
     layout::InputStatus append_key(const layout::KeyEvent& event) override {
-        const std::string output = output_for_event(event);
+        const std::string output = output_for_event(event, ends_with_bengali_consonant(composition_));
         if (output.empty()) {
             return layout::InputStatus::empty;
         }
@@ -203,7 +228,7 @@ class ProbhatInputSession final : public layout::InputSession {
 
         std::string updated = composition_;
         for (std::size_t index = 0; index < repeat_count; ++index) {
-            updated.append(output);
+            updated.append(output_for_event(event, ends_with_bengali_consonant(updated)));
         }
         return append_output(updated);
     }

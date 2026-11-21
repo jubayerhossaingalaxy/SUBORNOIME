@@ -66,6 +66,8 @@ class SubornoTextService final : public ITfTextInputProcessor,
     struct ContextState {
         wil::com_ptr<ITfContext> context;
         std::unique_ptr<layout::InputSession> session;
+        std::string session_layout_id;
+        bool session_needs_refresh = false;
         wil::com_ptr<ITfComposition> composition;
         wil::com_ptr<CandidateListUIElement> candidate_ui_element;
         DWORD candidate_ui_element_id = 0;

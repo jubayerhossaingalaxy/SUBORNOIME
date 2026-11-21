@@ -498,8 +498,15 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         if (inserted) {
             state.context = pContext;
         }
-        if (state.session == nullptr) {
+        const std::string active_layout_id(m_engine->active_layout_id());
+        const bool session_is_idle =
+            state.session == nullptr || state.session->snapshot().raw_input_utf8.empty();
+        if (state.session == nullptr
+            || (session_is_idle
+                && (state.session_needs_refresh || state.session_layout_id != active_layout_id))) {
             state.session = m_engine->create_session();
+            state.session_layout_id = active_layout_id;
+            state.session_needs_refresh = false;
         }
         if (state.session == nullptr) {
             return E_UNEXPECTED;
@@ -685,10 +692,21 @@ STDMETHODIMP SubornoTextService::OnSetFocus(BOOL foreground) {
     }
 
     try {
+        const std::string active_layout_id(m_engine->active_layout_id());
         for (auto& [context, state] : m_contexts) {
-            static_cast<void>(context);
-            if (state.session == nullptr || state.session->snapshot().raw_input_utf8.empty()) {
+            const auto current = state.session == nullptr
+                                     ? layout::CompositionSnapshot{}
+                                     : state.session->snapshot();
+            if (state.session == nullptr || current.raw_input_utf8.empty()) {
                 state.session = m_engine->create_session();
+                state.session_layout_id = active_layout_id;
+                state.session_needs_refresh = false;
+            } else {
+                state.session_needs_refresh = true;
+                const HRESULT ui_result = _UpdateCandidateUI(context, state, current);
+                if (FAILED(ui_result)) {
+                    return ui_result;
+                }
             }
         }
     } catch (const std::bad_alloc&) {
@@ -722,6 +740,8 @@ STDMETHODIMP SubornoTextService::OnPushContext(ITfContext* pContext) {
         }
         if (found->second.session == nullptr) {
             found->second.session = m_engine->create_session();
+            found->second.session_layout_id = std::string(m_engine->active_layout_id());
+            found->second.session_needs_refresh = false;
         }
         return found->second.session == nullptr ? E_UNEXPECTED : S_OK;
     } catch (const std::bad_alloc&) {

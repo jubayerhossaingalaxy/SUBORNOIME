@@ -7,7 +7,7 @@
 
 namespace suborno::layouts {
 
-class ProbhatLayout final : public layout::PhoneticLayout {
+class ProbhatLayout final : public layout::StatelessPhoneticLayout {
   public:
     std::string transliterate(const std::string& input) const override;
     std::vector<layout::Candidate> generate_candidates(const std::string& input) const override;

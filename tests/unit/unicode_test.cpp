@@ -73,10 +73,10 @@ TEST(UnicodeUtilitiesTest, BengaliInventoryMatchesTheSupportedBanglaCharacterSet
     EXPECT_EQ(count_character("৾"), 1);
 
     const auto find_character = [&inventory](std::string_view character) {
-        const auto found = std::find_if(
-            inventory.begin(),
-            inventory.end(),
-            [character](const auto& item) { return item.character == character; });
+        const auto found =
+            std::find_if(inventory.begin(), inventory.end(), [character](const auto& item) {
+                return item.character == character;
+            });
         return found == inventory.end() ? std::string_view{} : std::string_view(found->category);
     };
     EXPECT_EQ(find_character("ং"), "Mc");

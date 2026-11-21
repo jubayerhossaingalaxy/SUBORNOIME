@@ -192,14 +192,12 @@ bool is_bengali_codepoint(unsigned int code_point) {
            || (code_point >= 0x0985U && code_point <= 0x098CU)
            || (code_point >= 0x098FU && code_point <= 0x0990U)
            || (code_point >= 0x0993U && code_point <= 0x09A8U)
-           || (code_point >= 0x09AAU && code_point <= 0x09B0U)
-           || code_point == 0x09B2U
+           || (code_point >= 0x09AAU && code_point <= 0x09B0U) || code_point == 0x09B2U
            || (code_point >= 0x09B6U && code_point <= 0x09B9U)
            || (code_point >= 0x09BCU && code_point <= 0x09BDU)
            || (code_point >= 0x09BEU && code_point <= 0x09C4U)
            || (code_point >= 0x09C7U && code_point <= 0x09C8U)
-           || (code_point >= 0x09CBU && code_point <= 0x09CEU)
-           || code_point == 0x09D7U
+           || (code_point >= 0x09CBU && code_point <= 0x09CEU) || code_point == 0x09D7U
            || (code_point >= 0x09DCU && code_point <= 0x09DDU)
            || (code_point >= 0x09DFU && code_point <= 0x09E3U)
            || (code_point >= 0x09E6U && code_point <= 0x09EFU)

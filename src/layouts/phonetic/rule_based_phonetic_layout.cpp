@@ -267,7 +267,7 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
 
         if (const ControlToken* control = match_control(input, offset); control != nullptr) {
             const bool has_consonant = state == CompositionState::consonant_run
-                                        || state == CompositionState::unjoined_consonant;
+                                       || state == CompositionState::unjoined_consonant;
             const bool valid_nukta = control->input == "./" && has_consonant && nukta_eligible;
             const bool valid_halant = control->input == ",," && has_consonant;
             const bool valid_joiner =
@@ -277,8 +277,8 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
             if (valid_nukta || valid_halant || valid_joiner || valid_sign) {
                 output.append(control->output);
                 state = (!join_unmatched_consonants_ && control->input == "./")
-                             ? CompositionState::unjoined_consonant
-                             : control->next_state;
+                            ? CompositionState::unjoined_consonant
+                            : control->next_state;
                 nukta_eligible = false;
             } else {
                 output.append(control->input);
@@ -322,11 +322,8 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
                                                    : CompositionState::unjoined_consonant;
                 nukta_eligible = match.definition->nukta_eligible;
             } else {
-                append_token(*match.definition,
-                             output,
-                             state,
-                             nukta_eligible,
-                             join_unmatched_consonants_);
+                append_token(
+                    *match.definition, output, state, nukta_eligible, join_unmatched_consonants_);
             }
             force_independent_vowel = false;
             offset += match.length + (consumed_accent ? 1U : 0U);

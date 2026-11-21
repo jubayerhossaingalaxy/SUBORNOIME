@@ -9,13 +9,14 @@ suborno::layout::KeyEvent event(std::uint16_t scan_code,
                                 bool caps_lock = false,
                                 bool alt_graph = false) {
     return {
-        .modifiers = {
-            .shift = shift,
-            .caps_lock = caps_lock,
-            .control = alt_graph,
-            .alt = alt_graph,
-            .alt_graph = alt_graph,
-        },
+        .modifiers =
+            {
+                .shift = shift,
+                .caps_lock = caps_lock,
+                .control = alt_graph,
+                .alt = alt_graph,
+                .alt_graph = alt_graph,
+            },
         .scan_code = scan_code,
         .key_down = true,
     };
@@ -120,8 +121,7 @@ TEST(ProbhatLayoutTest, AppliesCapsLockAltGrFlagOnlyWithinTheAltGrLayers) {
     auto session = layout.create_session(nullptr, {});
     ASSERT_NE(session, nullptr);
 
-    EXPECT_EQ(session->append_key(event(0x33, false, true)),
-              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->append_key(event(0x33, false, true)), suborno::layout::InputStatus::updated);
     EXPECT_EQ(session->snapshot().preedit_utf8, ",");
 
     session->reset();

@@ -10,18 +10,18 @@ namespace suborno::platform::windows {
 [[nodiscard]] inline std::optional<layout::PhysicalKey> physical_key_from_virtual_key(
     WPARAM virtual_key) noexcept {
     if (virtual_key >= 'A' && virtual_key <= 'Z') {
-        const auto key = static_cast<std::uint8_t>(
-            static_cast<std::uint8_t>(layout::PhysicalKey::letter_a)
-            + static_cast<std::uint8_t>(virtual_key - 'A'));
+        const auto key =
+            static_cast<std::uint8_t>(static_cast<std::uint8_t>(layout::PhysicalKey::letter_a)
+                                      + static_cast<std::uint8_t>(virtual_key - 'A'));
         return static_cast<layout::PhysicalKey>(key);
     }
     if (virtual_key >= '0' && virtual_key <= '9') {
         return static_cast<layout::PhysicalKey>(static_cast<std::uint8_t>(virtual_key));
     }
     if (virtual_key >= VK_NUMPAD0 && virtual_key <= VK_NUMPAD9) {
-        const auto key = static_cast<std::uint8_t>(
-            static_cast<std::uint8_t>(layout::PhysicalKey::numpad_0)
-            + static_cast<std::uint8_t>(virtual_key - VK_NUMPAD0));
+        const auto key =
+            static_cast<std::uint8_t>(static_cast<std::uint8_t>(layout::PhysicalKey::numpad_0)
+                                      + static_cast<std::uint8_t>(virtual_key - VK_NUMPAD0));
         return static_cast<layout::PhysicalKey>(key);
     }
 

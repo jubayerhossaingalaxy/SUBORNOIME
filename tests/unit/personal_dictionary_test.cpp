@@ -14,7 +14,8 @@ std::string temporary_database_path(const char* filename) {
 }  // namespace
 
 TEST(PersonalDictionaryTest, RejectsNewerSchemaWithoutMutatingTheDatabase) {
-    const std::string db_path = temporary_database_path("suborno_dictionary_future_schema_test.sqlite");
+    const std::string db_path =
+        temporary_database_path("suborno_dictionary_future_schema_test.sqlite");
     std::remove(db_path.c_str());
 
     sqlite3* database = nullptr;
@@ -33,21 +34,18 @@ TEST(PersonalDictionaryTest, RejectsNewerSchemaWithoutMutatingTheDatabase) {
     ASSERT_EQ(sqlite3_close(database), SQLITE_OK);
 
     EXPECT_THROW(
-        {
-            suborno::dictionary::Dictionary dictionary(db_path);
-        },
+        { suborno::dictionary::Dictionary dictionary(db_path); },
         suborno::dictionary::DictionaryError);
 
     ASSERT_EQ(sqlite3_open(db_path.c_str(), &database), SQLITE_OK);
     ASSERT_NE(database, nullptr);
 
     sqlite3_stmt* version_stmt = nullptr;
-    ASSERT_EQ(sqlite3_prepare_v2(
-                  database,
-                  "SELECT value FROM dictionary_metadata WHERE key='schema_version'",
-                  -1,
-                  &version_stmt,
-                  nullptr),
+    ASSERT_EQ(sqlite3_prepare_v2(database,
+                                 "SELECT value FROM dictionary_metadata WHERE key='schema_version'",
+                                 -1,
+                                 &version_stmt,
+                                 nullptr),
               SQLITE_OK);
     ASSERT_EQ(sqlite3_step(version_stmt), SQLITE_ROW);
     EXPECT_STREQ(reinterpret_cast<const char*>(sqlite3_column_text(version_stmt, 0)), "4");
@@ -82,8 +80,8 @@ TEST(PersonalDictionaryTest, OpensDatabaseAtUnicodeFilesystemPath) {
     std::filesystem::remove(database_path, remove_error);
 
     const std::u8string utf8_path = database_path.u8string();
-    const std::string database_path_utf8(
-        reinterpret_cast<const char*>(utf8_path.data()), utf8_path.size());
+    const std::string database_path_utf8(reinterpret_cast<const char*>(utf8_path.data()),
+                                         utf8_path.size());
 
     {
         suborno::dictionary::Dictionary dictionary(database_path_utf8);

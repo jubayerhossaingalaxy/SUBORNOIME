@@ -172,8 +172,7 @@ void apply_input_settings(std::optional<suborno::layout::KeyEvent>& event,
 bool has_text_modifier_chord(bool allow_alt_graph) noexcept {
     const auto modifiers = current_key_modifiers();
     return modifiers.windows
-           || ((modifiers.control || modifiers.alt)
-               && !(allow_alt_graph && modifiers.alt_graph));
+           || ((modifiers.control || modifiers.alt) && !(allow_alt_graph && modifiers.alt_graph));
 }
 
 std::optional<std::size_t> candidate_index_from_virtual_key(WPARAM virtual_key) noexcept {

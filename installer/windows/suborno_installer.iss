@@ -379,9 +379,20 @@ begin
 end;
 
 
+procedure DeleteSharedFile(const Path: String);
+begin
+  if FileExists(Path) and not DeleteFile(Path) then begin
+    RaiseException(
+      'Unable to remove a bundled Suborno dictionary file: ' + Path
+    );
+  end;
+end;
+
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   SharedDirectory: String;
+  DictionaryDirectory: String;
 begin
 
   if CurUninstallStep = usPostUninstall then begin
@@ -405,9 +416,16 @@ begin
 
       SharedDirectory :=
         ExpandConstant('{commonappdata}\Suborno');
+      DictionaryDirectory := SharedDirectory + '\dictionaries';
+
+      DeleteSharedFile(DictionaryDirectory + '\bn-wordlist-unlicense-v1-part-01.txt');
+      DeleteSharedFile(DictionaryDirectory + '\bn-wordlist-unlicense-v1-part-02.txt');
+      DeleteSharedFile(DictionaryDirectory + '\bn-wordlist-unlicense-v1-part-03.txt');
+      DeleteSharedFile(DictionaryDirectory + '\bn-wordlist-unlicense-v1-part-04.txt');
+      DeleteSharedFile(DictionaryDirectory + '\UNLICENSE-Sanjidh090.txt');
 
       RemoveDirectoryIfEmpty(SharedDirectory + '\layouts');
-      RemoveDirectoryIfEmpty(SharedDirectory + '\dictionaries');
+      RemoveDirectoryIfEmpty(DictionaryDirectory);
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\fonts');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\themes');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets');

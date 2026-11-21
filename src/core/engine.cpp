@@ -123,6 +123,19 @@ settings::SettingsLoadResult Engine::load_settings() const {
     return result;
 }
 
+settings::SettingsLoadResult Engine::reload_settings() {
+    settings::SettingsLoadResult result = load_settings();
+    if (result.status != settings::SettingsStatus::ok) {
+        return result;
+    }
+
+    if (!layouts_.set_active(result.settings.active_layout_id)) {
+        result.settings.active_layout_id = std::string(layouts_.active_id());
+    }
+    current_settings_ = result.settings;
+    return result;
+}
+
 const settings::EngineSettings& Engine::settings() const noexcept {
     return current_settings_;
 }

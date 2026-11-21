@@ -35,6 +35,7 @@ class Engine {
 
     settings::SettingsStatus save_settings(const settings::EngineSettings& settings);
     settings::SettingsLoadResult load_settings() const;
+    settings::SettingsLoadResult reload_settings();
     const settings::EngineSettings& settings() const noexcept;
     dictionary::Dictionary* dictionary() noexcept;
     const dictionary::Dictionary* dictionary() const noexcept;

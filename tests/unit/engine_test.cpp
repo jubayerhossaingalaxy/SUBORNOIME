@@ -339,6 +339,34 @@ TEST(EngineTest, EngineConfigPersistsSettingsAndOwnsDictionary) {
     std::filesystem::remove(dictionary_path);
 }
 
+TEST(EngineTest, ReloadsSettingsChangedByTheDesktopSettingsApplication) {
+    const std::filesystem::path settings_path =
+        std::filesystem::temp_directory_path() / "suborno_engine_reload_settings_test.conf";
+    std::filesystem::remove(settings_path);
+
+    suborno::core::EngineConfig config;
+    config.settings_path = settings_path;
+    {
+        suborno::core::Engine engine(config);
+        ASSERT_EQ(engine.active_layout_id(), "suborno-phonetic");
+
+        suborno::settings::EngineSettings external = engine.settings();
+        external.active_layout_id = "khipro";
+        external.candidate_limit = 7;
+        external.input.ignore_caps_lock_state_in_bangla = true;
+        ASSERT_EQ(suborno::settings::SettingsStore(settings_path).save(external),
+                  suborno::settings::SettingsStatus::ok);
+
+        const auto reloaded = engine.reload_settings();
+        ASSERT_EQ(reloaded.status, suborno::settings::SettingsStatus::ok);
+        EXPECT_EQ(engine.active_layout_id(), "khipro");
+        EXPECT_EQ(engine.settings().candidate_limit, 7U);
+        EXPECT_TRUE(engine.settings().input.ignore_caps_lock_state_in_bangla);
+    }
+
+    std::filesystem::remove(settings_path);
+}
+
 TEST(EngineTest, RestoresKnownLayoutAndFallsBackForUnknownLayout) {
     const std::filesystem::path settings_path =
         std::filesystem::temp_directory_path() / "suborno_engine_layout_restore.conf";

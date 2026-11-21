@@ -41,6 +41,9 @@ enum ControlId : UINT {
     kOpenInputSettings = 1004,
     kHideButton = 1005,
     kAppsSettingsButton = 1006,
+    kMapNumpadCheck = 1007,
+    kIgnoreCapsLockCheck = 1008,
+    kSelectCandidateKeysCheck = 1009,
 };
 
 enum MenuId : UINT {
@@ -290,7 +293,7 @@ class Application final {
                                     CW_USEDEFAULT,
                                     CW_USEDEFAULT,
                                     600,
-                                    450,
+                                    530,
                                     nullptr,
                                     nullptr,
                                     instance_,
@@ -525,15 +528,49 @@ class Application final {
         ::SendMessageW(
             startup_check_, BM_SETCHECK, startup_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);
 
-        add_control(0, L"STATIC", L"Phonetic input", SS_LEFT, 24, 178, 520, 24, 0);
-        help_label_ = add_control(0, L"STATIC", L"", SS_LEFT, 24, 204, 520, 38, 0);
+        add_control(0, L"STATIC", L"Input preferences", SS_LEFT, 24, 170, 520, 24, 0);
+        map_numpad_check_ = add_control(0,
+                                        L"BUTTON",
+                                        L"Map numeric keypad to Bangla digits",
+                                        BS_AUTOCHECKBOX,
+                                        24,
+                                        196,
+                                        500,
+                                        26,
+                                        kMapNumpadCheck);
+        ignore_caps_lock_check_ = add_control(0,
+                                              L"BUTTON",
+                                              L"Ignore Caps Lock while typing Bangla",
+                                              BS_AUTOCHECKBOX,
+                                              24,
+                                              224,
+                                              500,
+                                              26,
+                                              kIgnoreCapsLockCheck);
+        select_candidate_keys_check_ = add_control(0,
+                                                   L"BUTTON",
+                                                   L"Select candidates with number keys",
+                                                   BS_AUTOCHECKBOX,
+                                                   24,
+                                                   252,
+                                                   500,
+                                                   26,
+                                                   kSelectCandidateKeysCheck);
+        if (map_numpad_check_ == nullptr || ignore_caps_lock_check_ == nullptr
+            || select_candidate_keys_check_ == nullptr) {
+            return false;
+        }
+        refresh_input_settings_controls();
+
+        add_control(0, L"STATIC", L"Typing help", SS_LEFT, 24, 290, 520, 24, 0);
+        help_label_ = add_control(0, L"STATIC", L"", SS_LEFT, 24, 316, 520, 38, 0);
 
         add_control(0,
                     L"BUTTON",
                     L"Windows input settings",
                     BS_PUSHBUTTON,
                     24,
-                    258,
+                    362,
                     190,
                     32,
                     kOpenInputSettings);
@@ -542,18 +579,18 @@ class Application final {
                                    L"Hide to notification area",
                                    BS_PUSHBUTTON,
                                    228,
-                                   258,
+                                   362,
                                    220,
                                    32,
                                    kHideButton);
 
-        add_control(0, L"STATIC", L"About Suborno", SS_LEFT, 24, 318, 520, 22, 0);
+        add_control(0, L"STATIC", L"About Suborno", SS_LEFT, 24, 408, 520, 22, 0);
         add_control(0,
                     L"STATIC",
                     L"Suborno Bengali Input Method  " SUBORNO_VERSION_WIDE,
                     SS_LEFT,
                     24,
-                    344,
+                    434,
                     520,
                     24,
                     0);
@@ -562,7 +599,7 @@ class Application final {
                                             L"Uninstall Suborno",
                                             BS_PUSHBUTTON,
                                             24,
-                                            378,
+                                            466,
                                             220,
                                             30,
                                             kAppsSettingsButton);
@@ -575,10 +612,44 @@ class Application final {
         }
         return status_label_ != nullptr && layout_combo_ != nullptr && startup_check_ != nullptr
                && hide_button_ != nullptr && apps_settings_button_ != nullptr
-               && help_label_ != nullptr;
+               && map_numpad_check_ != nullptr && ignore_caps_lock_check_ != nullptr
+               && select_candidate_keys_check_ != nullptr && help_label_ != nullptr;
+    }
+
+    void refresh_input_settings_controls() {
+        const auto& input = engine_->settings().input;
+        ::SendMessageW(map_numpad_check_,
+                       BM_SETCHECK,
+                       input.map_numpad_to_bangla_numbers ? BST_CHECKED : BST_UNCHECKED,
+                       0);
+        ::SendMessageW(ignore_caps_lock_check_,
+                       BM_SETCHECK,
+                       input.ignore_caps_lock_state_in_bangla ? BST_CHECKED : BST_UNCHECKED,
+                       0);
+        ::SendMessageW(select_candidate_keys_check_,
+                       BM_SETCHECK,
+                       input.select_candidate_using_number_keys ? BST_CHECKED : BST_UNCHECKED,
+                       0);
+    }
+
+    void save_input_settings() {
+        auto settings = engine_->settings();
+        settings.input.map_numpad_to_bangla_numbers =
+            ::SendMessageW(map_numpad_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+        settings.input.ignore_caps_lock_state_in_bangla =
+            ::SendMessageW(ignore_caps_lock_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+        settings.input.select_candidate_using_number_keys =
+            ::SendMessageW(select_candidate_keys_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+
+        const auto result = engine_->save_settings(settings);
+        if (result != suborno::settings::SettingsStatus::ok) {
+            refresh_input_settings_controls();
+            show_error(window_, L"Could not save the input preferences.", E_FAIL);
+        }
     }
 
     void refresh_status() {
+        refresh_input_settings_controls();
         const std::string_view active_layout = engine_->settings().active_layout_id;
         const bool phonetic = active_layout == "suborno-phonetic"
                               || active_layout == "borno-phonetic"
@@ -619,6 +690,12 @@ class Application final {
     void handle_command(UINT id, UINT notification) {
         if (id == kLayoutCombo && notification == CBN_SELCHANGE) {
             apply_selected_layout();
+            return;
+        }
+        if ((id == kMapNumpadCheck || id == kIgnoreCapsLockCheck
+             || id == kSelectCandidateKeysCheck)
+            && notification == BN_CLICKED) {
+            save_input_settings();
             return;
         }
         if (id == kStartupCheck && notification == BN_CLICKED) {
@@ -841,6 +918,9 @@ class Application final {
     HWND help_label_ = nullptr;
     HWND layout_combo_ = nullptr;
     HWND startup_check_ = nullptr;
+    HWND map_numpad_check_ = nullptr;
+    HWND ignore_caps_lock_check_ = nullptr;
+    HWND select_candidate_keys_check_ = nullptr;
     HWND hide_button_ = nullptr;
     HWND apps_settings_button_ = nullptr;
     bool startup_ = false;

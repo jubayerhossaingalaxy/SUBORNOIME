@@ -208,9 +208,11 @@ void apply_input_settings(std::optional<suborno::layout::KeyEvent>& event,
     if (settings.input.ignore_caps_lock_state_in_bangla) {
         event->modifiers.caps_lock = false;
     }
-    if (!settings.input.map_numpad_to_bangla_numbers
-        && suborno::layout::is_numpad_key(event->key)) {
-        event.reset();
+    if (suborno::layout::is_numpad_key(event->key)) {
+        if (!settings.input.map_numpad_to_bangla_numbers
+            || !suborno::layout::remap_numpad_to_top_row(*event)) {
+            event.reset();
+        }
     }
 }
 

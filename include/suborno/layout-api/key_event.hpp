@@ -115,6 +115,22 @@ struct KeyEvent {
     std::string logical_text_utf8;
 };
 
+[[nodiscard]] constexpr bool remap_numpad_to_top_row(KeyEvent& event) noexcept {
+    if (!is_numpad_key(event.key) || !event.modifiers.num_lock) {
+        return false;
+    }
+
+    const auto numpad_value = static_cast<std::uint8_t>(event.key)
+                              - static_cast<std::uint8_t>(PhysicalKey::numpad_0);
+    event.key = static_cast<PhysicalKey>(static_cast<std::uint8_t>('0') + numpad_value);
+    event.scan_code = numpad_value == 0U
+                          ? 0x0BU
+                          : static_cast<std::uint16_t>(0x01U + numpad_value);
+    event.modifiers.shift = false;
+    event.modifiers.caps_lock = false;
+    return true;
+}
+
 [[nodiscard]] inline std::optional<char> key_event_to_ascii(const KeyEvent& event) noexcept {
     if (event.modifiers.control || event.modifiers.alt || event.modifiers.windows) {
         return std::nullopt;

@@ -37,6 +37,42 @@ TEST(KeyEventTest, MapsPunctuationAndShiftedVariants) {
     EXPECT_EQ(key_event_to_ascii({PhysicalKey::backslash, {.shift = true}}), '|');
 }
 
+TEST(KeyEventTest, RemapsNumpadDigitsToTheTopRowWhenNumLockIsEnabled) {
+    KeyEvent numpad_two{
+        .key = PhysicalKey::numpad_2,
+        .modifiers = {.num_lock = true, .shift = true, .caps_lock = true},
+        .scan_code = 0x50,
+    };
+
+    ASSERT_TRUE(suborno::layout::remap_numpad_to_top_row(numpad_two));
+    EXPECT_EQ(numpad_two.key, PhysicalKey::digit_2);
+    EXPECT_EQ(numpad_two.scan_code, 0x03U);
+    EXPECT_FALSE(numpad_two.modifiers.shift);
+    EXPECT_FALSE(numpad_two.modifiers.caps_lock);
+    EXPECT_EQ(key_event_to_ascii(numpad_two), '2');
+
+    KeyEvent numpad_zero{
+        .key = PhysicalKey::numpad_0,
+        .modifiers = {.num_lock = true},
+        .scan_code = 0x52,
+    };
+    ASSERT_TRUE(suborno::layout::remap_numpad_to_top_row(numpad_zero));
+    EXPECT_EQ(numpad_zero.key, PhysicalKey::digit_0);
+    EXPECT_EQ(numpad_zero.scan_code, 0x0BU);
+}
+
+TEST(KeyEventTest, DoesNotRemapNumpadWhenNumLockIsOff) {
+    KeyEvent numpad_two{
+        .key = PhysicalKey::numpad_2,
+        .modifiers = {.num_lock = false},
+        .scan_code = 0x50,
+    };
+
+    EXPECT_FALSE(suborno::layout::remap_numpad_to_top_row(numpad_two));
+    EXPECT_EQ(numpad_two.key, PhysicalKey::numpad_2);
+    EXPECT_EQ(numpad_two.scan_code, 0x50U);
+}
+
 TEST(KeyEventTest, IdentifiesNumericKeypadPhysicalKeys) {
     EXPECT_TRUE(suborno::layout::is_numpad_key(PhysicalKey::numpad_0));
     EXPECT_TRUE(suborno::layout::is_numpad_key(PhysicalKey::numpad_9));

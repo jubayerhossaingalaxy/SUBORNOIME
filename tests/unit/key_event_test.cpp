@@ -40,7 +40,7 @@ TEST(KeyEventTest, MapsPunctuationAndShiftedVariants) {
 TEST(KeyEventTest, RemapsNumpadDigitsToTheTopRowWhenNumLockIsEnabled) {
     KeyEvent numpad_two{
         .key = PhysicalKey::numpad_2,
-        .modifiers = {.num_lock = true, .shift = true, .caps_lock = true},
+        .modifiers = {.shift = true, .caps_lock = true, .num_lock = true},
         .scan_code = 0x50,
     };
 

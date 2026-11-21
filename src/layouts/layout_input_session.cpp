@@ -110,7 +110,7 @@ std::vector<suborno::layout::Candidate> LayoutInputSession::make_candidates(
                                   seen,
                                   *dictionary_,
                                   input,
-                                  kPhoneticDictionaryScore,
+                                  kInputDictionaryScore,
                                   "input dictionary match",
                                   options_.candidate_limit);
     }
@@ -259,16 +259,6 @@ suborno::layout::CompositionSnapshot LayoutInputSession::snapshot() const {
 namespace suborno::layout {
 
 std::unique_ptr<InputSession> StatelessInputLayout::create_session(
-    suborno::dictionary::Dictionary* dictionary,
-    InputSessionOptions options) const {
-    if (dictionary != nullptr) {
-        return std::make_unique<suborno::layouts::LayoutInputSession>(
-            *this, *dictionary, options);
-    }
-    return std::make_unique<suborno::layouts::LayoutInputSession>(*this, options);
-}
-
-std::unique_ptr<InputSession> StatelessPhoneticLayout::create_session(
     suborno::dictionary::Dictionary* dictionary,
     InputSessionOptions options) const {
     if (dictionary != nullptr) {

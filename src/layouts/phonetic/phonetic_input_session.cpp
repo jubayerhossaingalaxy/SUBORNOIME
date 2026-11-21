@@ -5,6 +5,7 @@
 
 #include "phonetic_parser.hpp"
 #include "suborno/dictionary/dictionary.hpp"
+#include "suborno/layouts/layout_input_session.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include "suborno/unicode/bengali.hpp"
 
@@ -310,6 +311,16 @@ std::unique_ptr<InputSession> PhoneticLayout::create_session(
             *this, *dictionary, options);
     }
     return std::make_unique<suborno::layouts::PhoneticInputSession>(*this, options);
+}
+
+std::unique_ptr<InputSession> StatelessPhoneticLayout::create_session(
+    suborno::dictionary::Dictionary* dictionary,
+    InputSessionOptions options) const {
+    if (dictionary != nullptr) {
+        return std::make_unique<suborno::layouts::LayoutInputSession>(
+            *this, *dictionary, options);
+    }
+    return std::make_unique<suborno::layouts::LayoutInputSession>(*this, options);
 }
 
 }  // namespace suborno::layout

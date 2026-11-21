@@ -14,9 +14,11 @@
 3. **Phonetic compatibility:** Avro autocorrect/context behavior, Borno LM and
    context behavior, Khipro full composition parity, and complete golden corpora
    remain incomplete.
-4. **Physical layouts:** Probhat AltGr/dead-key behavior remains incomplete.
-   National physical mapping is blocked until BDS 1738:2018 licensing/permission
-   is resolved; the current National module is a prototype, not a physical map.
+4. **Physical layouts:** Probhat Base/Shift/AltGr/Shift+AltGr and CapsLock output
+   layers have been implemented with regression tests; current-head CI is pending.
+   Probhat dead-key behavior remains incomplete. National physical mapping is blocked
+   until BDS 1738:2018 licensing/permission is resolved; the current National module
+   is a prototype, not a physical map.
 5. **Unicode:** The supported Bangla inventory and grapheme handling require
    full corpus validation, including malformed UTF-8, combining sequences,
    ZWJ/ZWNJ, cursor movement and grapheme-aware deletion.

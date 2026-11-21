@@ -95,7 +95,7 @@ struct Dictionary::Impl {
     sqlite3* db = nullptr;
 
     explicit Impl(const std::string& path) {
-        const std::filesystem::path database_path = path;
+        const std::filesystem::path database_path = std::filesystem::u8path(path);
         std::error_code directory_error;
         if (!database_path.parent_path().empty()) {
             std::filesystem::create_directories(database_path.parent_path(), directory_error);
@@ -106,7 +106,7 @@ struct Dictionary::Impl {
             }
         }
 
-        if (sqlite3_open(database_path.string().c_str(), &db) != SQLITE_OK) {
+        if (sqlite3_open(path.c_str(), &db) != SQLITE_OK) {
             const int code = db == nullptr ? SQLITE_CANTOPEN : sqlite3_extended_errcode(db);
             const char* text = db == nullptr ? nullptr : sqlite3_errmsg(db);
             if (db != nullptr) {

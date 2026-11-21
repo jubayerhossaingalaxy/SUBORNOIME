@@ -129,6 +129,21 @@ TEST(ProbhatLayoutTest, AppliesCapsLockAltGrFlagOnlyWithinTheAltGrLayers) {
     EXPECT_EQ(session->snapshot().preedit_utf8, "ç");
 }
 
+TEST(ProbhatLayoutTest, AppliesBothCapsLockFlagsToTheAltGrShiftLayer) {
+    const suborno::layouts::ProbhatLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    EXPECT_EQ(session->append_key(event(0x10, false, true, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "Ä");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x10, true, true, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ä");
+}
+
 TEST(ProbhatLayoutTest, DoesNotConsumeUnmappedAltGrLayers) {
     const suborno::layouts::ProbhatLayout layout;
     auto session = layout.create_session(nullptr, {});

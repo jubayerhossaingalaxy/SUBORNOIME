@@ -276,6 +276,7 @@ if(BUILD_TESTING)
     add_executable(suborno_unit_tests
         tests/unit/atomic_file_test.cpp
         tests/unit/project_smoke_test.cpp
+        tests/unit/c_api_test.cpp
         tests/unit/phonetic_parser_test.cpp
         tests/unit/phonetic_input_session_test.cpp
         tests/unit/layout_input_session_test.cpp

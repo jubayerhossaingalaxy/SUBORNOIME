@@ -1,7 +1,9 @@
 #include "suborno/dictionary/dictionary.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <filesystem>
+#include <limits>
 #include <sqlite3.h>
 #include <stdexcept>
 #include <string>
@@ -278,10 +280,15 @@ int Dictionary::schema_version() const {
     return version;
 }
 
-std::vector<std::string> Dictionary::find_matches(const std::string& normalized) const {
+std::vector<std::string> Dictionary::find_matches(const std::string& normalized,
+                                                     std::size_t limit) const {
+    if (limit == 0) {
+        return {};
+    }
+
     const std::string query =
         "SELECT word FROM dictionary_entries WHERE normalized = ? "
-        "ORDER BY (frequency + COALESCE(user_frequency, 0)) DESC, word ASC";
+        "ORDER BY (frequency + COALESCE(user_frequency, 0)) DESC, word ASC LIMIT ?";
     sqlite3_stmt* stmt = nullptr;
     const int prepare_rc = sqlite3_prepare_v2(impl_->db, query.c_str(), -1, &stmt, nullptr);
     if (prepare_rc != SQLITE_OK) {
@@ -289,12 +296,16 @@ std::vector<std::string> Dictionary::find_matches(const std::string& normalized)
             DictionaryErrorCategory::prepare, prepare_rc, sqlite3_errmsg(impl_->db));
     }
 
-    if (sqlite3_bind_text(stmt, 1, normalized.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    const std::size_t bounded_limit =
+        std::min(limit, static_cast<std::size_t>(std::numeric_limits<sqlite3_int64>::max()));
+    if (sqlite3_bind_text(stmt, 1, normalized.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_int64(stmt, 2, static_cast<sqlite3_int64>(bounded_limit)) != SQLITE_OK) {
         sqlite3_finalize(stmt);
         throw DictionaryError(DictionaryErrorCategory::bind,
                               sqlite3_extended_errcode(impl_->db),
                               "Unable to bind dictionary lookup");
     }
+
     std::vector<std::string> results;
     int step_rc = SQLITE_OK;
     while ((step_rc = sqlite3_step(stmt)) == SQLITE_ROW) {

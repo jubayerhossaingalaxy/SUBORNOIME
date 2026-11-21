@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -39,7 +40,7 @@ class Dictionary {
     void record_commit(const std::string& word, const std::string& normalized);
     void clear_user_entries();
     int schema_version() const;
-    std::vector<std::string> find_matches(const std::string& normalized) const;
+    std::vector<std::string> find_matches(const std::string& normalized, std::size_t limit = 16) const;
     std::vector<std::string> words_for_prefix(const std::string& prefix) const;
     void initialize_schema();
 

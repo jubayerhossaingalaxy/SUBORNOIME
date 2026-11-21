@@ -93,3 +93,22 @@ TEST(PersonalDictionaryTest, PrefixSearchTreatsLikeWildcardsLiterally) {
 
     std::remove(db_path.c_str());
 }
+
+
+TEST(PersonalDictionaryTest, LimitsFindMatchesAtTheSqlQueryBoundary) {
+    const std::string db_path = temporary_database_path("suborno_personal_query_limit_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "shared", 9);
+    dictionary.add_entry("বাংলাদেশ", "shared", 7);
+    dictionary.add_entry("বাংলাদেশি", "shared", 5);
+
+    const auto limited = dictionary.find_matches("shared", 2);
+    ASSERT_EQ(limited.size(), 2U);
+    EXPECT_EQ(limited[0], "বাংলা");
+    EXPECT_EQ(limited[1], "বাংলাদেশ");
+    EXPECT_TRUE(dictionary.find_matches("shared", 0).empty());
+
+    std::remove(db_path.c_str());
+}

@@ -69,6 +69,11 @@ std::string_view Engine::active_layout_id() const noexcept {
     return layouts_.active_id();
 }
 
+layout::LayoutKind Engine::active_layout_kind() const noexcept {
+    const layout::InputLayout* active_layout = layouts_.active();
+    return active_layout == nullptr ? layout::LayoutKind::phonetic : active_layout->kind();
+}
+
 const layout::LayoutMetadata* Engine::layout_metadata(std::string_view id) const {
     return layouts_.find_metadata(id);
 }

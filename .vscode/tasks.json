@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "SUBORNO: Configure Ubuntu",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/configure-ubuntu.sh",
+      "args": ["ubuntu-dev"],
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "SUBORNO: Build Ubuntu",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build-ubuntu.sh",
+      "args": ["ubuntu-dev"],
+      "dependsOn": "SUBORNO: Configure Ubuntu",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "SUBORNO: Test Ubuntu",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/test-ubuntu.sh",
+      "args": ["ubuntu-dev"],
+      "dependsOn": "SUBORNO: Build Ubuntu",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "SUBORNO: Check formatting",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/check-format-ubuntu.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "SUBORNO: Run clang-tidy",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/check-tidy-ubuntu.sh",
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}

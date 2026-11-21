@@ -1,0 +1,35 @@
+# Build and CMake outputs
+/build/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/compile_commands.json
+/Testing/
+
+# vcpkg manifest installation and downloaded sources
+/vcpkg_installed/
+/vcpkg/
+
+# IDE and editor state
+.vscode/*.log
+.vscode/.browse.VC.db*
+.idea/
+*.user
+*.suo
+
+# Generated binaries and reports
+*.obj
+*.o
+*.lib
+*.a
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.so
+*.dylib
+*.profraw
+*.profdata
+*.sarif
+*.spdx.json

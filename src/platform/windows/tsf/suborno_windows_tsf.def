@@ -1,0 +1,7 @@
+LIBRARY suborno_windows_tsf
+EXPORTS
+    DllCanUnloadNow
+    DllGetClassObject
+    DllRegisterServer
+    DllUnregisterServer
+    DllInstall

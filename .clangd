@@ -1,0 +1,49 @@
+# SUBORNOIME - clangd language-server configuration
+# Target: C++20 | Windows x64 | MSVC v143 | Windows SDK
+# Build system remains MSVC + CMake + MSBuild.
+# clangd uses clang-cl mode only to understand MSVC-style compile flags.
+
+CompileFlags:
+    # Dedicated Ninja-generated compilation database.
+    CompilationDatabase: build-clangd
+
+    # Parse MSVC-style compiler arguments.
+    # Does NOT change the actual build compiler.
+    Compiler: clang-cl
+
+    BuiltinHeaders: Clangd
+
+# Reduce resource usage on low-memory development machines.
+Index:
+    Background: Skip
+    StandardLibrary: false
+
+# Use the repository's .clang-tidy as the single source of truth.
+Diagnostics:
+    UnusedIncludes: Strict
+    MissingIncludes: Strict
+    Includes:
+        AnalyzeAngledIncludes: false
+
+Completion:
+    AllScopes: Yes
+    ArgumentLists: FullPlaceholders
+    HeaderInsertion: IWYU
+    CodePatterns: All
+    MacroFilter: ExactPrefix
+
+InlayHints:
+    Enabled: true
+    ParameterNames: true
+    DeducedTypes: true
+    Designators: true
+    BlockEnd: false
+    DefaultArguments: false
+    TypeNameLimit: 32
+
+Hover:
+    ShowAKA: true
+    MacroContentsLimit: 2048
+
+Documentation:
+    CommentFormat: Doxygen

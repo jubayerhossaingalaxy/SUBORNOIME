@@ -1,0 +1,42 @@
+{
+  "name": "subornoime",
+  "version-string": "0.1.0",
+  "description": "Suborno native Bengali input method infrastructure",
+  "license": "MIT",
+  "builtin-baseline": "0df93a05b9de080129e653ec4776d7e14a1b2e4f",
+  "dependencies": [
+    {
+      "name": "icu",
+      "version>=": "79.1"
+    },
+    {
+      "name": "sqlite3",
+      "version>=": "3.54.1"
+    },
+    {
+      "name": "wil",
+      "version>=": "1.0.260126.7",
+      "platform": "windows"
+    }
+  ],
+  "features": {
+    "testing": {
+      "description": "GoogleTest infrastructure tests",
+      "dependencies": [
+        {
+          "name": "gtest",
+          "version>=": "1.18.0"
+        }
+      ]
+    },
+    "benchmarks": {
+      "description": "Optional Google Benchmark infrastructure target",
+      "dependencies": [
+        {
+          "name": "benchmark",
+          "version>=": "1.10.0"
+        }
+      ]
+    }
+  }
+}

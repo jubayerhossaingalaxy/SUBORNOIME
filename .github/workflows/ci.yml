@@ -1,0 +1,214 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ubuntu-clang:
+    name: Clang 23 / Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/.vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg-binary-cache
+      VCPKG_MAX_CONCURRENCY: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v6.1.0
+        with:
+          path: .vcpkg-binary-cache
+          key: vcpkg-${{ runner.os }}-clang23-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential git curl zip unzip tar zstd pkg-config python3
+          scripts/install-llvm-23-ubuntu.sh
+          scripts/install-linux-build-tools.sh
+
+      - name: Install pinned vcpkg
+        run: |
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          git -C "$VCPKG_ROOT" fetch --depth 1 origin 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          git -C "$VCPKG_ROOT" checkout --detach 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+
+      - name: Configure
+        run: cmake --preset ubuntu-ci
+
+      - name: Check formatting
+        run: scripts/check-format-ubuntu.sh
+
+      - name: Run clang-tidy
+        run: scripts/check-tidy-ubuntu.sh build/ubuntu-ci
+
+      - name: Test
+        run: |
+          cmake --build --preset ubuntu-ci --target suborno_unit_tests suborno_integration_tests
+          ctest --preset ubuntu-ci --output-on-failure
+
+      - name: Build
+        run: cmake --build --preset ubuntu-ci
+
+  ubuntu-gcc-13:
+    name: GCC 13 / Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/.vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.vcpkg-binary-cache
+      VCPKG_MAX_CONCURRENCY: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v6.1.0
+        with:
+          path: .vcpkg-binary-cache
+          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential git curl zip unzip tar zstd pkg-config python3
+          scripts/install-linux-build-tools.sh
+          g++-13 -dumpfullversion | grep -Fx '13.3.0'
+
+      - name: Install pinned vcpkg
+        run: |
+          mkdir -p "$VCPKG_DEFAULT_BINARY_CACHE"
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+          git -C "$VCPKG_ROOT" fetch --depth 1 origin 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          git -C "$VCPKG_ROOT" checkout --detach 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+
+      - name: Configure
+        run: cmake --preset ubuntu-gcc-ci
+
+      - name: Test
+        run: |
+          cmake --build --preset ubuntu-gcc-ci --target suborno_unit_tests suborno_integration_tests
+          ctest --preset ubuntu-gcc-ci --output-on-failure
+
+      - name: Build
+        run: cmake --build --preset ubuntu-gcc-ci
+
+  windows-msvc:
+    name: MSVC v143 / Windows 2022 / x64
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-binary-cache
+      VCPKG_MAX_CONCURRENCY: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v6.1.0
+        with:
+          path: .vcpkg-binary-cache
+          key: vcpkg-${{ runner.os }}-msvc-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+
+      - name: Install pinned vcpkg
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git "$env:VCPKG_ROOT"
+          if ($LASTEXITCODE -ne 0) { throw "Unable to clone vcpkg." }
+          git -C "$env:VCPKG_ROOT" fetch --depth 1 origin 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the pinned vcpkg baseline." }
+          git -C "$env:VCPKG_ROOT" checkout --detach 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          if ($LASTEXITCODE -ne 0) { throw "Unable to check out the pinned vcpkg baseline." }
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed." }
+
+      - name: Configure
+        run: cmake --preset windows-msvc
+
+      - name: Test Release
+        run: |
+          cmake --build --preset windows-msvc-release --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app
+          ctest --preset windows-msvc-release --output-on-failure
+
+      - name: Build Release
+        run: cmake --build --preset windows-msvc-release
+
+      - name: Audit Windows binary dependencies
+        shell: pwsh
+        run: ./scripts/audit-windows-dependencies.ps1
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $innoSetupUrl = "https://github.com/jrsoftware/issrc/releases/download/is-6_3_3/innosetup-6.3.3.exe"
+          $innoSetupInstaller = Join-Path $env:TEMP 'inno-setup.exe'
+          Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupInstaller
+          $proc = Start-Process -FilePath $innoSetupInstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { throw "Inno Setup installation failed with exit code $($proc.ExitCode)." }
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found." }
+          & $iscc /Q installer/windows/suborno_installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
+
+      - name: Test installer lifecycle
+        shell: pwsh
+        run: ./scripts/test-windows-installer.ps1
+
+      - name: Create checksum and inspect signature
+        shell: pwsh
+        run: |
+          $installer = 'installer/windows/Output/Suborno-Setup-x64.exe'
+          $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  Suborno-Setup-x64.exe" | Set-Content -Encoding ascii "$installer.sha256"
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer
+          Write-Host "Installer Authenticode status: $($signature.Status)"
+          if ($signature.Status -notin @('Valid', 'NotSigned')) {
+            throw "Unexpected installer signature status: $($signature.Status)"
+          }
+
+      - name: Upload Windows distribution
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: suborno-windows-x64-${{ github.run_number }}
+          path: |
+            installer/windows/Output/Suborno-Setup-x64.exe
+            installer/windows/Output/Suborno-Setup-x64.exe.sha256
+            build/windows-msvc/Release/Suborno.exe
+            build/windows-msvc/Release/suborno_windows_tsf.dll
+            THIRD_PARTY_NOTICES.md
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Test Debug
+        run: |
+          cmake --build --preset windows-msvc-debug --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app
+          ctest --preset windows-msvc-debug --output-on-failure
+
+      - name: Build Debug
+        run: cmake --build --preset windows-msvc-debug

@@ -1,0 +1,103 @@
+# SUBORNOIME - C++20 formatting policy
+# Base: Google style, customized for 4-space indentation and 100-column lines.
+# Target: LLVM clang-format 23-compatible options.
+
+Language: Cpp
+BasedOnStyle: Google
+
+# -----------------------------------------------------------------------------
+# Indentation and layout
+# -----------------------------------------------------------------------------
+AccessModifierOffset: -2
+AlignAfterOpenBracket: true
+AlignArrayOfStructures: None
+AlignConsecutiveAssignments: None
+AlignConsecutiveBitFields: None
+AlignConsecutiveDeclarations: None
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AlignTrailingComments:
+    Kind: Never
+
+ColumnLimit: 100
+ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+IndentCaseLabels: false
+IndentWidth: 4
+IndentWrappedFunctionNames: false
+NamespaceIndentation: None
+PPIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# -----------------------------------------------------------------------------
+# Braces, statements, and line breaking
+# -----------------------------------------------------------------------------
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortCompoundRequirementOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: None
+AllowShortLoopsOnASingleLine: false
+
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Attach
+BreakBeforeTernaryOperators: true
+BreakStringLiterals: false
+Cpp11BracedListStyle: FunctionCall
+PackArguments:
+    BinPack: OnePerLine
+PackConstructorInitializers: Never
+PackParameters:
+    BinPack: OnePerLine
+
+# -----------------------------------------------------------------------------
+# Include ordering
+# -----------------------------------------------------------------------------
+IncludeBlocks: Regroup
+IncludeCategories:
+    # Keep common precompiled-header names first when a project uses them.
+    - Regex: '^"(pch|stdafx)\.(h|hpp)"$'
+      Priority: -1
+    # System, C/C++ standard-library, Windows SDK, and angle-bracket dependencies.
+    - Regex: "^<.*>$"
+      Priority: 1
+    # Project/local quoted headers.
+    - Regex: '^".*"$'
+      Priority: 2
+    - Regex: ".*"
+      Priority: 3
+SortIncludes:
+    Enabled: true
+    IgnoreCase: false
+    IgnoreExtension: false
+SortUsingDeclarations: Never
+
+# -----------------------------------------------------------------------------
+# Pointers, references, qualifiers, and spacing
+# -----------------------------------------------------------------------------
+DerivePointerAlignment: false
+PointerAlignment: Left
+QualifierAlignment: Leave
+ReferenceAlignment: Left
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyBraces: Never
+SpaceAfterTemplateKeyword: true
+SpacesBeforeTrailingComments: 2
+SpacesInAngles: Never
+
+# -----------------------------------------------------------------------------
+# Comments, blank lines, and file boundaries
+# -----------------------------------------------------------------------------
+CommentPragmas: "^ IWYU pragma:"
+FixNamespaceComments: false
+InsertNewlineAtEOF: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+ReflowComments: false

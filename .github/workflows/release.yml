@@ -1,0 +1,185 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release / Windows 2022 / x64
+    runs-on: windows-2022
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-binary-cache
+      VCPKG_MAX_CONCURRENCY: 2
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v6.1.0
+        with:
+          path: .vcpkg-binary-cache
+          key: vcpkg-${{ runner.os }}-msvc-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $innoSetupUrl = "https://github.com/jrsoftware/issrc/releases/download/is-6_3_3/innosetup-6.3.3.exe"
+          $innoSetupInstaller = Join-Path $env:TEMP 'inno-setup.exe'
+          Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupInstaller
+          $proc = Start-Process -FilePath $innoSetupInstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { throw "Inno Setup installation failed with exit code $($proc.ExitCode)." }
+          Write-Host "Inno Setup installed."
+
+      - name: Install pinned vcpkg
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git "$env:VCPKG_ROOT"
+          git -C "$env:VCPKG_ROOT" fetch --depth 1 origin 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          git -C "$env:VCPKG_ROOT" checkout --detach 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed." }
+
+      - name: Build release (MSVC v143 x64)
+        shell: pwsh
+        run: |
+          cmake --preset windows-msvc
+          if ($LASTEXITCODE -ne 0) { throw "CMake configure failed." }
+          cmake --build --preset windows-msvc-release --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app --parallel 1
+          if ($LASTEXITCODE -ne 0) { throw "Release test targets failed to build." }
+          ctest --preset windows-msvc-release --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw "Release tests failed." }
+          cmake --build --preset windows-msvc-release --parallel 1 -- /verbosity:minimal
+          if ($LASTEXITCODE -ne 0) { throw "Release build failed." }
+
+      - name: Audit Windows binary dependencies
+        shell: pwsh
+        run: ./scripts/audit-windows-dependencies.ps1
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found." }
+          & $iscc /Q installer/windows/suborno_installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
+
+      - name: Test installer lifecycle
+        shell: pwsh
+        run: ./scripts/test-windows-installer.ps1
+
+      - name: Create checksum and inspect signature
+        shell: pwsh
+        run: |
+          $installer = 'installer/windows/Output/Suborno-Setup-x64.exe'
+          $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  Suborno-Setup-x64.exe" | Set-Content -Encoding ascii "$installer.sha256"
+          $signature = Get-AuthenticodeSignature -LiteralPath $installer
+          Write-Host "Installer Authenticode status: $($signature.Status)"
+          if ($signature.Status -notin @('Valid', 'NotSigned')) {
+            throw "Unexpected installer signature status: $($signature.Status)"
+          }
+
+      - name: Upload installer for manual testing
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: suborno-windows-x64-${{ github.run_number }}
+          path: |
+            installer/windows/Output/Suborno-Setup-x64.exe
+            installer/windows/Output/Suborno-Setup-x64.exe.sha256
+            build/windows-msvc/Release/Suborno.exe
+            build/windows-msvc/Release/suborno_windows_tsf.dll
+            THIRD_PARTY_NOTICES.md
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Create or update GitHub release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:RELEASE_TAG
+          if ($tag -match '^v(.+)$') { $version = $Matches[1] } else { $version = $tag }
+          $versionDefinition = Get-Content -LiteralPath 'build/windows-msvc/suborno_version.iss.inc' -Raw
+          if ($versionDefinition -match '#define MyAppVersion "([^"]+)"') {
+            $projectVersion = $Matches[1]
+          } else {
+            throw 'The generated installer version is missing.'
+          }
+          if ($version -ne $projectVersion) {
+            throw "Release tag version $version does not match project version $projectVersion."
+          }
+
+          $installerPath = 'installer/windows/Output/Suborno-Setup-x64.exe'
+          if (-not (Test-Path -LiteralPath $installerPath -PathType Leaf)) {
+            throw "Installer executable not found: $installerPath"
+          }
+          $appPath = 'build/windows-msvc/Release/Suborno.exe'
+          if (-not (Test-Path -LiteralPath $appPath -PathType Leaf)) {
+            throw "Desktop executable not found: $appPath"
+          }
+          $dllPath = 'build/windows-msvc/Release/suborno_windows_tsf.dll'
+          if (-not (Test-Path -LiteralPath $dllPath -PathType Leaf)) {
+            throw "Release DLL not found: $dllPath"
+          }
+
+          $notes = @"
+          ## Suborno $version
+
+          Native Bengali input method and desktop control application for Windows 10/11 x64.
+
+          ### Includes:
+          - `Suborno.exe` desktop GUI and notification-area integration
+          - Suborno TSF/COM Text Service DLL
+          - `Suborno-Setup-x64.exe` installer with Desktop and Start Menu shortcuts
+          - Suborno Phonetic, Probhat, and National keyboard layouts
+          - ICU and SQLite statically linked; MSVC runtime statically linked
+          - Third-party notices included with the installed application
+
+          ### Installation:
+          Download and run `Suborno-Setup-x64.exe`. The installer is unsigned because this
+          project does not have a code-signing certificate. Verify it with the attached
+          SHA256 checksum.
+
+          ### Requirements:
+          - Windows 10 or Windows 11 (x64)
+
+          ### Verification:
+          - Built with MSVC v143, Windows SDK, CMake, Visual Studio 17 2022
+          - Installer install, shortcut, reinstall, and uninstall smoke tests ran on Windows CI
+          - Interactive Win+Space and live Notepad typing still require manual desktop verification
+          "@
+
+          gh release view $tag --json tagName 1>$null 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release edit $tag --title "Suborno $version" --notes $notes --draft=false --prerelease=false
+            if ($LASTEXITCODE -ne 0) { throw "Failed to update release $tag." }
+          } else {
+            gh release create $tag --verify-tag --title "Suborno $version" --notes $notes
+            if ($LASTEXITCODE -ne 0) { throw "Failed to create release $tag." }
+          }
+
+          $assets = @(
+            (Resolve-Path -LiteralPath $installerPath).Path
+            (Resolve-Path -LiteralPath "$installerPath.sha256").Path
+            (Resolve-Path -LiteralPath $appPath).Path
+            (Resolve-Path -LiteralPath $dllPath).Path
+            (Resolve-Path -LiteralPath 'THIRD_PARTY_NOTICES.md').Path
+          )
+          $ghArgs = @('release', 'upload', $tag) + $assets + @('--clobber')
+          & gh @ghArgs
+          if ($LASTEXITCODE -ne 0) { throw "Failed to upload release assets for $tag." }

@@ -116,6 +116,7 @@
       },
       "environment": {
         "ICU_DATA_FILTER_FILE": "${sourceDir}/cmake/icu/suborno-data-filter.json",
+        "VCPKG_KEEP_ENV_VARS": "ICU_DATA_FILTER_FILE",
         "VCPKG_BINARY_SOURCES": "clear"
       }
     }

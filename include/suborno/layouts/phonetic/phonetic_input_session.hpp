@@ -14,6 +14,11 @@ class Dictionary;
 
 namespace suborno::layouts {
 
+using InputStatus = layout::InputStatus;
+using CompositionSnapshot = layout::CompositionSnapshot;
+using CommitResult = layout::CommitResult;
+using InputSessionOptions = layout::InputSessionOptions;
+
 class PhoneticInputSession final : public layout::InputSession {
   public:
     static constexpr std::size_t kMaxInputCodePoints = layout::InputSession::kMaxInputCodePoints;

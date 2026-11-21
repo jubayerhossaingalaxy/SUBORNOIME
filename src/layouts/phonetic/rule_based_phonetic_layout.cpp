@@ -13,6 +13,7 @@ enum class CompositionState {
     boundary,
     consonant_run,
     after_dependent_consonant,
+    unjoined_consonant,
     after_vowel,
     explicit_halant,
 };
@@ -83,7 +84,8 @@ std::size_t code_point_length(std::string_view input, std::size_t offset) {
 void append_consonant(const PhoneticTokenDefinition& token,
                       std::string& output,
                       CompositionState& state,
-                      bool& nukta_eligible) {
+                      bool& nukta_eligible,
+                      bool join_unmatched_consonants) {
     bool used_dependent_form = false;
     if (token.force_dependent_form && state == CompositionState::consonant_run) {
         output.append(kVirama);
@@ -91,30 +93,43 @@ void append_consonant(const PhoneticTokenDefinition& token,
         used_dependent_form = true;
     } else if (token.force_independent_form) {
         output.append(token.output);
-    } else if (state == CompositionState::consonant_run) {
+    } else if (state == CompositionState::consonant_run && join_unmatched_consonants) {
         output.append(kVirama);
         output.append(token.dependent_output.empty() ? token.output : token.dependent_output);
         used_dependent_form = !token.dependent_output.empty();
     } else {
         output.append(token.output);
     }
-    state = used_dependent_form ? CompositionState::after_dependent_consonant
-                                : CompositionState::consonant_run;
+    state = used_dependent_form
+                ? CompositionState::after_dependent_consonant
+                : (join_unmatched_consonants ? CompositionState::consonant_run
+                                             : CompositionState::unjoined_consonant);
     nukta_eligible = token.nukta_eligible;
 }
 
 void append_token(const PhoneticTokenDefinition& token,
                   std::string& output,
                   CompositionState& state,
-                  bool& nukta_eligible) {
+                  bool& nukta_eligible,
+                  bool join_unmatched_consonants) {
     switch (token.kind) {
     case PhoneticTokenKind::consonant:
-        append_consonant(token, output, state, nukta_eligible);
+        if (state == CompositionState::boundary && !token.boundary_output.empty()) {
+            output.append(token.boundary_output);
+            state = CompositionState::unjoined_consonant;
+            nukta_eligible = token.nukta_eligible;
+            return;
+        }
+        append_consonant(token, output, state, nukta_eligible, join_unmatched_consonants);
         return;
     case PhoneticTokenKind::vowel:
         if (state == CompositionState::consonant_run
-            || state == CompositionState::after_dependent_consonant) {
+            || state == CompositionState::after_dependent_consonant
+            || state == CompositionState::unjoined_consonant) {
             output.append(token.dependent_output);
+        } else if (state == CompositionState::after_vowel
+                   && !token.contextual_after_vowel_output.empty()) {
+            output.append(token.contextual_after_vowel_output);
         } else {
             output.append(token.output);
         }
@@ -163,10 +178,12 @@ void append_escaped_grapheme(std::string_view input,
 
 RuleBasedPhoneticLayout::RuleBasedPhoneticLayout(std::span<const PhoneticTokenDefinition> tokens,
                                                  bool accent_key_enabled,
-                                                 std::string_view profile_id)
+                                                 std::string_view profile_id,
+                                                 bool join_unmatched_consonants)
     : tokens_(tokens),
       accent_key_enabled_(accent_key_enabled),
-      profile_id_(profile_id) {
+      profile_id_(profile_id),
+      join_unmatched_consonants_(join_unmatched_consonants) {
     if (tokens_.empty() || profile_id_.empty()) {
         throw std::invalid_argument("A phonetic layout requires tokens and a profile identifier");
     }
@@ -213,7 +230,9 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
         }
 
         if (accent_key_enabled_ && input[offset] == '`') {
-            if (state == CompositionState::consonant_run) {
+            if (state == CompositionState::consonant_run
+                || state == CompositionState::unjoined_consonant
+                || state == CompositionState::after_dependent_consonant) {
                 state = CompositionState::boundary;
             }
             force_independent_vowel = true;
@@ -222,7 +241,8 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
         }
 
         if (const ControlToken* control = match_control(input, offset); control != nullptr) {
-            const bool has_consonant = state == CompositionState::consonant_run;
+            const bool has_consonant = state == CompositionState::consonant_run
+                                        || state == CompositionState::unjoined_consonant;
             const bool valid_nukta = control->input == "./" && has_consonant && nukta_eligible;
             const bool valid_halant = control->input == ",," && has_consonant;
             const bool valid_joiner =
@@ -231,7 +251,9 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
                 control->input == "::" || control->input == "^" || control->input == ".";
             if (valid_nukta || valid_halant || valid_joiner || valid_sign) {
                 output.append(control->output);
-                state = control->next_state;
+                state = (!join_unmatched_consonants_ && control->input == "./")
+                             ? CompositionState::unjoined_consonant
+                             : control->next_state;
                 nukta_eligible = false;
             } else {
                 output.append(control->input);
@@ -270,10 +292,15 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
             } else if (state == CompositionState::explicit_halant
                        && match.definition->kind == PhoneticTokenKind::consonant) {
                 output.append(match.definition->output);
-                state = CompositionState::consonant_run;
+                state = join_unmatched_consonants_ ? CompositionState::consonant_run
+                                                   : CompositionState::unjoined_consonant;
                 nukta_eligible = match.definition->nukta_eligible;
             } else {
-                append_token(*match.definition, output, state, nukta_eligible);
+                append_token(*match.definition,
+                             output,
+                             state,
+                             nukta_eligible,
+                             join_unmatched_consonants_);
             }
             force_independent_vowel = false;
             offset += match.length + (consumed_accent ? 1U : 0U);

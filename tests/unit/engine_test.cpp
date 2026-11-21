@@ -205,7 +205,7 @@ TEST(EngineTest, DictionarySchemaCommitAndReset) {
     std::remove(db_path.c_str());
     suborno::dictionary::Dictionary dictionary(db_path);
 
-    EXPECT_EQ(dictionary.schema_version(), 1);
+    EXPECT_EQ(dictionary.schema_version(), 2);
     dictionary.add_entry("বাংলা", "bangla", 5);
     dictionary.record_commit("বাংলা", "bangla");
 
@@ -263,7 +263,7 @@ TEST(EngineTest, DictionaryMigratesLegacySchema) {
     sqlite3_close(db);
 
     suborno::dictionary::Dictionary dictionary(db_path);
-    EXPECT_EQ(dictionary.schema_version(), 1);
+    EXPECT_EQ(dictionary.schema_version(), 2);
     EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");
     dictionary.record_commit("বাংলা", "bangla");
     EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");

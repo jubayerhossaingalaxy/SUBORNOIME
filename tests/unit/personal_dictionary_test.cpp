@@ -112,3 +112,46 @@ TEST(PersonalDictionaryTest, LimitsFindMatchesAtTheSqlQueryBoundary) {
 
     std::remove(db_path.c_str());
 }
+
+
+TEST(PersonalDictionaryTest, PinningAndRemovingSystemWordPreservesSystemDictionaryEntry) {
+    const std::string db_path = temporary_database_path("suborno_personal_system_pin_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "bangla", 10);
+
+    dictionary.add_user_word("বাংলা", "bangla");
+    ASSERT_EQ(dictionary.list_user_words(), std::vector<std::string>{"বাংলা"});
+    EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");
+
+    dictionary.remove_user_word("বাংলা");
+    EXPECT_TRUE(dictionary.list_user_words().empty());
+    EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");
+    EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 0);
+
+    std::remove(db_path.c_str());
+}
+
+TEST(PersonalDictionaryTest, ClearingUserEntriesUnpinsSystemWordsAndDeletesUserOnlyWords) {
+    const std::string db_path = temporary_database_path("suborno_personal_clear_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "bangla", 10);
+    dictionary.add_user_word("বাংলা", "bangla");
+    dictionary.add_user_word("নিজস্ব", "nijoshsho");
+    dictionary.record_commit("বাংলা", "bangla");
+
+    ASSERT_EQ(dictionary.list_user_words().size(), 2U);
+    EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 2);
+
+    dictionary.clear_user_entries();
+
+    EXPECT_TRUE(dictionary.list_user_words().empty());
+    EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 0);
+    EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");
+    EXPECT_TRUE(dictionary.find_matches("nijoshsho").empty());
+
+    std::remove(db_path.c_str());
+}

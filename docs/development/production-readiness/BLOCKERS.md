@@ -15,10 +15,12 @@
    context behavior, Khipro full composition parity, and complete golden corpora
    remain incomplete.
 4. **Physical layouts:** Probhat Base/Shift/AltGr/Shift+AltGr and CapsLock output
-   layers have been implemented with regression tests; current-head CI is pending.
-   Probhat dead-key behavior remains incomplete. National physical mapping is blocked
-   until BDS 1738:2018 licensing/permission is resolved; the current National module
-   is a prototype, not a physical map.
+   layers are implemented with regression tests; OEM_102 and numpad decimal are
+   recognized at the Windows virtual-key boundary. TSF probes actual session acceptance
+   and passes unsupported combinations through. Current-head CI and interactive tests
+   are pending; Probhat dead-key behavior remains incomplete. National physical mapping
+   is blocked until BDS 1738:2018 licensing/permission is resolved; the current National
+   module is a prototype, not a physical map.
 5. **Unicode:** The Unicode 18 assigned Bengali-block inventory and general-category
    metadata have been expanded, excluding Assamese-specific U+09F0/U+09F1. Full
    corpus validation remains outstanding for malformed UTF-8, combining sequences,

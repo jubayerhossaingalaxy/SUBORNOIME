@@ -565,6 +565,11 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
             && (found->second.composition != nullptr
                 || (found->second.session != nullptr
                     && !found->second.session->snapshot().raw_input_utf8.empty()));
+        if (composing) {
+            // Route active-composition keys without translating their text here.
+            *pbEaten = TRUE;
+            return S_OK;
+        }
         const auto& input_settings = m_engine->settings().input;
         auto key_event =
             key_event_from_virtual_key(wParam,
@@ -612,11 +617,6 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                 state_it->second.context = pContext;
             }
             ContextState& state = state_it->second;
-            if (composing) {
-                // OnKeyDown revalidates the scope immediately before processing this key.
-                *pbEaten = should_eat;
-                return S_OK;
-            }
             bool sensitive = false;
             const HRESULT scope_result =
                 query_sensitive_input_scope(pContext, m_clientId, sensitive);

@@ -794,7 +794,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             bool sensitive = false;
             const HRESULT scope_result =
                 query_sensitive_input_scope(pContext, m_clientId, sensitive);
-            if (FAILED(scope_result)) {
+            if (scope_result != S_OK) {
                 state.input_scope_checked = false;
                 state.sensitive_input_scope = false;
                 return S_OK;

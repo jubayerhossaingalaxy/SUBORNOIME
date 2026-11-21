@@ -73,6 +73,6 @@ constexpr std::array kBornoTokens{
 }  // namespace
 
 BornoPhoneticLayout::BornoPhoneticLayout()
-    : RuleBasedPhoneticLayout(kBornoTokens) {}
+    : RuleBasedPhoneticLayout(kBornoTokens, false, "borno-phonetic") {}
 
 }  // namespace suborno::layouts

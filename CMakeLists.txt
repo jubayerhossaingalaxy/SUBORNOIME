@@ -109,7 +109,6 @@ target_include_directories(suborno_persistence PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src"
 )
-target_link_libraries(suborno_persistence PUBLIC unofficial::sqlite3::sqlite3)
 
 add_library(suborno_settings STATIC src/settings/settings.cpp)
 target_include_directories(suborno_settings PUBLIC "${PROJECT_SOURCE_DIR}/include")

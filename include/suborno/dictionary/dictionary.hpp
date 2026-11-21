@@ -42,9 +42,8 @@ class Dictionary {
     Dictionary& operator=(const Dictionary&) = delete;
 
     void add_entry(const std::string& word, const std::string& normalized, int frequency = 1);
-    std::size_t import_word_lists_if_needed(
-        const WordListPaths& word_list_paths,
-        std::string_view corpus_version);
+    std::size_t import_word_lists_if_needed(const WordListPaths& word_list_paths,
+                                            std::string_view corpus_version);
     void record_commit(const std::string& word, const std::string& normalized);
     void record_commit(const std::string& word,
                        const std::string& canonical_normalized,

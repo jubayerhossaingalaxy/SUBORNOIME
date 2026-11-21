@@ -1,9 +1,10 @@
+#include "suborno/layouts/phonetic/phonetic_input_session.hpp"
+
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <string>
 
 #include "suborno/dictionary/dictionary.hpp"
-#include "suborno/layouts/phonetic/phonetic_input_session.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 
 using suborno::layouts::InputStatus;

@@ -64,9 +64,8 @@ Engine::Engine(const EngineConfig& config)
             if (config.dictionary_word_lists.empty() || config.dictionary_corpus_version.empty()) {
                 throw std::invalid_argument("The bundled dictionary configuration is incomplete");
             }
-            dictionary_->import_word_lists_if_needed(
-                config.dictionary_word_lists,
-                config.dictionary_corpus_version);
+            dictionary_->import_word_lists_if_needed(config.dictionary_word_lists,
+                                                      config.dictionary_corpus_version);
         }
     }
 }

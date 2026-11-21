@@ -195,6 +195,10 @@ class ProbhatInputSession final : public layout::InputSession {
             || event.modifiers.windows) {
             return layout::InputStatus::empty;
         }
+        const std::string output = output_for_event(event);
+        if (output.empty()) {
+            return layout::InputStatus::empty;
+        }
         const std::size_t repeat_count = event.repeat_count == 0 ? 1 : event.repeat_count;
         if (repeat_count > layout::InputSession::kMaxInputCodePoints) {
             return layout::InputStatus::input_limit;
@@ -202,7 +206,7 @@ class ProbhatInputSession final : public layout::InputSession {
 
         std::string updated = composition_;
         for (std::size_t index = 0; index < repeat_count; ++index) {
-            updated.append(output_for_event(event));
+            updated.append(output);
         }
         return append_output(updated);
     }

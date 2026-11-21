@@ -55,8 +55,10 @@ TEST(ProbhatLayoutTest, ConcatenatesLiteralFixedKeyOutputsWithoutPhoneticRewriti
 
     EXPECT_EQ(layout.transliterate("ka"), "কা");
     EXPECT_EQ(layout.transliterate("ki"), "কি");
-    EXPECT_EQ(layout.transliterate("ke"), "কে");
-    EXPECT_EQ(layout.transliterate("ko"), "কো");
+    EXPECT_EQ(layout.transliterate("ke"), "কী");
+    EXPECT_EQ(layout.transliterate("ko"), "কও");
+    EXPECT_EQ(layout.transliterate("k["), "কে");
+    EXPECT_EQ(layout.transliterate("k]"), "কো");
     EXPECT_EQ(layout.transliterate("wa"), "ূা");
 }
 
@@ -121,7 +123,7 @@ TEST(ProbhatLayoutTest, MapsDigitsSignsAndPunctuation) {
     EXPECT_EQ(layout.transliterate("/"), "্");
     EXPECT_EQ(layout.transliterate(","), ",");
     EXPECT_EQ(layout.transliterate("<"), "ৃ");
-    EXPECT_EQ(layout.transliterate("\\\\"), "\\\\");
+    EXPECT_EQ(layout.transliterate("\\"), "\\");
 }
 
 TEST(ProbhatLayoutTest, BackspaceRemovesOneBengaliGrapheme) {

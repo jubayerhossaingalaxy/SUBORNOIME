@@ -286,7 +286,7 @@ class InputScopeQueryEditSession final : public ITfEditSession {
             return S_FALSE;
         }
         for (UINT index = 0; index < count; ++index) {
-            if (is_input_scope_blocks_capture_type(scopes[index])) {
+            if (is_sensitive_input_scope_type(scopes[index])) {
                 sensitive_ = true;
                 break;
             }
@@ -306,7 +306,7 @@ class InputScopeQueryEditSession final : public ITfEditSession {
 
 }  // namespace
 
-HRESULT query_input_scope_blocks_capture(ITfContext* context,
+HRESULT query_sensitive_input_scope(ITfContext* context,
                                     TfClientId client_id,
                                     bool& sensitive) noexcept {
     sensitive = false;
@@ -603,7 +603,7 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
             ContextState& state = state_it->second;
             bool sensitive = false;
             const HRESULT scope_result =
-                query_input_scope_blocks_capture(pContext, m_clientId, sensitive);
+                query_sensitive_input_scope(pContext, m_clientId, sensitive);
             const InputScopeCaptureDecision capture_decision =
                 decide_input_scope_capture(scope_result, sensitive, composing);
             if (capture_decision != InputScopeCaptureDecision::allow_capture) {
@@ -798,10 +798,10 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             && (!state.input_scope_checked || state.input_scope_blocks_capture)) {
             bool sensitive = false;
             const HRESULT scope_result =
-                query_input_scope_blocks_capture(pContext, m_clientId, sensitive);
+                query_sensitive_input_scope(pContext, m_clientId, sensitive);
             if (!may_capture_text_from_input_scope(scope_result, sensitive)) {
                 state.input_scope_checked = false;
-                state.input_scope_blocks_capture = scope_result == S_OK && sensitive;
+                state.input_scope_blocks_capture = true;
                 return S_OK;
             }
             state.input_scope_checked = true;
@@ -925,7 +925,6 @@ STDMETHODIMP SubornoTextService::OnSetFocus(ITfDocumentMgr*, ITfDocumentMgr*) {
     for (auto& [context, state] : m_contexts) {
         static_cast<void>(context);
         state.input_scope_checked = false;
-        state.input_scope_blocks_capture = false;
     }
     return S_OK;
 }
@@ -968,8 +967,9 @@ STDMETHODIMP SubornoTextService::OnPopContext(ITfContext* pContext) {
                     result = E_INVALIDARG;
                 }
             }
-            if (SUCCEEDED(result)) {
-                result = _FinishComposition(pContext, found->second, text);
+            const HRESULT finish_result = _FinishComposition(pContext, found->second, text);
+            if (FAILED(finish_result) || SUCCEEDED(result)) {
+                result = finish_result;
             }
         }
     } catch (const std::bad_alloc&) {

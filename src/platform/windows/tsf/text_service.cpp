@@ -552,8 +552,11 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
 
     try {
         const auto found = m_contexts.find(pContext);
-        const bool composing = found != m_contexts.end() && found->second.session != nullptr
-                               && !found->second.session->snapshot().raw_input_utf8.empty();
+        const bool composing =
+            found != m_contexts.end()
+            && (found->second.composition != nullptr
+                || (found->second.session != nullptr
+                    && !found->second.session->snapshot().raw_input_utf8.empty()));
         const auto& input_settings = m_engine->settings().input;
         auto key_event =
             key_event_from_virtual_key(wParam,
@@ -615,7 +618,9 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                 return S_OK;
             }
             state.input_scope_checked = true;
-            state.input_scope_blocks_capture = false;
+            if (!composing) {
+                state.input_scope_blocks_capture = false;
+            }
         }
         *pbEaten = should_eat;
         return S_OK;
@@ -658,7 +663,8 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         }
         const std::string active_layout_id(m_engine->active_layout_id());
         const bool session_is_idle =
-            state.session == nullptr || state.session->snapshot().raw_input_utf8.empty();
+            state.composition == nullptr
+            && (state.session == nullptr || state.session->snapshot().raw_input_utf8.empty());
         if (state.session == nullptr
             || (session_is_idle
                 && (state.session_needs_refresh || state.session_layout_id != active_layout_id))) {
@@ -668,6 +674,18 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         }
         if (state.session == nullptr) {
             return E_UNEXPECTED;
+        }
+
+        if (state.input_scope_blocks_capture) {
+            const HRESULT cancellation_result = _FinishComposition(pContext, state, {});
+            const bool composition_cleared =
+                state.composition == nullptr && state.session->snapshot().raw_input_utf8.empty();
+            if (composition_cleared) {
+                *pbEaten = FALSE;
+                return S_OK;
+            }
+            *pbEaten = TRUE;
+            return FAILED(cancellation_result) ? S_OK : E_UNEXPECTED;
         }
 
         const auto snapshot = state.session->snapshot();
@@ -806,16 +824,6 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
             state.input_scope_checked = true;
             state.input_scope_blocks_capture = false;
-        }
-        if (state.input_scope_blocks_capture) {
-            const HRESULT cancellation_result = _FinishComposition(pContext, state, {});
-            if (SUCCEEDED(cancellation_result) && state.composition == nullptr
-                && state.session->snapshot().raw_input_utf8.empty()) {
-                *pbEaten = FALSE;
-                return S_OK;
-            }
-            *pbEaten = TRUE;
-            return S_OK;
         }
         if (should_append_key) {
             const layout::InputStatus input_status = state.session->append_key(*key_event);

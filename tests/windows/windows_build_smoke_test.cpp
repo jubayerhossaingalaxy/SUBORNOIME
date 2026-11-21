@@ -12,6 +12,7 @@
 
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/platform/windows/app_paths.hpp"
+#include "suborno/platform/windows/key_translation.hpp"
 #include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
 #include "suborno/platform/windows/tsf/guids.hpp"
 extern "C" _Check_return_ HRESULT WINAPI DllCanUnloadNow();
@@ -57,6 +58,16 @@ class ComApartment final {
 };
 
 }  // namespace
+
+TEST(WindowsKeyTranslationTest, RecognizesAllProbhatKlcExtendedPhysicalKeys) {
+    using suborno::layout::PhysicalKey;
+    using suborno::platform::windows::physical_key_from_virtual_key;
+
+    EXPECT_EQ(physical_key_from_virtual_key(VK_OEM_102), PhysicalKey::backslash);
+    EXPECT_EQ(physical_key_from_virtual_key(VK_DECIMAL), PhysicalKey::numpad_decimal);
+    EXPECT_EQ(physical_key_from_virtual_key(VK_OEM_5), PhysicalKey::backslash);
+    EXPECT_FALSE(physical_key_from_virtual_key(VK_F1).has_value());
+}
 
 TEST(WindowsBuildSmokeTest, LoadsTheNativeWindowsModuleTarget) {
     EXPECT_NE(::GetModuleHandleW(L"suborno_windows_tsf.dll"), nullptr);

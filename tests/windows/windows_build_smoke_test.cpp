@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
+
+#include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
 #include <iterator>
 #include <msctf.h>
 #include <string>
@@ -247,4 +249,39 @@ TEST(WindowsTsfContractTest, RegistersAndUnregistersTheLanguageProfile) {
     }
 
     EXPECT_EQ(DllUnregisterServer(), S_OK);
+}
+
+
+TEST(CandidateListUIElementTest, ExposesCandidateStringsAndSelectionThroughTsfContracts) {
+    const std::vector<suborno::layout::Candidate> candidates{
+        {.text = "আমি", .normalized_text = "ami", .stable_id = "candidate:ami"},
+        {.text = "আমরা", .normalized_text = "amra", .stable_id = "candidate:amra"},
+    };
+    auto* element = new suborno::platform::windows::CandidateListUIElement(
+        nullptr, candidates, 1, {}, {});
+
+    UINT count = 0;
+    EXPECT_EQ(element->GetCount(&count), S_OK);
+    EXPECT_EQ(count, 2U);
+
+    UINT selection = 0;
+    EXPECT_EQ(element->GetSelection(&selection), S_OK);
+    EXPECT_EQ(selection, 1U);
+
+    BSTR candidate = nullptr;
+    EXPECT_EQ(element->GetString(0, &candidate), S_OK);
+    ASSERT_NE(candidate, nullptr);
+    EXPECT_EQ(std::wstring(candidate), L"আমি");
+    ::SysFreeString(candidate);
+
+    GUID element_guid{};
+    EXPECT_EQ(element->GetGUID(&element_guid), S_OK);
+    EXPECT_TRUE(::IsEqualGUID(element_guid,
+                             suborno::platform::windows::kSubornoCandidateListUIElementGuid));
+
+    UINT page_count = 0;
+    EXPECT_EQ(element->GetPageIndex(nullptr, 0, &page_count), S_OK);
+    EXPECT_EQ(page_count, 1U);
+
+    element->Release();
 }

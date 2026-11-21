@@ -243,6 +243,7 @@ if(WIN32)
         src/platform/windows/tsf/module_smoke.cpp
         src/platform/windows/tsf/guids.cpp
         src/platform/windows/tsf/text_edit_session.cpp
+        src/platform/windows/tsf/candidate_list_ui_element.cpp
         src/platform/windows/tsf/text_service.cpp
         src/platform/windows/tsf/class_factory.cpp
         src/platform/windows/tsf/dll_main.cpp
@@ -256,6 +257,7 @@ if(WIN32)
         WIL::WIL
         Advapi32.lib
         Ole32.lib
+        OleAut32.lib
         Shell32.lib
         Shlwapi.lib
         User32.lib

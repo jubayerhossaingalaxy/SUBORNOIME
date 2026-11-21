@@ -219,7 +219,7 @@ TEST(PersonalDictionaryTest, StoresUserInputAsAliasWithoutOverwritingCanonicalNo
 
     suborno::dictionary::Dictionary dictionary(db_path);
     dictionary.add_entry("বাংলা", "bangla", 10);
-    dictionary.record_commit("বাংলা", "bang");
+    dictionary.record_commit("বাংলা", "bangla", "bang");
 
     EXPECT_EQ(dictionary.find_matches("bangla"), std::vector<std::string>{"বাংলা"});
     EXPECT_EQ(dictionary.find_matches("bang"), std::vector<std::string>{"বাংলা"});
@@ -228,7 +228,7 @@ TEST(PersonalDictionaryTest, StoresUserInputAsAliasWithoutOverwritingCanonicalNo
     EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 1);
     EXPECT_EQ(dictionary.list_user_words(), std::vector<std::string>{"বাংলা"});
 
-    dictionary.record_commit("বাংলা", "bngla");
+    dictionary.record_commit("বাংলা", "bangla", "bngla");
     EXPECT_EQ(dictionary.find_matches("bangla"), std::vector<std::string>{"বাংলা"});
     EXPECT_EQ(dictionary.find_matches("bang"), std::vector<std::string>{"বাংলা"});
     EXPECT_EQ(dictionary.find_matches("bngla"), std::vector<std::string>{"বাংলা"});

@@ -518,7 +518,7 @@ TEST(EngineTest, SessionCandidatesIncludePhoneticDictionaryMatches) {
     std::filesystem::remove(dictionary_path);
 }
 
-TEST(EngineTest, PhoneticSessionLearnsTypedInputAsSearchableDictionaryAlias) {
+TEST(EngineTest, PhoneticSessionStoresCanonicalWordAndTypedAliasSeparately) {
     const std::filesystem::path dictionary_path =
         std::filesystem::temp_directory_path() / "suborno_phonetic_session_alias_learning.sqlite";
     std::filesystem::remove(dictionary_path);
@@ -528,7 +528,6 @@ TEST(EngineTest, PhoneticSessionLearnsTypedInputAsSearchableDictionaryAlias) {
     {
         suborno::core::Engine engine(config);
         ASSERT_NE(engine.dictionary(), nullptr);
-        engine.dictionary()->add_entry("আমি", "আমি", 10);
 
         ASSERT_TRUE(engine.set_active_layout("suborno-phonetic"));
         auto session = engine.create_session();

@@ -88,7 +88,7 @@ CommitResult PhoneticInputSession::commit() {
     const std::string committed =
         parsed.literal_passthrough ? parsed.text : layout_->transliterate(raw_input_);
     if (dictionary_ != nullptr && options_.learning_enabled) {
-        dictionary_->record_commit(committed, raw_input_);
+        dictionary_->record_commit(committed, committed, raw_input_);
     }
     raw_input_.clear();
     selected_candidate_index_ = 0;
@@ -120,7 +120,10 @@ CommitResult PhoneticInputSession::commit_candidate(std::size_t index) {
     const auto parsed = suborno::layouts::phonetic::detail::parse_primary(raw_input_, true);
     const std::string committed = candidates[index].text;
     if (dictionary_ != nullptr && options_.learning_enabled) {
-        dictionary_->record_commit(committed, raw_input_);
+        dictionary_->record_commit(
+            committed,
+            candidates[index].normalized_text.empty() ? committed : candidates[index].normalized_text,
+            raw_input_);
     }
     raw_input_.clear();
     selected_candidate_index_ = 0;

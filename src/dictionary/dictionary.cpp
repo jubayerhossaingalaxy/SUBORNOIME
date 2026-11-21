@@ -342,7 +342,14 @@ void Dictionary::add_entry(const std::string& word, const std::string& normalize
     }
 }
 
-void Dictionary::record_commit(const std::string& word, const std::string& normalized) {
+void Dictionary::record_commit(const std::string& word,
+                             const std::string& normalized) {
+    record_commit(word, normalized, normalized);
+}
+
+void Dictionary::record_commit(const std::string& word,
+                               const std::string& canonical_normalized,
+                               const std::string& user_alias) {
     begin_dictionary_transaction(impl_->db);
     try {
         execute_two_text_statement(
@@ -353,7 +360,7 @@ void Dictionary::record_commit(const std::string& word, const std::string& norma
             "ON CONFLICT(word) DO UPDATE SET "
             "user_frequency=MIN(dictionary_entries.user_frequency+1, 2147483647);",
             word,
-            normalized,
+            canonical_normalized,
             "committed dictionary entry");
         execute_two_text_statement(
             impl_->db,
@@ -362,7 +369,7 @@ void Dictionary::record_commit(const std::string& word, const std::string& norma
             "ON CONFLICT(word, normalized) DO UPDATE SET "
             "frequency=MIN(dictionary_user_aliases.frequency+1, 2147483647);",
             word,
-            normalized,
+            user_alias,
             "committed dictionary alias");
         commit_dictionary_transaction(impl_->db);
     } catch (...) {

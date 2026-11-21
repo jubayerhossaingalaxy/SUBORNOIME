@@ -26,6 +26,7 @@ TEST(KeyEventTest, MapsShiftedNumberRowCharacters) {
 TEST(KeyEventTest, HonorsNumpadNumLockState) {
     EXPECT_EQ(key_event_to_ascii({PhysicalKey::numpad_2, {.num_lock = true}}), '2');
     EXPECT_FALSE(key_event_to_ascii({PhysicalKey::numpad_2, {.num_lock = false}}).has_value());
+    EXPECT_EQ(key_event_to_ascii({PhysicalKey::numpad_decimal, {}}), '.');
 }
 
 TEST(KeyEventTest, MapsPunctuationAndShiftedVariants) {

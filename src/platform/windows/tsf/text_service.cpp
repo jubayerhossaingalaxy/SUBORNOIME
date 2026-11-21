@@ -698,7 +698,8 @@ STDMETHODIMP SubornoTextService::OnSetFocus(BOOL foreground) {
 
     const suborno::settings::SettingsLoadResult loaded = m_engine->reload_settings();
     if (loaded.status != suborno::settings::SettingsStatus::ok) {
-        return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
+        // Keep the last-known-good settings so a malformed file cannot disable TSF input.
+        return S_OK;
     }
 
     try {

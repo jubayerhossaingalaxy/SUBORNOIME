@@ -6,8 +6,8 @@ namespace {
 
 suborno::layout::KeyEvent event(std::uint8_t scan_code, bool shift = false) {
     return {
-        .scan_code = scan_code,
         .modifiers = {.shift = shift},
+        .scan_code = scan_code,
         .key_down = true,
     };
 }
@@ -73,6 +73,19 @@ TEST(ProbhatLayoutTest, AppliesShiftLayerFromThePhysicalKeyEvent) {
     ASSERT_NE(session, nullptr);
     EXPECT_EQ(session->append_key(event(0x25, true)), suborno::layout::InputStatus::updated);
     EXPECT_EQ(session->snapshot().preedit_utf8, "খ");
+}
+
+TEST(ProbhatLayoutTest, AppendsDependentVowelsAcrossSessionKeyEvents) {
+    const suborno::layouts::ProbhatLayout layout;
+    auto session = layout.create_session(nullptr, {});
+
+    ASSERT_NE(session, nullptr);
+    EXPECT_EQ(session->append_utf8("k"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
+    EXPECT_EQ(session->append_utf8("a"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "কা");
+    EXPECT_EQ(session->append_utf8("i"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "কাই");
 }
 
 TEST(ProbhatLayoutTest, MapsNumpadDigitsWhenNumLockIsEnabled) {

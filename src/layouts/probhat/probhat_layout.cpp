@@ -149,11 +149,23 @@ bool ends_with_bengali_consonant(std::string_view text) {
         return false;
     }
     const auto* bytes = reinterpret_cast<const unsigned char*>(last_grapheme.data());
-    if (bytes[0] < 0xE0 || bytes[0] > 0xEF) {
+    std::size_t start = last_grapheme.size() - 1;
+    while (start > 0 && (bytes[start] & 0xC0U) == 0x80U) {
+        --start;
+    }
+    const unsigned char lead = bytes[start];
+    char32_t code_point = 0;
+    if (lead < 0x80) {
+        code_point = lead;
+    } else if ((lead & 0xE0U) == 0xC0U && last_grapheme.size() - start >= 2) {
+        code_point = static_cast<char32_t>(((lead & 0x1FU) << 6U) | (bytes[start + 1] & 0x3FU));
+    } else if ((lead & 0xF0U) == 0xE0U && last_grapheme.size() - start >= 3) {
+        code_point = static_cast<char32_t>(((lead & 0x0FU) << 12U)
+                                           | ((bytes[start + 1] & 0x3FU) << 6U)
+                                           | (bytes[start + 2] & 0x3FU));
+    } else {
         return false;
     }
-    const char32_t code_point = static_cast<char32_t>(
-        ((bytes[0] & 0x0FU) << 12U) | ((bytes[1] & 0x3FU) << 6U) | (bytes[2] & 0x3FU));
     return code_point >= 0x0995 && code_point <= 0x09B9;
 }
 
@@ -213,12 +225,21 @@ class ProbhatInputSession final : public layout::InputSession {
         if (input.empty()) {
             return layout::InputStatus::empty;
         }
-        return append_output(composition_ + transliterate_probhat(input));
+        std::string updated = composition_;
+        for (const char value : input) {
+            layout::KeyEvent event;
+            if (ascii_key_to_event(value, event)) {
+                updated.append(output_for_event(event, ends_with_bengali_consonant(updated)));
+            } else {
+                updated.push_back(value);
+            }
+        }
+        return append_output(updated);
     }
 
     layout::InputStatus append_key(const layout::KeyEvent& event) override {
-        const std::string output = output_for_event(event, ends_with_bengali_consonant(composition_));
-        if (output.empty()) {
+        if (!event.key_down || event.modifiers.control || event.modifiers.alt
+            || event.modifiers.windows) {
             return layout::InputStatus::empty;
         }
         const std::size_t repeat_count = event.repeat_count == 0 ? 1 : event.repeat_count;

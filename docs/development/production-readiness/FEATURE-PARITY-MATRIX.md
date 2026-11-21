@@ -19,7 +19,7 @@ verified.
 | Avro autocorrect and full context rules | Planned | Official-behavior regression corpus |
 | Khipro Classic compositional subset | Initial implementation, CI pending; not full parity | Khipro composition, slicer, forced-vowel and separator vectors |
 | National physical layout | Not implemented; current module is only a Roman-token prototype. BDS 1738:2018 licensing review required before reproducing the official chart | Written permission / licensing clearance plus an independently authored and tested physical-key matrix |
-| Probhat fixed keymap | KLC Base/Shift/AltGr/Shift+AltGr/Caps scan-code layers implemented; dead-key composition incomplete; CI pending | Physical scan-code, CAPLOK/CAPLOKALTGR, literal vowel-sign, punctuation and numpad pass-through tests |
+| Probhat fixed keymap | KLC Base/Shift/AltGr/Shift+AltGr/Caps scan-code layers implemented; OEM_102 and numpad decimal virtual-key paths recognized; dead-key composition incomplete; CI pending | Physical scan-code, CAPLOK/CAPLOKALTGR, OEM_102, numpad decimal, literal vowel-sign, punctuation and numpad pass-through tests |
 | Phonetic literal escaping | Partial | Single-EGC escape tests |
 | Automatic vowel forming | Planned | Avro compatibility vectors |
 | Old-style/automatic reph | Planned | Reph composition corpus |

@@ -13,6 +13,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: icu-minimal-poc-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   windows-minimal-icu:
     name: MSVC v143 / Minimal ICU data POC

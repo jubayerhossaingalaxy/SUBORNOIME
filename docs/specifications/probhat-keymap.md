@@ -26,7 +26,10 @@ Dead-key composition remains incomplete.
 
 Windows fixed-layout input uses scan codes, not the active Windows logical character.
 Ctrl/Alt/Windows shortcuts are not consumed. Unmapped numpad digits remain unmapped.
-The KLC includes the numpad decimal key but does not define a numpad digit-to-Bengali layer.
+The KLC OEM_102 key (scan code 0x56) and numpad decimal key (scan code 0x53) are
+recognized by the TSF virtual-key translation boundary so their KLC entries can be
+reached. The KLC includes the numpad decimal key but does not define a numpad
+digit-to-Bengali layer.
 
 The source KLC declares dead keys for certain Latin accent outputs. Suborno currently
 uses literal visible output for those layers; full dead-key composition is not claimed.
@@ -36,5 +39,5 @@ uses literal visible output for those layers; full dead-key composition is not c
 Unit tests cover base/Shift pairs, both AltGr layers, ordinary CAPLOK behavior,
 CAPLOKALTGR behavior within AltGr only, shortcut pass-through, literal vowel-sign
 concatenation, punctuation/currency, scan-code precedence, unmapped numpad keys, and
-grapheme-safe backspace. Dead-key composition remains incomplete pending its own stateful
-implementation and tests.
+grapheme-safe backspace, OEM_102 translation, and numpad-decimal translation.
+Dead-key composition remains incomplete pending its own stateful implementation and tests.

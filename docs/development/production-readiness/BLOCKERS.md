@@ -19,8 +19,9 @@
    Probhat dead-key behavior remains incomplete. National physical mapping is blocked
    until BDS 1738:2018 licensing/permission is resolved; the current National module
    is a prototype, not a physical map.
-5. **Unicode:** The supported Bangla inventory and grapheme handling require
-   full corpus validation, including malformed UTF-8, combining sequences,
+5. **Unicode:** The Unicode 18 assigned Bengali-block inventory and general-category
+   metadata have been expanded, excluding Assamese-specific U+09F0/U+09F1. Full
+   corpus validation remains outstanding for malformed UTF-8, combining sequences,
    ZWJ/ZWNJ, cursor movement and grapheme-aware deletion.
 6. **Dictionary and language quality:** Full dictionary corpus provenance,
    license clearance, ranking evaluation, spell-correction integration,

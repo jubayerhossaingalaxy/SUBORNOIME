@@ -40,7 +40,8 @@ class TestStatelessLayout final : public suborno::layout::StatelessInputLayout {
 
 TEST(LayoutInputSessionTest, BuildsPreeditFromTheCompleteKeySequence) {
     TestStatelessLayout layout;
-    suborno::layouts::LayoutInputSession session(layout);
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
 
     EXPECT_EQ(session.append_utf8("a"), suborno::layout::InputStatus::updated);
     EXPECT_EQ(session.append_utf8("b"), suborno::layout::InputStatus::updated);
@@ -50,7 +51,8 @@ TEST(LayoutInputSessionTest, BuildsPreeditFromTheCompleteKeySequence) {
 
 TEST(LayoutInputSessionTest, BackspaceRemovesOneGraphemeAndRebuildsPreedit) {
     TestStatelessLayout layout;
-    suborno::layouts::LayoutInputSession session(layout);
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
 
     ASSERT_EQ(session.append_utf8("ab"), suborno::layout::InputStatus::updated);
     EXPECT_EQ(session.backspace(), suborno::layout::InputStatus::updated);
@@ -60,7 +62,8 @@ TEST(LayoutInputSessionTest, BackspaceRemovesOneGraphemeAndRebuildsPreedit) {
 
 TEST(LayoutInputSessionTest, SelectsAndCommitsTheActiveCandidate) {
     TestStatelessLayout layout;
-    suborno::layouts::LayoutInputSession session(layout);
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
 
     ASSERT_EQ(session.append_utf8("ab"), suborno::layout::InputStatus::updated);
     ASSERT_TRUE(session.select_candidate(0));
@@ -70,7 +73,8 @@ TEST(LayoutInputSessionTest, SelectsAndCommitsTheActiveCandidate) {
 
 TEST(LayoutInputSessionTest, RejectsInvalidUtf8WithoutMutatingTheSession) {
     TestStatelessLayout layout;
-    suborno::layouts::LayoutInputSession session(layout);
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
 
     EXPECT_EQ(session.append_utf8("\xFF"), suborno::layout::InputStatus::invalid_utf8);
     EXPECT_TRUE(session.snapshot().raw_input_utf8.empty());
@@ -78,7 +82,8 @@ TEST(LayoutInputSessionTest, RejectsInvalidUtf8WithoutMutatingTheSession) {
 
 TEST(LayoutInputSessionTest, EnforcesTheSharedInputLimit) {
     TestStatelessLayout layout;
-    suborno::layouts::LayoutInputSession session(layout);
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
 
     const std::string input(suborno::layout::InputSession::kMaxInputCodePoints, 'a');
     ASSERT_EQ(session.append_utf8(input), suborno::layout::InputStatus::updated);

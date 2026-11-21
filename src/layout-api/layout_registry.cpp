@@ -4,7 +4,7 @@
 
 namespace suborno::layout {
 
-bool LayoutRegistry::register_layout(std::string_view id, std::unique_ptr<PhoneticLayout> layout) {
+bool LayoutRegistry::register_layout(std::string_view id, std::unique_ptr<InputLayout> layout) {
     if (id.empty() || layout == nullptr) {
         return false;
     }
@@ -20,7 +20,7 @@ bool LayoutRegistry::register_layout(std::string_view id, std::unique_ptr<Phonet
 }
 
 bool LayoutRegistry::register_layout(std::string_view id,
-                                     std::unique_ptr<PhoneticLayout> layout,
+                                     std::unique_ptr<InputLayout> layout,
                                      LayoutMetadata metadata) {
     const std::string key(id);
     if (metadata.id.empty()) {
@@ -47,12 +47,12 @@ bool LayoutRegistry::set_active(std::string_view id) {
     return true;
 }
 
-const PhoneticLayout* LayoutRegistry::find(std::string_view id) const {
+const InputLayout* LayoutRegistry::find(std::string_view id) const {
     const auto iterator = layouts_.find(std::string(id));
     return iterator == layouts_.end() ? nullptr : iterator->second.get();
 }
 
-const PhoneticLayout* LayoutRegistry::active() const {
+const InputLayout* LayoutRegistry::active() const {
     return active_id_.empty() ? nullptr : find(active_id_);
 }
 

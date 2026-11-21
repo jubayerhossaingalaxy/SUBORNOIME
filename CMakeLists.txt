@@ -14,12 +14,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(ICU REQUIRED COMPONENTS uc)
+find_package(ICU REQUIRED COMPONENTS uc i18n)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 
 add_library(suborno_unicode STATIC src/unicode/bengali.cpp)
 target_include_directories(suborno_unicode PUBLIC "${PROJECT_SOURCE_DIR}/include")
-target_link_libraries(suborno_unicode PUBLIC ICU::uc)
+target_link_libraries(suborno_unicode PUBLIC ICU::uc ICU::i18n)
 
 add_library(suborno_layout_api INTERFACE)
 target_include_directories(suborno_layout_api INTERFACE "${PROJECT_SOURCE_DIR}/include")

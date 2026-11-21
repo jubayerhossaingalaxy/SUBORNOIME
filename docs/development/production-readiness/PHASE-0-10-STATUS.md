@@ -13,7 +13,7 @@ current-head CI evidence and the applicable real-world acceptance checks.
 | 0 | Repository baseline, audit, scope, license and risk inventory | Partial | Complete source/build/security/license audit; reconcile all docs with the actual source and approved product scope |
 | 1 | Portable C++20 core, API contracts, module boundaries and registry | Implemented foundation; CI pending | Current-head GCC/Clang/MSVC builds, ABI/API review, lifecycle and concurrency tests |
 | 2 | Phonetic engine and Avro/Borno behavior | Partial | Golden corpora; Avro autocorrect/context parity; Borno LM/context parity; escaping, backspace and composition edge cases |
-| 3 | Independent keyboard layouts | Partial | Probhat AltGr/dead-key behavior; verify all physical positions; National physical map remains blocked on licensing clearance; Khipro full parity |
+| 3 | Independent keyboard layouts | Partial | Probhat dead-key behavior and full physical-position validation; National physical map remains blocked on licensing clearance; Khipro full parity. Probhat Base/Shift/AltGr/Shift+AltGr and CapsLock flags are implemented; CI pending |
 | 4 | Bengali Unicode and text composition | Partial | Current-head Unicode tests; grapheme/ZWJ/ZWNJ and malformed UTF-8 coverage; full character inventory review; no Assamese-specific letters |
 | 5 | Dictionary, candidates and language intelligence | Partial | Current-head tests; dictionary corpus provenance/license; language-quality evaluation; spell integration; prediction and learning controls |
 | 6 | Windows COM/TSF integration | Implementation present; CI and interactive acceptance pending | MSVC Release/Debug; TSF lifecycle, focus, edit-session and candidate behavior in Notepad, Office and browsers |
@@ -32,6 +32,8 @@ current-head CI evidence and the applicable real-world acceptance checks.
   coverage verifies that the active layout and settings remain intact.
 - Avro ya-phala composition now ends the dependent-consonant run correctly so
   the documented `bybohar` vector produces `ব্যবহার`; a regression test was added.
+- Probhat KLC Ctrl+Alt and Shift+Ctrl+Alt output layers now use the Windows Right-Alt
+  state, and CAPLOKALTGR is applied only within those layers; regression tests added.
 - ICU i18n is explicitly linked because grapheme segmentation uses
   `icu::BreakIterator`; the minimal-data POC must retain the required character
   break rules and pass the full Unicode regression suite.
@@ -42,7 +44,8 @@ current-head CI evidence and the applicable real-world acceptance checks.
 1. Latest-head CI has not yet produced a passing result.
 2. Minimal ICU data POC has not yet produced reproducible size and test evidence.
 3. Avro/Borno/Khipro phonetic parity is incomplete.
-4. Probhat AltGr and dead-key parity is incomplete.
+4. Probhat dead-key behavior is incomplete; Base/Shift/AltGr/Shift+AltGr and CapsLock
+   output layers have implementation and regression coverage, pending current-head CI.
 5. National physical keymap is blocked pending licensing clearance for BDS 1738:2018.
 6. Dictionary corpus provenance and language-quality evaluation are incomplete.
 7. TSF candidate UI has not been validated interactively in real Windows host apps.

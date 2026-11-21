@@ -278,6 +278,7 @@ if(BUILD_TESTING)
         tests/unit/phonetic_parser_test.cpp
         tests/unit/phonetic_input_session_test.cpp
         tests/unit/layout_input_session_test.cpp
+        tests/unit/key_event_test.cpp
         tests/unit/borno_phonetic_layout_test.cpp
         tests/unit/phonetic_candidate_test.cpp
         tests/unit/phonetic_tokenizer_test.cpp

@@ -164,6 +164,18 @@ TEST(EngineTest, RegistersAndCreatesBornoPhoneticSessions) {
     EXPECT_EQ(session->snapshot().preedit_utf8, "আমি");
 }
 
+TEST(EngineTest, RegistersAndCreatesKhiproCompositionalSessions) {
+    suborno::core::Engine engine;
+    ASSERT_TRUE(engine.set_active_layout("khipro"));
+    EXPECT_EQ(engine.active_layout_kind(), suborno::layout::LayoutKind::compositional);
+
+    auto session = engine.create_session();
+    ASSERT_NE(session, nullptr);
+    EXPECT_EQ(session->append_utf8("kt"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ক্ত");
+    EXPECT_EQ(session->commit().text_utf8, "ক্ত");
+}
+
 TEST(EngineTest, RegistersAndCreatesAvroPhoneticSessions) {
     suborno::core::Engine engine;
     ASSERT_TRUE(engine.set_active_layout("avro-phonetic"));

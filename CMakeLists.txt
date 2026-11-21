@@ -53,6 +53,17 @@ add_library(suborno_phonetic STATIC
     src/layouts/phonetic/phonetic_parser.cpp
     src/layouts/phonetic/phonetic_tokenizer.cpp
 )
+
+add_library(suborno_khipro STATIC
+    src/layouts/khipro/khipro_layout.cpp
+)
+target_include_directories(suborno_khipro PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(suborno_khipro PUBLIC
+    suborno_layout_api
+    suborno_unicode
+    suborno_layout_sessions
+)
+
 target_include_directories(suborno_phonetic PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_include_directories(suborno_phonetic PRIVATE "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(suborno_phonetic PUBLIC
@@ -115,6 +126,7 @@ target_link_libraries(suborno_core
         suborno_unicode
         suborno_layout_api
         suborno_phonetic
+        suborno_khipro
         suborno_probhat
         suborno_national
         suborno_candidates
@@ -153,6 +165,7 @@ endfunction()
 
 suborno_configure_target(suborno_unicode)
 suborno_configure_target(suborno_phonetic)
+suborno_configure_target(suborno_khipro)
 suborno_configure_target(suborno_candidates)
 suborno_configure_target(suborno_layout_registry)
 suborno_configure_target(suborno_settings)
@@ -289,6 +302,7 @@ if(BUILD_TESTING)
         tests/unit/key_event_test.cpp
         tests/unit/borno_phonetic_layout_test.cpp
         tests/unit/avro_phonetic_layout_test.cpp
+        tests/unit/khipro_layout_test.cpp
         tests/unit/phonetic_candidate_test.cpp
         tests/unit/phonetic_tokenizer_test.cpp
         tests/unit/unicode_test.cpp

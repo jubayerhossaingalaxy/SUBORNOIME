@@ -3,6 +3,7 @@
 #include <string>
 
 #include "suborno/dictionary/dictionary.hpp"
+#include "suborno/layouts/khipro/khipro_layout.hpp"
 #include "suborno/layouts/national/national_layout.hpp"
 #include "suborno/layouts/phonetic/avro_phonetic_layout.hpp"
 #include "suborno/layouts/phonetic/borno_phonetic_layout.hpp"
@@ -22,6 +23,9 @@ Engine::Engine() {
     layouts_.register_layout("avro-phonetic",
                              std::make_unique<layouts::AvroPhoneticLayout>(),
                              layout::LayoutMetadata{"avro-phonetic", "Avro Phonetic", "1"});
+    layouts_.register_layout("khipro",
+                             std::make_unique<layouts::KhiproLayout>(),
+                             layout::LayoutMetadata{"khipro", "Khipro Classic", "1"});
     layouts_.register_layout("probhat",
                              std::make_unique<layouts::ProbhatLayout>(),
                              layout::LayoutMetadata{"probhat", "Probhat", "1"});

@@ -546,15 +546,23 @@ TEST(EngineTest, SessionCandidatesIncludePhoneticDictionaryMatches) {
 }
 
 TEST(EngineTest, PhoneticSessionStoresCanonicalWordAndTypedAliasSeparately) {
+    const std::filesystem::path settings_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_alias_learning.conf";
     const std::filesystem::path dictionary_path =
         std::filesystem::temp_directory_path() / "suborno_phonetic_session_alias_learning.sqlite";
+    std::filesystem::remove(settings_path);
     std::filesystem::remove(dictionary_path);
 
     suborno::core::EngineConfig config;
+    config.settings_path = settings_path;
     config.dictionary_path = dictionary_path;
     {
         suborno::core::Engine engine(config);
         ASSERT_NE(engine.dictionary(), nullptr);
+
+        auto settings = engine.settings();
+        settings.learning_enabled = true;
+        ASSERT_EQ(engine.save_settings(settings), suborno::settings::SettingsStatus::ok);
 
         ASSERT_TRUE(engine.set_active_layout("suborno-phonetic"));
         auto session = engine.create_session();
@@ -568,6 +576,7 @@ TEST(EngineTest, PhoneticSessionStoresCanonicalWordAndTypedAliasSeparately) {
         EXPECT_EQ(engine.dictionary()->find_prefix_matches("am"), std::vector<std::string>{"আমি"});
     }
 
+    std::filesystem::remove(settings_path);
     std::filesystem::remove(dictionary_path);
 }
 

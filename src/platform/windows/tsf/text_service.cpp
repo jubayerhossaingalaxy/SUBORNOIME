@@ -698,6 +698,27 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
 
         const auto snapshot = state.session->snapshot();
         const bool composing = !snapshot.raw_input_utf8.empty();
+        const auto may_commit_active_composition = [&]() {
+            bool sensitive = false;
+            const HRESULT scope_result =
+                query_sensitive_input_scope(pContext, m_clientId, sensitive);
+            if (!may_commit_composition_from_input_scope(
+                    scope_result, sensitive, state.input_scope_blocks_capture)) {
+                state.input_scope_checked = false;
+                state.input_scope_blocks_capture = true;
+                return false;
+            }
+            state.input_scope_checked = true;
+            return true;
+        };
+        const auto cancel_unsafe_composition = [&]() {
+            state.session->reset();
+            const HRESULT result = _FinishComposition(pContext, state, {});
+            if (SUCCEEDED(result)) {
+                *pbEaten = FALSE;
+            }
+            return result;
+        };
         if (!composing && wParam == VK_SPACE) {
             return S_OK;
         }
@@ -771,6 +792,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                     ? candidate_index_from_virtual_key(wParam)
                     : std::nullopt;
             if (candidate_index.has_value() && *candidate_index < snapshot.candidates.size()) {
+                if (!may_commit_active_composition()) {
+                    return cancel_unsafe_composition();
+                }
                 const auto committed = state.session->commit_candidate(*candidate_index);
                 const std::wstring text = utf8_to_utf16(committed.text_utf8);
                 if (!committed.text_utf8.empty() && text.empty()) {
@@ -784,6 +808,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
         }
         if (composing && wParam == VK_SPACE) {
+            if (!may_commit_active_composition()) {
+                return cancel_unsafe_composition();
+            }
             const auto committed = state.session->commit();
             const std::wstring text = utf8_to_utf16(committed.text_utf8);
             if (!committed.text_utf8.empty() && text.empty()) {
@@ -841,6 +868,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                 if (!composing) {
                     return S_OK;
                 }
+                if (!may_commit_active_composition()) {
+                    return cancel_unsafe_composition();
+                }
                 const auto committed = state.session->commit();
                 const std::wstring text = utf8_to_utf16(committed.text_utf8);
                 if (!committed.text_utf8.empty() && text.empty()) {
@@ -863,6 +893,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
 
         if (!composing) {
             return S_OK;
+        }
+        if (!may_commit_active_composition()) {
+            return cancel_unsafe_composition();
         }
 
         const auto committed = state.session->commit();

@@ -4,6 +4,7 @@
 
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layouts/national/national_layout.hpp"
+#include "suborno/layouts/phonetic/avro_phonetic_layout.hpp"
 #include "suborno/layouts/phonetic/borno_phonetic_layout.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include "suborno/layouts/probhat/probhat_layout.hpp"
@@ -18,6 +19,9 @@ Engine::Engine() {
     layouts_.register_layout("borno-phonetic",
                              std::make_unique<layouts::BornoPhoneticLayout>(),
                              layout::LayoutMetadata{"borno-phonetic", "Borno Phonetic", "1"});
+    layouts_.register_layout("avro-phonetic",
+                             std::make_unique<layouts::AvroPhoneticLayout>(),
+                             layout::LayoutMetadata{"avro-phonetic", "Avro Phonetic", "1"});
     layouts_.register_layout("probhat",
                              std::make_unique<layouts::ProbhatLayout>(),
                              layout::LayoutMetadata{"probhat", "Probhat", "1"});

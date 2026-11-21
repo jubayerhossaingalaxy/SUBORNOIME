@@ -11,6 +11,7 @@
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layout-api/declarative_layout.hpp"
 #include "suborno/layout-api/phonetic_layout.hpp"
+#include "suborno/layouts/phonetic/phonetic_input_session.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include "suborno/settings/settings.hpp"
 #include "suborno/suborno.h"

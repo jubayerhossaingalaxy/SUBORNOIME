@@ -50,7 +50,10 @@ TEST(AvroPhoneticLayoutTest, SupportsRephPhalaAndSpecialSigns) {
     const suborno::layouts::AvroPhoneticLayout layout;
 
     EXPECT_EQ(layout.transliterate("orrko"), "অর্ক");
+    EXPECT_EQ(layout.transliterate("y"), "য়");
     EXPECT_EQ(layout.transliterate("by"), "ব্‌য");
+    EXPECT_EQ(layout.transliterate("kr"), "ক্র");
+    EXPECT_EQ(layout.transliterate("km"), "ক্ম");
     EXPECT_EQ(layout.transliterate("rri"), "ঋ");
     EXPECT_EQ(layout.transliterate("ng"), "ং");
     EXPECT_EQ(layout.transliterate(":"), "ঃ");

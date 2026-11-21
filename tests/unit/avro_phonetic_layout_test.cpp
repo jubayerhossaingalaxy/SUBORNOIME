@@ -43,6 +43,13 @@ TEST(AvroPhoneticLayoutTest, PreservesCaseSensitiveConsonantTokens) {
     EXPECT_EQ(layout.transliterate("ng"), "ং");
 }
 
+TEST(AvroPhoneticLayoutTest, ComposesYaPhalaWithoutJoiningTheFollowingConsonant) {
+    const suborno::layouts::AvroPhoneticLayout layout;
+
+    EXPECT_EQ(layout.transliterate("by"), "ব্য");
+    EXPECT_EQ(layout.transliterate("bybohar"), "ব্যবহার");
+}
+
 TEST(AvroPhoneticLayoutTest, HandlesAccentKeyOverrides) {
     const suborno::layouts::AvroPhoneticLayout layout;
 

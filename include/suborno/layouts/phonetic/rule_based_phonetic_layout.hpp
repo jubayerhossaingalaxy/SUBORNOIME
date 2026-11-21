@@ -19,8 +19,10 @@ struct PhoneticTokenDefinition {
     std::string_view input;
     PhoneticTokenKind kind;
     std::string_view output;
+    // For vowels this is the dependent sign; for consonants it is the form
+    // used after an existing consonant run (for example, ya-phala).
     std::string_view dependent_output;
-    bool nukta_eligible = true;
+     bool nukta_eligible = true;
 };
 
 // A small immutable token table drives a complete, independent phonetic parser.

@@ -31,6 +31,8 @@ class DictionaryError final : public std::runtime_error {
     int sqlite_code_;
 };
 
+using WordListPaths = std::vector<std::filesystem::path>;
+
 class Dictionary {
   public:
     // database_path is UTF-8 encoded on every platform.
@@ -40,9 +42,8 @@ class Dictionary {
     Dictionary& operator=(const Dictionary&) = delete;
 
     void add_entry(const std::string& word, const std::string& normalized, int frequency = 1);
-    std::size_t import_word_lists_if_needed(
-        const std::vector<std::filesystem::path>& word_list_paths,
-        std::string_view corpus_version);
+    std::size_t import_word_lists_if_needed(const WordListPaths& word_list_paths,
+                                             std::string_view corpus_version);
     void record_commit(const std::string& word, const std::string& normalized);
     void record_commit(const std::string& word,
                        const std::string& canonical_normalized,

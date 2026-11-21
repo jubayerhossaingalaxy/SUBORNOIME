@@ -8,8 +8,7 @@ TEST(InputScopeTest, ClassifiesPasswordAndPrivateScopesAsSensitive) {
     EXPECT_TRUE(suborno::platform::windows::is_sensitive_input_scope_type(IS_NUMERIC_PASSWORD));
     EXPECT_TRUE(suborno::platform::windows::is_sensitive_input_scope_type(IS_NUMERIC_PIN));
     EXPECT_TRUE(suborno::platform::windows::is_sensitive_input_scope_type(IS_ALPHANUMERIC_PIN));
-    EXPECT_TRUE(
-        suborno::platform::windows::is_sensitive_input_scope_type(IS_ALPHANUMERIC_PIN_SET));
+    EXPECT_TRUE(suborno::platform::windows::is_sensitive_input_scope_type(IS_ALPHANUMERIC_PIN_SET));
 }
 
 TEST(InputScopeTest, DoesNotTreatOrdinaryTextScopesAsSensitive) {

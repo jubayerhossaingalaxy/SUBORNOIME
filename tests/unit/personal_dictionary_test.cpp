@@ -215,11 +215,7 @@ TEST(PersonalDictionaryTest, ImportsSystemWordListsOnceAndPreservesThemWhenClear
     }
 
     {
-        suborno::dictionary::Dictionary dictionary(database_path.u8string().empty()
-                                                        ? database_path.string()
-                                                        : std::string(reinterpret_cast<const char*>(
-                                                              database_path.u8string().data()),
-                                                                      database_path.u8string().size()));
+        suborno::dictionary::Dictionary dictionary(database_path.string());
         const std::vector<std::filesystem::path> word_lists{first_list, second_list};
         EXPECT_EQ(dictionary.import_word_lists_if_needed(word_lists, "test-wordlist-v1"), 3U);
         EXPECT_EQ(dictionary.find_matches("বাংলা"), std::vector<std::string>{"বাংলা"});

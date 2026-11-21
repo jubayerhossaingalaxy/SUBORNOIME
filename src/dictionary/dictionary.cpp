@@ -1,7 +1,3 @@
-#include "suborno/dictionary/dictionary.hpp"
-
-#include "suborno/unicode/bengali.hpp"
-
 #include <algorithm>
 #include <charconv>
 #include <filesystem>
@@ -14,6 +10,9 @@
 #include <utility>
 #include <vector>
 
+#include "suborno/dictionary/dictionary.hpp"
+#include "suborno/unicode/bengali.hpp"
+
 namespace suborno::dictionary {
 namespace {
 
@@ -22,8 +21,9 @@ std::string read_dictionary_metadata(sqlite3* database, const char* key) {
     const int prepare_result = sqlite3_prepare_v2(
         database, "SELECT value FROM dictionary_metadata WHERE key = ?", -1, &statement, nullptr);
     if (prepare_result != SQLITE_OK) {
-        throw DictionaryError(
-            DictionaryErrorCategory::prepare, prepare_result, sqlite3_errmsg(database));
+        throw DictionaryError(DictionaryErrorCategory::prepare,
+                              prepare_result,
+                              sqlite3_errmsg(database));
     }
 
     if (sqlite3_bind_text(statement, 1, key, -1, SQLITE_STATIC) != SQLITE_OK) {
@@ -376,9 +376,8 @@ void Dictionary::initialize_schema() {
     }
 }
 
-std::size_t Dictionary::import_word_lists_if_needed(
-    const std::vector<std::filesystem::path>& word_list_paths,
-    std::string_view corpus_version) {
+std::size_t Dictionary::import_word_lists_if_needed(const WordListPaths& word_list_paths,
+                                                     std::string_view corpus_version) {
     if (word_list_paths.empty() || corpus_version.empty() || corpus_version.size() > 128
         || corpus_version.find_first_of("\r\n") != std::string_view::npos) {
         throw DictionaryError(
@@ -483,13 +482,12 @@ std::size_t Dictionary::import_word_lists_if_needed(
 
         sqlite3_finalize(insert_statement);
         insert_statement = nullptr;
-        execute_two_text_statement(
-            impl_->db,
-            "INSERT INTO dictionary_metadata(key, value) VALUES(?, ?) "
-            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
-            kImportMetadataKey,
-            requested_version,
-            "system wordlist version");
+        execute_two_text_statement(impl_->db,
+                                   "INSERT INTO dictionary_metadata(key, value) VALUES(?, ?) "
+                                   "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                                   kImportMetadataKey,
+                                   requested_version,
+                                   "system wordlist version");
         commit_dictionary_transaction(impl_->db);
         return imported_count;
     } catch (...) {

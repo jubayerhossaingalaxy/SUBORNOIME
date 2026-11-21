@@ -1,13 +1,57 @@
 # SUBORNO Production Readiness Blockers
 
-## Active blockers
+**Status:** NOT PRODUCTION READY  
+**Detailed phase tracker:** [PHASE-0-10-STATUS.md](PHASE-0-10-STATUS.md)
 
-1. The current environment has no Windows SDK/MSVC runtime; the Windows build must be verified by hosted CI.
-2. Interactive Windows application compatibility and real typing remain untested.
-3. Installer behavior on a clean Windows machine and release signing remain unverified.
+## Active release blockers
 
-## Recovery
+1. **Current-head CI:** Clang 23, GCC 13, and MSVC v143 Release/Debug must all pass
+   on the exact candidate SHA. A previous commit's result is not evidence for a
+   newer source state.
+2. **Minimal ICU POC:** Must preserve ICU i18n functionality required by
+   `icu::BreakIterator`, pass Unicode regression tests, and report reproducible
+   binary/data size measurements before any production data-filter change.
+3. **Phonetic compatibility:** Avro autocorrect/context behavior, Borno LM and
+   context behavior, Khipro full composition parity, and complete golden corpora
+   remain incomplete.
+4. **Physical layouts:** Probhat AltGr/dead-key behavior remains incomplete.
+   National physical mapping is blocked until BDS 1738:2018 licensing/permission
+   is resolved; the current National module is a prototype, not a physical map.
+5. **Unicode:** The supported Bangla inventory and grapheme handling require
+   full corpus validation, including malformed UTF-8, combining sequences,
+   ZWJ/ZWNJ, cursor movement and grapheme-aware deletion.
+6. **Dictionary and language quality:** Full dictionary corpus provenance,
+   license clearance, ranking evaluation, spell-correction integration,
+   next-word prediction and explicit learning controls remain outstanding.
+7. **Windows TSF:** Hosted MSVC CI is necessary but not sufficient. Interactive
+   activation, composition, candidate UI, keyboard navigation and compatibility
+   must be tested in Notepad, Office and browsers.
+8. **Desktop UX:** Full General/Interface/Input settings, Topbar, themes,
+   on-screen keyboard, accessibility and per-monitor DPI behavior remain
+   incomplete.
+9. **Reliability and security:** Current-head sanitizer/fuzz/security/performance
+   evidence, concurrency/lifetime review and supported Windows compatibility
+   matrix remain outstanding.
+10. **Installer/release:** Clean-machine install, upgrade, rollback and uninstall
+    must pass. Production binaries require a valid signing certificate and
+    verified signature/timestamp; a SHA-256 checksum is not a code signature.
+11. **Other platforms:** Linux IBus/Fcitx and macOS InputMethodKit adapters are
+    not production implementations; their current contracts do not constitute
+    platform support.
 
-- Run the repository's Windows MSVC GitHub Actions workflow and resolve failures.
-- Perform interactive Windows activation, composition, and application-compatibility testing.
-- Validate install/uninstall on a clean Windows machine and arrange release signing.
+## Environment-dependent blockers
+
+- This repository session has no interactive Windows desktop host. Live TSF
+  typing, language-bar activation, real host rendering, DPI and accessibility
+  checks require a Windows session.
+- Release signing requires the project's authorized certificate and release
+  credentials. These must never be committed to the repository or exposed in logs.
+- National layout implementation requires documented licensing clearance.
+
+## Recovery and acceptance
+
+- Fix CI failures with isolated changes and regression tests.
+- Verify the exact latest PR head before recording any pass.
+- Run the interactive Windows test matrix and clean-machine installer lifecycle.
+- Complete license/provenance and security reviews.
+- Keep the PR in draft until every gate in the phase tracker has evidence.

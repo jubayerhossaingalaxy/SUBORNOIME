@@ -3,7 +3,6 @@
 #include <array>
 #include <stdexcept>
 #include <string_view>
-#include <utility>
 
 #include "suborno/unicode/bengali.hpp"
 
@@ -24,9 +23,6 @@ struct ControlToken {
 };
 
 constexpr std::string_view kVirama = "\u09CD";
-constexpr std::string_view kNukta = "\u09BC";
-constexpr std::string_view kZwnj = "\u200C";
-constexpr std::string_view kZwj = "\u200D";
 
 constexpr std::array<std::string_view, 10> kBanglaDigits{
     "০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"};

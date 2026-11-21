@@ -138,6 +138,30 @@ TEST(LayoutInputSessionTest, LearningIsDisabledByDefaultForPublicSessionConstruc
     std::filesystem::remove(db_path);
 }
 
+TEST(LayoutInputSessionTest, EnablingLearningDuringCompositionAppliesToTheNextComposition) {
+    const std::filesystem::path db_path =
+        std::filesystem::temp_directory_path() / "suborno_layout_session_delayed_learning.sqlite";
+    std::filesystem::remove(db_path);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path.string());
+        TestStatelessLayout layout;
+        auto session = layout.create_session(&dictionary, {});
+        ASSERT_NE(session, nullptr);
+
+        ASSERT_EQ(session->append_utf8("ab"), suborno::layout::InputStatus::updated);
+        session->set_learning_enabled(true);
+        EXPECT_EQ(session->commit().text_utf8, "কখ");
+        EXPECT_EQ(dictionary.get_user_frequency("কখ"), 0);
+
+        ASSERT_EQ(session->append_utf8("ab"), suborno::layout::InputStatus::updated);
+        EXPECT_EQ(session->commit().text_utf8, "কখ");
+        EXPECT_EQ(dictionary.get_user_frequency("কখ"), 1);
+    }
+
+    std::filesystem::remove(db_path);
+}
+
 TEST(LayoutInputSessionTest, DisablingLearningBeforeCommitPreventsPersonalDictionaryWrites) {
     const std::filesystem::path db_path =
         std::filesystem::temp_directory_path() / "suborno_layout_session_learning_opt_out.sqlite";

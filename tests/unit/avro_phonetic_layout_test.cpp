@@ -2,9 +2,9 @@
 
 #include <gtest/gtest.h>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <utility>
-#include <string>
 
 TEST(AvroPhoneticLayoutTest, ConvertsIndependentAndDependentVowels) {
     const suborno::layouts::AvroPhoneticLayout layout;
@@ -21,6 +21,7 @@ TEST(AvroPhoneticLayoutTest, ConvertsIndependentAndDependentVowels) {
     EXPECT_EQ(layout.transliterate("krri"), "কৃ");
     EXPECT_EQ(layout.transliterate("samia"), "সামিয়া");
     EXPECT_EQ(layout.transliterate("oi"), "অই");
+    EXPECT_EQ(layout.transliterate("ao"), "আও");
     EXPECT_EQ(layout.transliterate("OI"), "ঐ");
     EXPECT_EQ(layout.transliterate("OU"), "ঔ");
 }
@@ -71,7 +72,7 @@ TEST(AvroPhoneticLayoutTest, SupportsRephPhalaAndSpecialSigns) {
     const suborno::layouts::AvroPhoneticLayout layout;
 
     EXPECT_EQ(layout.transliterate("orrko"), "অর্ক");
-    EXPECT_EQ(layout.transliterate("y"), "য়");
+    EXPECT_EQ(layout.transliterate("y"), "ইয়");
     EXPECT_EQ(layout.transliterate("by"), "\u09AC\u09CD\u09AF");
     EXPECT_EQ(layout.transliterate("kr"), "ক্র");
     EXPECT_EQ(layout.transliterate("km"), "কম");

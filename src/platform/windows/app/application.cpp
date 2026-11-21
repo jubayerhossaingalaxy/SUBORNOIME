@@ -717,22 +717,34 @@ class Application final {
         const int answer = ::MessageBoxW(
             window_,
             L"This removes words and aliases learned by Suborno, along with personal dictionary "
-            L"entries. The bundled Bengali system dictionary will remain. Continue?",
+            L"entries. Automatic learning will also be turned off. The bundled Bengali system "
+            L"dictionary will remain. Continue?",
             L"Clear personal data",
             MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2);
         if (answer != IDYES) {
             return;
         }
 
+        auto settings = engine_->settings();
+        settings.learning_enabled = false;
+        if (engine_->save_settings(settings) != suborno::settings::SettingsStatus::ok) {
+            show_error(window_, L"Could not disable personal learning.", E_FAIL);
+            return;
+        }
+        refresh_input_settings_controls();
+
         try {
             dictionary->clear_user_entries();
         } catch (const std::exception&) {
-            show_error(window_, L"Could not clear the personal dictionary.", E_FAIL);
+            show_error(window_,
+                       L"Automatic learning is disabled, but the personal dictionary could not "
+                       L"be cleared.",
+                       E_FAIL);
             return;
         }
 
         ::MessageBoxW(window_,
-                      L"Learned words and personal dictionary entries have been cleared.",
+                      L"Personal dictionary data has been cleared and automatic learning is off.",
                       L"Suborno",
                       MB_OK | MB_ICONINFORMATION);
     }

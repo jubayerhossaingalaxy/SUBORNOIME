@@ -15,6 +15,31 @@ TEST(SettingsTest, SavesAndLoadsVersionedSettings) {
     settings.active_layout_id = "suborno-phonetic";
     settings.candidate_limit = 24;
     settings.learning_enabled = false;
+    settings.general.remember_last_input_layout = false;
+    settings.general.start_with_windows = true;
+    settings.general.start_mode = suborno::settings::StartMode::system_tray;
+    settings.general.switching_mode = suborno::settings::SwitchingMode::global;
+    settings.interface_settings.theme_id = "suborno-glass";
+    settings.interface_settings.show_candidate_window = false;
+    settings.interface_settings.next_word_prediction_enabled = true;
+    settings.interface_settings.candidate_orientation =
+        suborno::settings::CandidateOrientation::horizontal;
+    settings.interface_settings.candidate_fixed_height = false;
+    settings.interface_settings.use_os_default_bangla_font = false;
+    settings.interface_settings.enable_sliding_effect = false;
+    settings.interface_settings.follow_caret = false;
+    settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails = false;
+    settings.topbar.idle_dimming_enabled = false;
+    settings.topbar.idle_opacity_percent = 35;
+    settings.topbar.idle_time_seconds = 45;
+    settings.topbar.remember_position = false;
+    settings.input.layout_switch_shortcut = "Alt+Shift";
+    settings.input.disable_encoding_shortcut = true;
+    settings.input.map_numpad_to_bangla_numbers = false;
+    settings.input.change_locale_to_bn_bd_when_layout_not_english = false;
+    settings.input.ignore_caps_lock_state_in_bangla = true;
+    settings.input.select_candidate_using_number_keys = false;
+    settings.input.preferred_encoding = suborno::settings::TextEncoding::ansi;
 
     EXPECT_EQ(store.save(settings), suborno::settings::SettingsStatus::ok);
     const auto loaded = store.load();
@@ -22,6 +47,31 @@ TEST(SettingsTest, SavesAndLoadsVersionedSettings) {
     EXPECT_EQ(loaded.settings.active_layout_id, settings.active_layout_id);
     EXPECT_EQ(loaded.settings.candidate_limit, settings.candidate_limit);
     EXPECT_FALSE(loaded.settings.learning_enabled);
+    EXPECT_FALSE(loaded.settings.general.remember_last_input_layout);
+    EXPECT_TRUE(loaded.settings.general.start_with_windows);
+    EXPECT_EQ(loaded.settings.general.start_mode, suborno::settings::StartMode::system_tray);
+    EXPECT_EQ(loaded.settings.general.switching_mode, suborno::settings::SwitchingMode::global);
+    EXPECT_EQ(loaded.settings.interface_settings.theme_id, "suborno-glass");
+    EXPECT_FALSE(loaded.settings.interface_settings.show_candidate_window);
+    EXPECT_TRUE(loaded.settings.interface_settings.next_word_prediction_enabled);
+    EXPECT_EQ(loaded.settings.interface_settings.candidate_orientation,
+              suborno::settings::CandidateOrientation::horizontal);
+    EXPECT_FALSE(loaded.settings.interface_settings.candidate_fixed_height);
+    EXPECT_FALSE(loaded.settings.interface_settings.use_os_default_bangla_font);
+    EXPECT_FALSE(loaded.settings.interface_settings.enable_sliding_effect);
+    EXPECT_FALSE(loaded.settings.interface_settings.follow_caret);
+    EXPECT_FALSE(loaded.settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails);
+    EXPECT_FALSE(loaded.settings.topbar.idle_dimming_enabled);
+    EXPECT_EQ(loaded.settings.topbar.idle_opacity_percent, 35U);
+    EXPECT_EQ(loaded.settings.topbar.idle_time_seconds, 45U);
+    EXPECT_FALSE(loaded.settings.topbar.remember_position);
+    EXPECT_EQ(loaded.settings.input.layout_switch_shortcut, "Alt+Shift");
+    EXPECT_TRUE(loaded.settings.input.disable_encoding_shortcut);
+    EXPECT_FALSE(loaded.settings.input.map_numpad_to_bangla_numbers);
+    EXPECT_FALSE(loaded.settings.input.change_locale_to_bn_bd_when_layout_not_english);
+    EXPECT_TRUE(loaded.settings.input.ignore_caps_lock_state_in_bangla);
+    EXPECT_FALSE(loaded.settings.input.select_candidate_using_number_keys);
+    EXPECT_EQ(loaded.settings.input.preferred_encoding, suborno::settings::TextEncoding::ansi);
 
     std::filesystem::remove(path);
 }
@@ -35,7 +85,104 @@ TEST(SettingsTest, MissingFileUsesDefaults) {
     EXPECT_EQ(loaded.status, suborno::settings::SettingsStatus::ok);
     EXPECT_EQ(loaded.settings.active_layout_id, "suborno-phonetic");
     EXPECT_EQ(loaded.settings.candidate_limit, 16U);
-    EXPECT_TRUE(loaded.settings.learning_enabled);
+    EXPECT_FALSE(loaded.settings.learning_enabled);
+}
+
+TEST(SettingsTest, MigratesLegacyVersionOneSettingsToCurrentDefaults) {
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "suborno_settings_v1_migration_test.conf";
+    {
+        std::ofstream output(path, std::ios::trunc);
+        output << "version=1\n"
+               << "active_layout=probhat\n"
+               << "candidate_limit=12\n"
+               << "learning_enabled=false\n";
+    }
+
+    suborno::settings::SettingsStore store(path);
+    const auto loaded = store.load();
+    ASSERT_EQ(loaded.status, suborno::settings::SettingsStatus::ok);
+    EXPECT_EQ(loaded.settings.active_layout_id, "probhat");
+    EXPECT_EQ(loaded.settings.candidate_limit, 12U);
+    EXPECT_FALSE(loaded.settings.learning_enabled);
+    EXPECT_EQ(loaded.settings.interface_settings.theme_id, "suborno-dark");
+    EXPECT_EQ(loaded.settings.topbar.idle_opacity_percent, 50U);
+    EXPECT_EQ(loaded.settings.input.layout_switch_shortcut, "F10");
+    EXPECT_EQ(loaded.settings.input.preferred_encoding, suborno::settings::TextEncoding::unicode);
+
+    EXPECT_EQ(store.save(loaded.settings), suborno::settings::SettingsStatus::ok);
+    {
+        std::ifstream migrated(path);
+        ASSERT_TRUE(migrated.is_open());
+        std::string first_line;
+        ASSERT_TRUE(std::getline(migrated, first_line));
+        EXPECT_EQ(first_line, "version=3");
+    }
+    std::filesystem::remove(path);
+}
+
+TEST(SettingsTest, DisablesImplicitLearningWhenMigratingVersionTwoSettings) {
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "suborno_settings_v2_learning_migration_test.conf";
+    {
+        std::ofstream output(path, std::ios::trunc);
+        output << "version=2\n"
+               << "active_layout=suborno-phonetic\n"
+               << "candidate_limit=16\n"
+               << "learning_enabled=true\n";
+    }
+
+    suborno::settings::SettingsStore store(path);
+    const auto loaded = store.load();
+    ASSERT_EQ(loaded.status, suborno::settings::SettingsStatus::ok);
+    EXPECT_FALSE(loaded.settings.learning_enabled);
+
+    EXPECT_EQ(store.save(loaded.settings), suborno::settings::SettingsStatus::ok);
+    {
+        std::ifstream migrated(path);
+        ASSERT_TRUE(migrated.is_open());
+        std::string first_line;
+        ASSERT_TRUE(std::getline(migrated, first_line));
+        EXPECT_EQ(first_line, "version=3");
+    }
+    const auto reloaded = store.load();
+    EXPECT_EQ(reloaded.status, suborno::settings::SettingsStatus::ok);
+    EXPECT_FALSE(reloaded.settings.learning_enabled);
+    std::filesystem::remove(path);
+}
+
+TEST(SettingsTest, RejectsInvalidDesktopRangesShortcutsAndDuplicateKeys) {
+    suborno::settings::EngineSettings invalid;
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "suborno_settings_invalid_desktop_test.conf";
+
+    invalid.topbar.idle_opacity_percent = 101;
+    EXPECT_EQ(suborno::settings::SettingsStore(path).save(invalid),
+              suborno::settings::SettingsStatus::invalid_format);
+    invalid = {};
+    invalid.topbar.idle_time_seconds = 0;
+    EXPECT_EQ(suborno::settings::SettingsStore(path).save(invalid),
+              suborno::settings::SettingsStatus::invalid_format);
+    invalid = {};
+    invalid.input.layout_switch_shortcut = "F99";
+    EXPECT_EQ(suborno::settings::SettingsStore(path).save(invalid),
+              suborno::settings::SettingsStatus::invalid_format);
+    invalid = {};
+    invalid.interface_settings.theme_id = "theme=invalid";
+    EXPECT_EQ(suborno::settings::SettingsStore(path).save(invalid),
+              suborno::settings::SettingsStatus::invalid_format);
+
+    {
+        std::ofstream output(path, std::ios::trunc);
+        output << "version=2\n"
+               << "active_layout=suborno-phonetic\n"
+               << "active_layout=probhat\n"
+               << "candidate_limit=16\n"
+               << "learning_enabled=true\n";
+    }
+    EXPECT_EQ(suborno::settings::SettingsStore(path).load().status,
+              suborno::settings::SettingsStatus::invalid_format);
+    std::filesystem::remove(path);
 }
 
 TEST(SettingsTest, RejectsMalformedOrUnsupportedFiles) {
@@ -103,5 +250,20 @@ TEST(SettingsTest, ReplacesExistingSettingsFile) {
     const auto loaded = store.load();
     EXPECT_EQ(loaded.status, suborno::settings::SettingsStatus::ok);
     EXPECT_EQ(loaded.settings.candidate_limit, 32U);
+    std::filesystem::remove(path);
+}
+
+TEST(SettingsTest, AcceptsTheKhiproCompositionalLayoutId) {
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "suborno_settings_khipro_layout_test.conf";
+    std::filesystem::remove(path);
+
+    suborno::settings::EngineSettings settings;
+    settings.active_layout_id = "khipro";
+    const suborno::settings::SettingsStore store(path);
+
+    EXPECT_EQ(store.save(settings), suborno::settings::SettingsStatus::ok);
+    EXPECT_EQ(store.load().settings.active_layout_id, "khipro");
+
     std::filesystem::remove(path);
 }

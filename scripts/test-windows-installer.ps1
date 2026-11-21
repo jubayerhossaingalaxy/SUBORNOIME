@@ -7,7 +7,7 @@ if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
 }
 
 $setupVersion = (Get-Item -LiteralPath $installer).VersionInfo
-if ($setupVersion.ProductName -ne 'Suborno') {
+if ($setupVersion.ProductName.Trim() -ne 'Suborno') {
     throw "Unexpected installer ProductName: $($setupVersion.ProductName)"
 }
 $signature = Get-AuthenticodeSignature -LiteralPath $installer
@@ -51,11 +51,16 @@ function Invoke-SubornoSetup {
 function Assert-CleanInstallDirectory {
     param([string]$Path)
 
-    $expectedFiles = @('Suborno.exe', 'unins000.dat', 'unins000.exe')
+    $expectedFiles = @('Suborno.exe', 'THIRD_PARTY_NOTICES.md', 'unins000.dat', 'unins000.exe')
     $actualFiles = @(Get-ChildItem -LiteralPath $Path -Force -File |
         Sort-Object Name | Select-Object -ExpandProperty Name)
     if (($actualFiles -join '|') -ne (($expectedFiles | Sort-Object) -join '|')) {
         throw "Unexpected Program Files contents: $($actualFiles -join ', ')"
+    }
+    $noticesPath = Join-Path $Path 'THIRD_PARTY_NOTICES.md'
+    if (-not (Test-Path -LiteralPath $noticesPath -PathType Leaf) -or
+        (Get-Item -LiteralPath $noticesPath).Length -eq 0) {
+        throw 'Third-party license notices are missing from the installed application.'
     }
     if (@(Get-ChildItem -LiteralPath $Path -Force -Directory).Count -ne 0) {
         throw 'Subdirectories were installed into the Suborno application directory.'
@@ -84,6 +89,18 @@ function Assert-SharedResourceDirectories {
     )) {
         if (-not (Test-Path -LiteralPath (Join-Path $programDataDirectory $resourceDirectory) -PathType Container)) {
             throw "Machine-wide resource directory is missing: $resourceDirectory"
+        }
+    }
+    foreach ($dictionaryFile in @(
+        'bn-wordlist-unlicense-v1-part-01.txt',
+        'bn-wordlist-unlicense-v1-part-02.txt',
+        'bn-wordlist-unlicense-v1-part-03.txt',
+        'bn-wordlist-unlicense-v1-part-04.txt',
+        'UNLICENSE-Sanjidh090.txt'
+    )) {
+        $dictionaryPath = Join-Path $programDataDirectory "dictionaries\$dictionaryFile"
+        if (-not (Test-Path -LiteralPath $dictionaryPath -PathType Leaf)) {
+            throw "The bundled Bengali system dictionary file is missing: $dictionaryPath"
         }
     }
     if (Test-Path -LiteralPath (Join-Path $commonFilesDirectory 'Suborno')) {

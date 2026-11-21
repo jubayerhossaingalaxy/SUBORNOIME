@@ -43,7 +43,7 @@ for vcpkg_sbom in "${vcpkg_sboms[@]}"; do
         -o "spdx-json=${sbom}"
     {
         printf '\n## %s\n' "${port_name}"
-        grype "sbom:${sbom}" -o table
+        grype "sbom:${sbom}" --fail-on high -o table
     } >>"${report}"
 done
 

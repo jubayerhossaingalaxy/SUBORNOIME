@@ -20,10 +20,10 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Cache vcpkg packages
-        uses: actions/cache@v6.1.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .vcpkg-binary-cache
           key: vcpkg-${{ runner.os }}-msvc-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
@@ -78,6 +78,59 @@ jobs:
         shell: pwsh
         run: ./scripts/test-windows-installer.ps1
 
+      - name: Sign and verify Windows release binaries
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        env:
+          WINDOWS_CODESIGN_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_CODESIGN_CERTIFICATE_BASE64 }}
+          WINDOWS_CODESIGN_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_CERTIFICATE_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CODESIGN_CERTIFICATE_BASE64)) {
+            throw 'Tag releases require the WINDOWS_CODESIGN_CERTIFICATE_BASE64 repository secret.'
+          }
+          $certificatePath = Join-Path $env:RUNNER_TEMP 'suborno-signing.pfx'
+          try {
+            $certificateBytes = [Convert]::FromBase64String($env:WINDOWS_CODESIGN_CERTIFICATE_BASE64)
+            [IO.File]::WriteAllBytes($certificatePath, $certificateBytes)
+            $signtoolPattern = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin\*\x64\signtool.exe'
+            $signtool = Get-ChildItem -Path $signtoolPattern |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1 -ExpandProperty FullName
+            if (-not $signtool) { throw 'Windows SDK signtool.exe was not found.' }
+
+            $targets = @(
+              'build/windows-msvc/Release/Suborno.exe',
+              'build/windows-msvc/Release/suborno_windows_tsf.dll',
+              'installer/windows/Output/Suborno-Setup-x64.exe'
+            )
+            foreach ($target in $targets) {
+              if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
+                throw "Signing target is missing: $target"
+              }
+              $signArguments = @(
+                'sign', '/fd', 'SHA256', '/td', 'SHA256',
+                '/tr', 'http://timestamp.digicert.com',
+                '/f', $certificatePath
+              )
+              if (-not [string]::IsNullOrEmpty($env:WINDOWS_CODESIGN_CERTIFICATE_PASSWORD)) {
+                $signArguments += @('/p', $env:WINDOWS_CODESIGN_CERTIFICATE_PASSWORD)
+              }
+              $signArguments += $target
+              & $signtool @signArguments
+              if ($LASTEXITCODE -ne 0) { throw "Authenticode signing failed: $target" }
+              & $signtool verify /pa /all $target
+              if ($LASTEXITCODE -ne 0) { throw "Authenticode verification failed: $target" }
+              $signature = Get-AuthenticodeSignature -LiteralPath $target
+              if ($signature.Status -ne 'Valid') {
+                throw "Windows rejected the Authenticode signature for ${target}: $($signature.Status)"
+              }
+            }
+          }
+          finally {
+            Remove-Item -LiteralPath $certificatePath -Force -ErrorAction SilentlyContinue
+          }
+
       - name: Create checksum and inspect signature
         shell: pwsh
         run: |
@@ -86,13 +139,17 @@ jobs:
           "$hash  Suborno-Setup-x64.exe" | Set-Content -Encoding ascii "$installer.sha256"
           $signature = Get-AuthenticodeSignature -LiteralPath $installer
           Write-Host "Installer Authenticode status: $($signature.Status)"
-          if ($signature.Status -notin @('Valid', 'NotSigned')) {
+          if ($env:GITHUB_REF -like 'refs/tags/*') {
+            if ($signature.Status -ne 'Valid') {
+              throw "A public release requires a valid Authenticode signature; got $($signature.Status)."
+            }
+          } elseif ($signature.Status -notin @('Valid', 'NotSigned')) {
             throw "Unexpected installer signature status: $($signature.Status)"
           }
 
       - name: Upload installer for manual testing
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: suborno-windows-x64-${{ github.run_number }}
           path: |
@@ -146,14 +203,14 @@ jobs:
           - `Suborno.exe` desktop GUI and notification-area integration
           - Suborno TSF/COM Text Service DLL
           - `Suborno-Setup-x64.exe` installer with Desktop and Start Menu shortcuts
-          - Suborno Phonetic, Probhat, and National keyboard layouts
+          - Suborno Phonetic and Probhat; National remains a draft layout
           - ICU and SQLite statically linked; MSVC runtime statically linked
           - Third-party notices included with the installed application
 
           ### Installation:
-          Download and run `Suborno-Setup-x64.exe`. The installer is unsigned because this
-          project does not have a code-signing certificate. Verify it with the attached
-          SHA256 checksum.
+          Download and run `Suborno-Setup-x64.exe`. The installer, desktop application, and
+          TSF service are Authenticode-signed and timestamped. Verify the publisher in the
+          Windows file properties and use the attached SHA256 checksum.
 
           ### Requirements:
           - Windows 10 or Windows 11 (x64)

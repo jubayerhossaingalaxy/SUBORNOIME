@@ -64,3 +64,26 @@
 ## Evidence policy
 
 No pass claim is recorded without an executed command and observed result.
+
+
+
+## Additional implementation slices — 2026-11-21
+
+- Repaired a dictionary compile issue and moved the stateless phonetic session
+  factory into the phonetic-session translation unit.
+- Added bounded normalized-prefix dictionary candidates with deduplication,
+  lower ranking than exact matches, and candidate-engine tests.
+- Added commit-frequency persistence for personal words, including system
+  entries learned through commits; new words become visible in personal
+  dictionary queries and usage frequency affects ranking.
+- Replaced Probhat's earlier context-dependent vowel heuristic with a physical
+  scan-code Base/Shift/Caps mapping derived from the MIT-licensed KLC reference.
+  Added attribution and a mapping specification. AltGr and dead-key composition
+  are explicitly not yet supported.
+- Added TSF per-context session-layout tracking so settings changes are adopted
+  by idle contexts without replacing an in-flight composition.
+- Added native candidate popup module-instance resolution using the module
+  containing the window procedure, rather than assuming the EXE module handle.
+- Updated source-backed feature statuses; implementation presence is not
+  treated as release acceptance.
+

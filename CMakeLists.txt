@@ -30,15 +30,47 @@ add_library(suborno_layout_registry STATIC
 target_include_directories(suborno_layout_registry PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(suborno_layout_registry PUBLIC suborno_layout_api suborno_unicode)
 
+add_library(suborno_dictionary STATIC src/dictionary/dictionary.cpp)
+target_include_directories(suborno_dictionary PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(suborno_dictionary PUBLIC unofficial::sqlite3::sqlite3 suborno_unicode)
+
+add_library(suborno_layout_sessions STATIC
+    src/layouts/layout_input_session.cpp
+)
+target_include_directories(suborno_layout_sessions PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(suborno_layout_sessions PUBLIC
+    suborno_layout_api
+    suborno_unicode
+    suborno_dictionary
+)
+
 add_library(suborno_phonetic STATIC
     src/layouts/phonetic/suborno_phonetic_layout.cpp
+    src/layouts/phonetic/borno_phonetic_layout.cpp
+    src/layouts/phonetic/avro_phonetic_layout.cpp
+    src/layouts/phonetic/rule_based_phonetic_layout.cpp
     src/layouts/phonetic/phonetic_input_session.cpp
     src/layouts/phonetic/phonetic_parser.cpp
     src/layouts/phonetic/phonetic_tokenizer.cpp
 )
+
+add_library(suborno_khipro STATIC
+    src/layouts/khipro/khipro_layout.cpp
+)
+target_include_directories(suborno_khipro PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(suborno_khipro PUBLIC
+    suborno_layout_api
+    suborno_unicode
+    suborno_layout_sessions
+)
+
 target_include_directories(suborno_phonetic PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_include_directories(suborno_phonetic PRIVATE "${PROJECT_SOURCE_DIR}/src")
-target_link_libraries(suborno_phonetic PUBLIC suborno_layout_api suborno_unicode)
+target_link_libraries(suborno_phonetic PUBLIC
+    suborno_layout_api
+    suborno_unicode
+    suborno_layout_sessions
+)
 
 add_library(suborno_probhat STATIC
     src/layouts/probhat/probhat_layout.cpp
@@ -65,21 +97,18 @@ add_library(suborno_candidates STATIC
 target_include_directories(suborno_candidates PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(suborno_candidates PUBLIC
     suborno_layout_api
-    suborno_phonetic
     suborno_unicode
     suborno_dictionary
 )
 
-add_library(suborno_dictionary STATIC src/dictionary/dictionary.cpp)
-target_include_directories(suborno_dictionary PUBLIC "${PROJECT_SOURCE_DIR}/include")
-target_link_libraries(suborno_dictionary PUBLIC unofficial::sqlite3::sqlite3)
+target_link_libraries(suborno_layout_sessions PUBLIC suborno_candidates)
+target_link_libraries(suborno_phonetic PUBLIC suborno_candidates)
 
 add_library(suborno_persistence STATIC src/persistence/atomic_file.cpp)
 target_include_directories(suborno_persistence PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/src"
 )
-target_link_libraries(suborno_persistence PUBLIC unofficial::sqlite3::sqlite3)
 
 add_library(suborno_settings STATIC src/settings/settings.cpp)
 target_include_directories(suborno_settings PUBLIC "${PROJECT_SOURCE_DIR}/include")
@@ -96,12 +125,14 @@ target_link_libraries(suborno_core
         suborno_unicode
         suborno_layout_api
         suborno_phonetic
+        suborno_khipro
         suborno_probhat
         suborno_national
         suborno_candidates
         suborno_dictionary
         suborno_persistence
         suborno_layout_registry
+        suborno_layout_sessions
         suborno_settings
 )
 target_compile_definitions(suborno_core PUBLIC SUBORNO_API_STATIC)
@@ -133,11 +164,16 @@ endfunction()
 
 suborno_configure_target(suborno_unicode)
 suborno_configure_target(suborno_phonetic)
+suborno_configure_target(suborno_khipro)
 suborno_configure_target(suborno_candidates)
 suborno_configure_target(suborno_layout_registry)
 suborno_configure_target(suborno_settings)
 suborno_configure_target(suborno_persistence)
 suborno_configure_target(suborno_dictionary)
+suborno_configure_target(suborno_probhat)
+suborno_configure_target(suborno_national)
+suborno_configure_target(suborno_spell)
+suborno_configure_target(suborno_layout_sessions)
 suborno_configure_target(suborno_core)
 
 if(UNIX AND NOT APPLE)
@@ -160,20 +196,23 @@ if(WIN32)
     endif()
 
     find_package(wil CONFIG REQUIRED)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
     enable_language(RC)
 
-    set(SUBORNO_ICON_FILE "${CMAKE_CURRENT_BINARY_DIR}/suborno.ico")
-    execute_process(
-        COMMAND "${Python3_EXECUTABLE}"
-                "${PROJECT_SOURCE_DIR}/src/platform/windows/resources/generate_icon.py"
-                "${SUBORNO_ICON_FILE}"
-        RESULT_VARIABLE icon_result
-        ERROR_VARIABLE icon_error
+    add_executable(suborno_icon_generator EXCLUDE_FROM_ALL
+        tools/icon_generator.cpp
     )
-    if(NOT "${icon_result}" STREQUAL "0")
-        message(FATAL_ERROR "Could not generate the Suborno application icon: ${icon_error}")
-    endif()
+    suborno_configure_target(suborno_icon_generator)
+
+    set(SUBORNO_ICON_FILE "${CMAKE_CURRENT_BINARY_DIR}/suborno.ico")
+    add_custom_command(
+        OUTPUT "${SUBORNO_ICON_FILE}"
+        COMMAND "$<TARGET_FILE:suborno_icon_generator>" "${SUBORNO_ICON_FILE}"
+        DEPENDS suborno_icon_generator
+                "${PROJECT_SOURCE_DIR}/tools/icon_generator.cpp"
+        COMMENT "Generating native Suborno Windows icon"
+        VERBATIM
+    )
+    add_custom_target(suborno_generate_icon DEPENDS "${SUBORNO_ICON_FILE}")
     configure_file(
         "${PROJECT_SOURCE_DIR}/src/platform/windows/resources/version.hpp.in"
         "${CMAKE_CURRENT_BINARY_DIR}/suborno_version.hpp"
@@ -206,6 +245,7 @@ if(WIN32)
         src/platform/windows/tsf/module_smoke.cpp
         src/platform/windows/tsf/guids.cpp
         src/platform/windows/tsf/text_edit_session.cpp
+        src/platform/windows/tsf/candidate_list_ui_element.cpp
         src/platform/windows/tsf/text_service.cpp
         src/platform/windows/tsf/class_factory.cpp
         src/platform/windows/tsf/dll_main.cpp
@@ -219,12 +259,14 @@ if(WIN32)
         WIL::WIL
         Advapi32.lib
         Ole32.lib
+        OleAut32.lib
         Shell32.lib
         Shlwapi.lib
         User32.lib
         Uuid.lib
     )
     suborno_configure_target(suborno_windows_tsf)
+    add_dependencies(suborno_windows_tsf suborno_generate_icon)
     if(MSVC AND SUBORNO_ENABLE_MSVC_ANALYSIS)
         target_compile_options(suborno_windows_tsf PRIVATE /analyze:external-)
         suborno_mark_dependency_headers_external(suborno_windows_tsf WIL::WIL)
@@ -248,6 +290,7 @@ if(WIN32)
         Uuid.lib
     )
     suborno_configure_target(suborno_app)
+    add_dependencies(suborno_app suborno_generate_icon)
 endif()
 
 include(CTest)
@@ -257,8 +300,15 @@ if(BUILD_TESTING)
     add_executable(suborno_unit_tests
         tests/unit/atomic_file_test.cpp
         tests/unit/project_smoke_test.cpp
+        tests/unit/c_api_test.cpp
+        tests/unit/candidate_engine_test.cpp
         tests/unit/phonetic_parser_test.cpp
         tests/unit/phonetic_input_session_test.cpp
+        tests/unit/layout_input_session_test.cpp
+        tests/unit/key_event_test.cpp
+        tests/unit/borno_phonetic_layout_test.cpp
+        tests/unit/avro_phonetic_layout_test.cpp
+        tests/unit/khipro_layout_test.cpp
         tests/unit/phonetic_candidate_test.cpp
         tests/unit/phonetic_tokenizer_test.cpp
         tests/unit/unicode_test.cpp
@@ -271,6 +321,7 @@ if(BUILD_TESTING)
         tests/unit/personal_dictionary_test.cpp
     )
     target_include_directories(suborno_unit_tests PRIVATE "${PROJECT_SOURCE_DIR}/src")
+    target_compile_definitions(suborno_unit_tests PRIVATE SUBORNO_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
     target_link_libraries(suborno_unit_tests PRIVATE suborno_core GTest::gtest_main suborno_spell)
     if(MSVC AND SUBORNO_ENABLE_MSVC_ANALYSIS)
         suborno_mark_dependency_headers_external(suborno_unit_tests GTest::gtest)
@@ -295,8 +346,10 @@ if(BUILD_TESTING)
     if(WIN32)
         add_executable(suborno_windows_tests
             tests/windows/windows_build_smoke_test.cpp
+            tests/windows/input_scope_test.cpp
             src/platform/windows/app_paths.cpp
             src/platform/windows/tsf/guids.cpp
+            src/platform/windows/tsf/candidate_list_ui_element.cpp
         )
         target_link_libraries(suborno_windows_tests PRIVATE
             suborno_core
@@ -304,6 +357,8 @@ if(BUILD_TESTING)
             GTest::gtest_main
             WIL::WIL
             Ole32.lib
+            OleAut32.lib
+            User32.lib
             Shell32.lib
             Uuid.lib
         )
@@ -316,7 +371,10 @@ if(BUILD_TESTING)
         add_test(NAME suborno.windows.tsf_contract COMMAND suborno_windows_tests)
         set_tests_properties(suborno.windows.tsf_contract PROPERTIES LABELS "windows;non-interactive")
         add_test(NAME suborno.windows.app_smoke COMMAND suborno_app --smoke-test)
-        set_tests_properties(suborno.windows.app_smoke PROPERTIES LABELS "windows;non-interactive")
+        set_tests_properties(suborno.windows.app_smoke PROPERTIES
+            LABELS "windows;non-interactive"
+            TIMEOUT 30
+        )
     endif()
 endif()
 

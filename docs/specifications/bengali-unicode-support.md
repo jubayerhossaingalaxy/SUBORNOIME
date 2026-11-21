@@ -19,6 +19,21 @@ engine milestone.
   Consumers must not assume that NFC output retains U+09DC/U+09DD/U+09DF.
 - `count_utf8_code_points` counts Unicode scalar values, not bytes.
 
+## Bengali inventory and scope
+
+The supported inventory records assigned Bengali-block characters in the
+Unicode 18.0.0 U+0980–U+09FE range, including Bengali letters, signs, vowel
+signs, digits, currency and historic symbols. Reserved code points are excluded.
+The Assamese-specific additions U+09F0 BENGALI LETTER RA WITH MIDDLE DIAGONAL
+and U+09F1 BENGALI LETTER RA WITH LOWER DIAGONAL are intentionally excluded
+from both the inventory and `is_bengali_codepoint`.
+
+The inventory's `category` field records the Unicode General_Category value.
+An empty `romanization` means the character is recognized by the inventory but
+does not yet have a default phonetic keystroke mapping. Inventory membership is
+not, by itself, a promise that every character has a layout mapping or an
+orthographic composition rule.
+
 ## Grapheme handling
 
 `split_graphemes` uses ICU's root-locale character break iterator and follows
@@ -26,9 +41,15 @@ UAX #29 Extended Grapheme Cluster boundaries. Composition backspace applies
 this to raw input. The output document's editing behavior remains the host's
 responsibility.
 
-## Bengali range helper
+## Bengali code-point helper
 
-`is_bengali_codepoint` currently tests the Bengali block range U+0980–U+09FF;
-it is a range check, not a complete assigned-character or orthographic
-validator. Rare historic, Vedic, and extended characters are not core phonetic
-tokens.
+`is_bengali_codepoint` returns true only for assigned code points represented
+in the supported Bangla inventory. It is not an orthographic validator,
+transliterator, or keyboard-layout mapping lookup.
+
+## References
+
+- Unicode 18.0.0 Bengali code chart: https://www.unicode.org/Public/18.0.0/charts/PDF/U0980.pdf
+- Unicode 18.0.0 Bengali names list: https://www.unicode.org/Public/18.0.0/charts/nameslist/0980/
+- Unicode Normalization: https://www.unicode.org/reports/tr15/
+- Unicode Text Segmentation: https://www.unicode.org/reports/tr29/

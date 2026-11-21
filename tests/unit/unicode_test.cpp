@@ -1,6 +1,9 @@
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <unordered_set>
 
 #include "suborno/unicode/bengali.hpp"
 
@@ -27,6 +30,80 @@ TEST(UnicodeUtilitiesTest, NormalizesNfcAndNfkcExplicitly) {
     EXPECT_EQ(suborno::unicode::normalize_nfc("\u09A1\u09BC"), "\u09A1\u09BC");
     EXPECT_EQ(suborno::unicode::normalize_nfkc("\uFF21"), "A");
     EXPECT_THROW(suborno::unicode::normalize_nfc("\xF0\x80"), std::invalid_argument);
+}
+
+TEST(UnicodeUtilitiesTest, BengaliInventoryMatchesTheSupportedBanglaCharacterSet) {
+    const auto inventory = suborno::unicode::supported_bengali_inventory();
+    const auto count_character = [&inventory](std::string_view character) {
+        return std::count_if(inventory.begin(), inventory.end(), [character](const auto& item) {
+            return item.character == character;
+        });
+    };
+
+    EXPECT_EQ(count_character("ঀ"), 1);
+    EXPECT_EQ(count_character("এ"), 1);
+    EXPECT_EQ(count_character("ঐ"), 1);
+    EXPECT_EQ(count_character("ঔ"), 1);
+    EXPECT_EQ(count_character("ঌ"), 1);
+    EXPECT_EQ(count_character("ৠ"), 1);
+    EXPECT_EQ(count_character("ৡ"), 1);
+    EXPECT_EQ(count_character("ঁ"), 1);
+    EXPECT_EQ(count_character("ং"), 1);
+    EXPECT_EQ(count_character("়"), 1);
+    EXPECT_EQ(count_character("ঽ"), 1);
+    EXPECT_EQ(count_character("ড়"), 1);
+    EXPECT_EQ(count_character("ঢ়"), 1);
+    EXPECT_EQ(count_character("য়"), 1);
+    EXPECT_EQ(count_character("ৎ"), 1);
+    EXPECT_EQ(count_character("ৄ"), 1);
+    EXPECT_EQ(count_character("ৗ"), 1);
+    EXPECT_EQ(count_character("ৢ"), 1);
+    EXPECT_EQ(count_character("ৣ"), 1);
+    EXPECT_EQ(count_character("৲"), 1);
+    EXPECT_EQ(count_character("৴"), 1);
+    EXPECT_EQ(count_character("৵"), 1);
+    EXPECT_EQ(count_character("৶"), 1);
+    EXPECT_EQ(count_character("৷"), 1);
+    EXPECT_EQ(count_character("৸"), 1);
+    EXPECT_EQ(count_character("৹"), 1);
+    EXPECT_EQ(count_character("৺"), 1);
+    EXPECT_EQ(count_character("৻"), 1);
+    EXPECT_EQ(count_character("ৼ"), 1);
+    EXPECT_EQ(count_character("৽"), 1);
+    EXPECT_EQ(count_character("৾"), 1);
+
+    const auto find_character = [&inventory](std::string_view character) {
+        const auto found =
+            std::find_if(inventory.begin(), inventory.end(), [character](const auto& item) {
+                return item.character == character;
+            });
+        return found == inventory.end() ? std::string_view{} : std::string_view(found->category);
+    };
+    EXPECT_EQ(find_character("ং"), "Mc");
+    EXPECT_EQ(find_character("া"), "Mc");
+    EXPECT_EQ(find_character("ী"), "Mc");
+    EXPECT_EQ(find_character("ে"), "Mc");
+    EXPECT_EQ(find_character("্"), "Mn");
+    EXPECT_EQ(find_character("৴"), "No");
+    EXPECT_EQ(find_character("৾"), "Mn");
+
+    std::unordered_set<std::string> unique_characters;
+    for (const auto& item : inventory) {
+        EXPECT_TRUE(unique_characters.insert(item.character).second);
+    }
+
+    EXPECT_EQ(count_character("ৰ"), 0);
+    EXPECT_EQ(count_character("ৱ"), 0);
+}
+
+TEST(UnicodeUtilitiesTest, RecognizesOnlyAssignedBanglaCodepoints) {
+    EXPECT_TRUE(suborno::unicode::is_bengali_codepoint(0x0980U));
+    EXPECT_TRUE(suborno::unicode::is_bengali_codepoint(0x0985U));
+    EXPECT_TRUE(suborno::unicode::is_bengali_codepoint(0x09FEU));
+    EXPECT_FALSE(suborno::unicode::is_bengali_codepoint(0x0984U));
+    EXPECT_FALSE(suborno::unicode::is_bengali_codepoint(0x09F0U));
+    EXPECT_FALSE(suborno::unicode::is_bengali_codepoint(0x09F1U));
+    EXPECT_FALSE(suborno::unicode::is_bengali_codepoint(0x09FFU));
 }
 
 TEST(UnicodeUtilitiesTest, SplitsExtendedGraphemeClusters) {

@@ -90,6 +90,35 @@
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
         "VCPKG_MANIFEST_FEATURES": "testing"
       }
+    },
+    {
+      "name": "windows-msvc-minimal-icu-poc",
+      "displayName": "Windows MSVC v143 — minimal ICU data POC",
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "toolset": {
+        "value": "v143",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/build/icu-minimal-poc",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "OFF",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded$<$<CONFIG:Debug>:Debug>",
+        "BUILD_TESTING": "ON",
+        "SUBORNO_ENABLE_MSVC_ANALYSIS": "ON",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "VCPKG_MANIFEST_FEATURES": "testing"
+      },
+      "environment": {
+        "ICU_DATA_FILTER_FILE": "${sourceDir}/cmake/icu/suborno-data-filter.json",
+        "VCPKG_KEEP_ENV_VARS": "ICU_DATA_FILTER_FILE",
+        "VCPKG_BINARY_SOURCES": "clear"
+      }
     }
   ],
   "buildPresets": [
@@ -117,13 +146,19 @@
       "name": "windows-msvc-release",
       "configurePreset": "windows-msvc",
       "configuration": "Release",
-      "jobs": 2
+      "jobs": 1
     },
     {
       "name": "windows-msvc-debug",
       "configurePreset": "windows-msvc",
       "configuration": "Debug",
-      "jobs": 2
+      "jobs": 1
+    },
+    {
+      "name": "windows-msvc-minimal-icu-poc",
+      "configurePreset": "windows-msvc-minimal-icu-poc",
+      "configuration": "Release",
+      "jobs": 1
     }
   ],
   "testPresets": [

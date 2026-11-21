@@ -15,7 +15,7 @@ trap 'rm -f -- "${archive}" "${file_list}"' EXIT
 if [[ -n "${LLVM_ARCHIVE:-}" ]]; then
     cp -- "${LLVM_ARCHIVE}" "${archive}"
 else
-    curl -fsSL \
+    curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 30 --max-time 600 \
         "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/LLVM-${LLVM_VERSION}-Linux-X64.tar.zst" \
         -o "${archive}"
 fi

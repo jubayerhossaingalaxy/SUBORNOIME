@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstddef>
+#include <filesystem>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace suborno::dictionary {
@@ -28,18 +31,29 @@ class DictionaryError final : public std::runtime_error {
     int sqlite_code_;
 };
 
+using WordListPaths = std::vector<std::filesystem::path>;
+
 class Dictionary {
   public:
+    // database_path is UTF-8 encoded on every platform.
     explicit Dictionary(const std::string& database_path);
     ~Dictionary();
     Dictionary(const Dictionary&) = delete;
     Dictionary& operator=(const Dictionary&) = delete;
 
     void add_entry(const std::string& word, const std::string& normalized, int frequency = 1);
+    std::size_t import_word_lists_if_needed(const WordListPaths& word_list_paths,
+                                            std::string_view corpus_version);
     void record_commit(const std::string& word, const std::string& normalized);
+    void record_commit(const std::string& word,
+                       const std::string& canonical_normalized,
+                       const std::string& user_alias);
     void clear_user_entries();
     int schema_version() const;
-    std::vector<std::string> find_matches(const std::string& normalized) const;
+    std::vector<std::string> find_matches(const std::string& normalized,
+                                          std::size_t limit = 16) const;
+    std::vector<std::string> find_prefix_matches(const std::string& normalized_prefix,
+                                                 std::size_t limit = 10) const;
     std::vector<std::string> words_for_prefix(const std::string& prefix) const;
     void initialize_schema();
 

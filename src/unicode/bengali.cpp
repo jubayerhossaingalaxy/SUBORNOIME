@@ -90,16 +90,21 @@ std::string normalize_nfkc(const std::string& text) {
 }
 
 std::vector<BengaliCharacterInfo> supported_bengali_inventory() {
-    return {{"অ", "Bengali Letter A", "Lo", "a", "অ"},
+    return {{"ঀ", "Bengali Anji", "Lo", "", "ঀ"},
+            {"অ", "Bengali Letter A", "Lo", "a", "অ"},
             {"আ", "Bengali Letter AA", "Lo", "aa", "আ"},
             {"ই", "Bengali Letter I", "Lo", "i", "ই"},
             {"ঈ", "Bengali Letter II", "Lo", "ii", "ঈ"},
             {"উ", "Bengali Letter U", "Lo", "u", "উ"},
             {"ঊ", "Bengali Letter UU", "Lo", "uu", "ঊ"},
             {"ঋ", "Bengali Letter Vocalic R", "Lo", "ri", "ঋ"},
+            {"ঌ", "Bengali Letter Vocalic L", "Lo", "", "ঌ"},
             {"এ", "Bengali Letter E", "Lo", "e", "এ"},
-            {"এ", "Bengali Letter E", "Lo", "ei", "এ"},
+            {"ঐ", "Bengali Letter AI", "Lo", "oi", "ঐ"},
             {"ও", "Bengali Letter O", "Lo", "o", "ও"},
+            {"ঔ", "Bengali Letter AU", "Lo", "ou", "ঔ"},
+            {"ৠ", "Bengali Letter Vocalic RR", "Lo", "", "ৠ"},
+            {"ৡ", "Bengali Letter Vocalic LL", "Lo", "", "ৡ"},
             {"ক", "Bengali Letter Ka", "Lo", "k", "ক"},
             {"খ", "Bengali Letter Kha", "Lo", "kh", "খ"},
             {"গ", "Bengali Letter Ga", "Lo", "g", "গ"},
@@ -130,22 +135,46 @@ std::vector<BengaliCharacterInfo> supported_bengali_inventory() {
             {"ষ", "Bengali Letter Ssa", "Lo", "shh", "ষ"},
             {"স", "Bengali Letter Sa", "Lo", "s", "স"},
             {"হ", "Bengali Letter Ha", "Lo", "h", "হ"},
+            {"ড়", "Bengali Letter RRA", "Lo", "R", "\u09A1\u09BC"},
+            {"ঢ়", "Bengali Letter RHA", "Lo", "Rh", "\u09A2\u09BC"},
+            {"য়", "Bengali Letter YYA", "Lo", "y", "\u09AF\u09BC"},
             {"ঙ", "Bengali Letter Nga", "Lo", "ng", "ঙ"},
             {"ঞ", "Bengali Letter Nya", "Lo", "ny", "ঞ"},
-            {"ং", "Bengali Sign Anusvara", "Mn", "ng", "ং"},
+
+            {"ঁ", "Bengali Sign Candrabindu", "Mn", "^", "ঁ"},
+            {"ং", "Bengali Sign Anusvara", "Mc", "ng", "ং"},
+            {"়", "Bengali Sign Nukta", "Mn", "", "়"},
+            {"ঽ", "Bengali Sign Avagraha", "Lo", "", "ঽ"},
             {"ঃ", "Bengali Sign Visarga", "Mc", "h", "ঃ"},
+            {"ৎ", "Bengali Letter Khanda Ta", "Lo", "X", "ৎ"},
             {"্", "Bengali Sign Virama", "Mn", "", "্"},
-            {"া", "Bengali Vowel Sign Aa", "Mn", "a", "া"},
-            {"ি", "Bengali Vowel Sign I", "Mn", "i", "ি"},
-            {"ী", "Bengali Vowel Sign II", "Mn", "ii", "ী"},
+            {"া", "Bengali Vowel Sign Aa", "Mc", "a", "া"},
+            {"ি", "Bengali Vowel Sign I", "Mc", "i", "ি"},
+            {"ী", "Bengali Vowel Sign II", "Mc", "ii", "ী"},
             {"ু", "Bengali Vowel Sign U", "Mn", "u", "ু"},
             {"ূ", "Bengali Vowel Sign UU", "Mn", "uu", "ূ"},
             {"ৃ", "Bengali Vowel Sign Vocalic R", "Mn", "ri", "ৃ"},
-            {"ে", "Bengali Vowel Sign E", "Mn", "e", "ে"},
-            {"ৈ", "Bengali Vowel Sign AI", "Mn", "oi", "ৈ"},
-            {"ো", "Bengali Vowel Sign O", "Mn", "o", "ো"},
-            {"ৌ", "Bengali Vowel Sign AU", "Mn", "ou", "ৌ"},
+            {"ৄ", "Bengali Vowel Sign Vocalic RR", "Mn", "", "ৄ"},
+            {"ে", "Bengali Vowel Sign E", "Mc", "e", "ে"},
+            {"ৈ", "Bengali Vowel Sign AI", "Mc", "oi", "ৈ"},
+            {"ো", "Bengali Vowel Sign O", "Mc", "o", "ো"},
+            {"ৌ", "Bengali Vowel Sign AU", "Mc", "ou", "ৌ"},
+            {"ৗ", "Bengali AU Length Mark", "Mc", "", "ৗ"},
+            {"ৢ", "Bengali Vowel Sign Vocalic L", "Mn", "", "ৢ"},
+            {"ৣ", "Bengali Vowel Sign Vocalic LL", "Mn", "", "ৣ"},
+            {"৲", "Bengali Rupee Mark", "Sc", "", "৲"},
             {"৳", "Bengali Rupee Sign", "Sc", "rs", "৳"},
+            {"৴", "Bengali Currency Numerator One", "No", "", "৴"},
+            {"৵", "Bengali Currency Numerator Two", "No", "", "৵"},
+            {"৶", "Bengali Currency Numerator Three", "No", "", "৶"},
+            {"৷", "Bengali Currency Numerator Four", "No", "", "৷"},
+            {"৸", "Bengali Currency Numerator One Less Than The Denominator", "No", "", "৸"},
+            {"৹", "Bengali Currency Denominator Sixteen", "No", "", "৹"},
+            {"৺", "Bengali Isshar", "So", "", "৺"},
+            {"৻", "Bengali Ganda Mark", "Sc", "", "৻"},
+            {"ৼ", "Bengali Letter Vedic Anusvara", "Lo", "", "ৼ"},
+            {"৽", "Bengali Abbreviation Sign", "Po", "", "৽"},
+            {"৾", "Bengali Sandhi Mark", "Mn", "", "৾"},
             {"০", "Bengali Digit Zero", "Nd", "0", "০"},
             {"১", "Bengali Digit One", "Nd", "1", "১"},
             {"২", "Bengali Digit Two", "Nd", "2", "২"},
@@ -159,9 +188,20 @@ std::vector<BengaliCharacterInfo> supported_bengali_inventory() {
 }
 
 bool is_bengali_codepoint(unsigned int code_point) {
-    const auto begin = static_cast<unsigned int>(0x0980);
-    const auto end = static_cast<unsigned int>(0x09FF);
-    return code_point >= begin && code_point <= end;
+    return (code_point >= 0x0980U && code_point <= 0x0983U)
+           || (code_point >= 0x0985U && code_point <= 0x098CU)
+           || (code_point >= 0x098FU && code_point <= 0x0990U)
+           || (code_point >= 0x0993U && code_point <= 0x09A8U)
+           || (code_point >= 0x09AAU && code_point <= 0x09B0U) || code_point == 0x09B2U
+           || (code_point >= 0x09B6U && code_point <= 0x09B9U)
+           || (code_point >= 0x09BCU && code_point <= 0x09BDU)
+           || (code_point >= 0x09BEU && code_point <= 0x09C4U)
+           || (code_point >= 0x09C7U && code_point <= 0x09C8U)
+           || (code_point >= 0x09CBU && code_point <= 0x09CEU) || code_point == 0x09D7U
+           || (code_point >= 0x09DCU && code_point <= 0x09DDU)
+           || (code_point >= 0x09DFU && code_point <= 0x09E3U)
+           || (code_point >= 0x09E6U && code_point <= 0x09EFU)
+           || (code_point >= 0x09F2U && code_point <= 0x09FEU);
 }
 
 std::vector<std::string> split_graphemes(const std::string& text) {

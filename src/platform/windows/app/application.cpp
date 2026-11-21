@@ -19,6 +19,7 @@
 #include <wil/com.h>
 
 #include "suborno/core/engine.hpp"
+#include "suborno/dictionary/dictionary.hpp"
 #include "suborno/platform/windows/app/resource.h"
 #include "suborno/platform/windows/app_paths.hpp"
 #include "suborno/platform/windows/tsf/guids.hpp"
@@ -41,6 +42,12 @@ enum ControlId : UINT {
     kOpenInputSettings = 1004,
     kHideButton = 1005,
     kAppsSettingsButton = 1006,
+    kMapNumpadCheck = 1007,
+    kIgnoreCapsLockCheck = 1008,
+    kSelectCandidateKeysCheck = 1009,
+    kShowCandidateWindowCheck = 1010,
+    kLearningEnabledCheck = 1011,
+    kClearPersonalDataButton = 1012,
 };
 
 enum MenuId : UINT {
@@ -57,10 +64,13 @@ struct LayoutOption {
     const wchar_t* name;
 };
 
-constexpr std::array<LayoutOption, 3> kLayouts{{
+constexpr std::array<LayoutOption, 6> kLayouts{{
     {"suborno-phonetic", L"Suborno Phonetic"},
+    {"borno-phonetic", L"Borno Phonetic"},
+    {"avro-phonetic", L"Avro Phonetic"},
+    {"khipro", L"Khipro Classic"},
     {"probhat", L"Probhat"},
-    {"national", L"National"},
+    {"national", L"National (draft)"},
 }};
 
 HRESULT get_profiles(wil::com_ptr<ITfInputProcessorProfiles>& profiles) {
@@ -134,8 +144,8 @@ HRESULT executable_path(std::wstring& path) {
     if (length >= static_cast<DWORD>(buffer.size())) {
         // Path exceeds buffer size; try a larger allocation
         std::vector<wchar_t> larger_buffer(length + 1);
-        const DWORD larger_length =
-            ::GetModuleFileNameW(nullptr, larger_buffer.data(), static_cast<DWORD>(larger_buffer.size()));
+        const DWORD larger_length = ::GetModuleFileNameW(
+            nullptr, larger_buffer.data(), static_cast<DWORD>(larger_buffer.size()));
         if (larger_length == 0) {
             return HRESULT_FROM_WIN32(::GetLastError());
         }
@@ -222,6 +232,26 @@ void show_error(HWND owner, const wchar_t* message, HRESULT result) {
     ::MessageBoxW(owner, text, L"Suborno", MB_OK | MB_ICONERROR);
 }
 
+void report_error(HWND owner, const wchar_t* message, HRESULT result, bool show_dialog) {
+    if (show_dialog) {
+        show_error(owner, message, result);
+        return;
+    }
+
+    wchar_t text[512]{};
+    swprintf_s(text,
+               _countof(text),
+               L"%s (HRESULT: 0x%08lX)\n",
+               message,
+               static_cast<unsigned long>(result));
+    ::OutputDebugStringW(text);
+}
+
+int smoke_test_exit_code(HRESULT result) noexcept {
+    const DWORD code = HRESULT_CODE(result);
+    return code == ERROR_SUCCESS ? 1 : static_cast<int>(code);
+}
+
 class Application final {
   public:
     Application(HINSTANCE instance, bool startup, bool smoke_test)
@@ -233,8 +263,8 @@ class Application final {
     int run(int show_command) {
         HRESULT result = initialize();
         if (FAILED(result)) {
-            show_error(nullptr, L"Suborno could not load its settings.", result);
-            return 1;
+            report_error(nullptr, L"Suborno could not load its settings.", result, !smoke_test_);
+            return smoke_test_ ? smoke_test_exit_code(result) : 1;
         }
 
         WNDCLASSEXW window_class{};
@@ -247,14 +277,17 @@ class Application final {
         window_class.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
         window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
         if (window_class.hIcon == nullptr) {
-            show_error(nullptr, L"Suborno's application icon could not be loaded.", E_FAIL);
-            return 1;
+            report_error(
+                nullptr, L"Suborno's application icon could not be loaded.", E_FAIL, !smoke_test_);
+            return smoke_test_ ? smoke_test_exit_code(E_FAIL) : 1;
         }
         if (::RegisterClassExW(&window_class) == 0) {
-            show_error(nullptr,
-                       L"Suborno's application window could not be registered.",
-                       HRESULT_FROM_WIN32(::GetLastError()));
-            return 1;
+            const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
+            report_error(nullptr,
+                         L"Suborno's application window could not be registered.",
+                         error,
+                         !smoke_test_);
+            return smoke_test_ ? smoke_test_exit_code(error) : 1;
         }
 
         window_ = ::CreateWindowExW(0,
@@ -264,17 +297,19 @@ class Application final {
                                     CW_USEDEFAULT,
                                     CW_USEDEFAULT,
                                     600,
-                                    450,
+                                    600,
                                     nullptr,
                                     nullptr,
                                     instance_,
                                     this);
         if (window_ == nullptr) {
-            show_error(nullptr,
-                       L"Suborno's application window could not be created.",
-                       HRESULT_FROM_WIN32(::GetLastError()));
+            const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
+            report_error(nullptr,
+                         L"Suborno's application window could not be created.",
+                         error,
+                         !smoke_test_);
             ::UnregisterClassW(kWindowClass, instance_);
-            return 1;
+            return smoke_test_ ? smoke_test_exit_code(error) : 1;
         }
         if (smoke_test_) {
             ::DestroyWindow(window_);
@@ -330,12 +365,35 @@ class Application final {
                 return result;
             }
             config.dictionary_path = dictionary_path;
+            std::filesystem::path shared_dictionaries;
+            result = get_shared_dictionaries_directory(shared_dictionaries);
+            if (FAILED(result)) {
+                return result;
+            }
+            config.dictionary_word_lists = {
+                shared_dictionaries / L"bn-wordlist-unlicense-v1-part-01.txt",
+                shared_dictionaries / L"bn-wordlist-unlicense-v1-part-02.txt",
+                shared_dictionaries / L"bn-wordlist-unlicense-v1-part-03.txt",
+                shared_dictionaries / L"bn-wordlist-unlicense-v1-part-04.txt"};
+            config.dictionary_corpus_version = "sanjidh090-bn-wordlist-d3095ea-v1";
             engine_ = std::make_unique<suborno::core::Engine>(config);
             const auto loaded = engine_->load_settings();
             if (loaded.status != suborno::settings::SettingsStatus::ok) {
                 return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
             }
-            return read_startup_preference(startup_enabled_);
+            result = read_startup_preference(startup_enabled_);
+            if (FAILED(result)) {
+                return result;
+            }
+
+            auto settings = engine_->settings();
+            if (settings.general.start_with_windows != startup_enabled_) {
+                settings.general.start_with_windows = startup_enabled_;
+                if (engine_->save_settings(settings) != suborno::settings::SettingsStatus::ok) {
+                    return HRESULT_FROM_WIN32(ERROR_WRITE_FAULT);
+                }
+            }
+            return S_OK;
         } catch (const std::bad_alloc&) {
             return E_OUTOFMEMORY;
         } catch (const std::exception&) {
@@ -485,15 +543,68 @@ class Application final {
         ::SendMessageW(
             startup_check_, BM_SETCHECK, startup_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);
 
-        add_control(0, L"STATIC", L"Phonetic input", SS_LEFT, 24, 178, 520, 24, 0);
-        help_label_ = add_control(0, L"STATIC", L"", SS_LEFT, 24, 204, 520, 38, 0);
+        add_control(0, L"STATIC", L"Input preferences", SS_LEFT, 24, 170, 520, 24, 0);
+        show_candidate_window_check_ = add_control(0,
+                                                   L"BUTTON",
+                                                   L"Show candidate suggestion window",
+                                                   BS_AUTOCHECKBOX,
+                                                   24,
+                                                   196,
+                                                   500,
+                                                   26,
+                                                   kShowCandidateWindowCheck);
+        map_numpad_check_ = add_control(0,
+                                        L"BUTTON",
+                                        L"Map numeric keypad to Bangla digits",
+                                        BS_AUTOCHECKBOX,
+                                        24,
+                                        224,
+                                        500,
+                                        26,
+                                        kMapNumpadCheck);
+        ignore_caps_lock_check_ = add_control(0,
+                                              L"BUTTON",
+                                              L"Ignore Caps Lock while typing Bangla",
+                                              BS_AUTOCHECKBOX,
+                                              24,
+                                              252,
+                                              500,
+                                              26,
+                                              kIgnoreCapsLockCheck);
+        select_candidate_keys_check_ = add_control(0,
+                                                   L"BUTTON",
+                                                   L"Select candidates with number keys",
+                                                   BS_AUTOCHECKBOX,
+                                                   24,
+                                                   280,
+                                                   500,
+                                                   26,
+                                                   kSelectCandidateKeysCheck);
+        learning_check_ = add_control(0,
+                                      L"BUTTON",
+                                      L"Learn committed words on this device (opt-in)",
+                                      BS_AUTOCHECKBOX,
+                                      24,
+                                      308,
+                                      500,
+                                      26,
+                                      kLearningEnabledCheck);
+        if (show_candidate_window_check_ == nullptr || map_numpad_check_ == nullptr
+            || ignore_caps_lock_check_ == nullptr || select_candidate_keys_check_ == nullptr
+            || learning_check_ == nullptr) {
+            return false;
+        }
+        refresh_input_settings_controls();
+
+        add_control(0, L"STATIC", L"Typing help", SS_LEFT, 24, 342, 520, 24, 0);
+        help_label_ = add_control(0, L"STATIC", L"", SS_LEFT, 24, 368, 520, 38, 0);
 
         add_control(0,
                     L"BUTTON",
                     L"Windows input settings",
                     BS_PUSHBUTTON,
                     24,
-                    258,
+                    414,
                     190,
                     32,
                     kOpenInputSettings);
@@ -502,18 +613,27 @@ class Application final {
                                    L"Hide to notification area",
                                    BS_PUSHBUTTON,
                                    228,
-                                   258,
-                                   220,
+                                   414,
+                                   150,
                                    32,
                                    kHideButton);
+        clear_personal_data_button_ = add_control(0,
+                                                  L"BUTTON",
+                                                  L"Clear personal data",
+                                                  BS_PUSHBUTTON,
+                                                  392,
+                                                  414,
+                                                  180,
+                                                  32,
+                                                  kClearPersonalDataButton);
 
-        add_control(0, L"STATIC", L"About Suborno", SS_LEFT, 24, 318, 520, 22, 0);
+        add_control(0, L"STATIC", L"About Suborno", SS_LEFT, 24, 460, 520, 22, 0);
         add_control(0,
                     L"STATIC",
                     L"Suborno Bengali Input Method  " SUBORNO_VERSION_WIDE,
                     SS_LEFT,
                     24,
-                    344,
+                    486,
                     520,
                     24,
                     0);
@@ -522,7 +642,7 @@ class Application final {
                                             L"Uninstall Suborno",
                                             BS_PUSHBUTTON,
                                             24,
-                                            378,
+                                            518,
                                             220,
                                             30,
                                             kAppsSettingsButton);
@@ -535,11 +655,106 @@ class Application final {
         }
         return status_label_ != nullptr && layout_combo_ != nullptr && startup_check_ != nullptr
                && hide_button_ != nullptr && apps_settings_button_ != nullptr
+               && show_candidate_window_check_ != nullptr && map_numpad_check_ != nullptr
+               && ignore_caps_lock_check_ != nullptr && select_candidate_keys_check_ != nullptr
+               && learning_check_ != nullptr && clear_personal_data_button_ != nullptr
                && help_label_ != nullptr;
     }
 
+    void refresh_input_settings_controls() {
+        const auto& settings = engine_->settings();
+        const auto& input = settings.input;
+        ::SendMessageW(
+            show_candidate_window_check_,
+            BM_SETCHECK,
+            settings.interface_settings.show_candidate_window ? BST_CHECKED : BST_UNCHECKED,
+            0);
+        ::SendMessageW(map_numpad_check_,
+                       BM_SETCHECK,
+                       input.map_numpad_to_bangla_numbers ? BST_CHECKED : BST_UNCHECKED,
+                       0);
+        ::SendMessageW(ignore_caps_lock_check_,
+                       BM_SETCHECK,
+                       input.ignore_caps_lock_state_in_bangla ? BST_CHECKED : BST_UNCHECKED,
+                       0);
+        ::SendMessageW(select_candidate_keys_check_,
+                       BM_SETCHECK,
+                       input.select_candidate_using_number_keys ? BST_CHECKED : BST_UNCHECKED,
+                       0);
+        ::SendMessageW(learning_check_,
+                       BM_SETCHECK,
+                       settings.learning_enabled ? BST_CHECKED : BST_UNCHECKED,
+                       0);
+    }
+
+    void save_input_settings() {
+        auto settings = engine_->settings();
+        settings.interface_settings.show_candidate_window =
+            ::SendMessageW(show_candidate_window_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+        settings.input.map_numpad_to_bangla_numbers =
+            ::SendMessageW(map_numpad_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+        settings.input.ignore_caps_lock_state_in_bangla =
+            ::SendMessageW(ignore_caps_lock_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+        settings.input.select_candidate_using_number_keys =
+            ::SendMessageW(select_candidate_keys_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+        settings.learning_enabled =
+            ::SendMessageW(learning_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+
+        const auto result = engine_->save_settings(settings);
+        if (result != suborno::settings::SettingsStatus::ok) {
+            refresh_input_settings_controls();
+            show_error(window_, L"Could not save the input preferences.", E_FAIL);
+        }
+    }
+
+    void clear_personal_data() {
+        auto* dictionary = engine_->dictionary();
+        if (dictionary == nullptr) {
+            show_error(window_, L"The personal dictionary is unavailable.", E_UNEXPECTED);
+            return;
+        }
+
+        const int answer = ::MessageBoxW(
+            window_,
+            L"This removes words and aliases learned by Suborno, along with personal dictionary "
+            L"entries. Automatic learning will also be turned off. The bundled Bengali system "
+            L"dictionary will remain. Continue?",
+            L"Clear personal data",
+            MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2);
+        if (answer != IDYES) {
+            return;
+        }
+
+        auto settings = engine_->settings();
+        settings.learning_enabled = false;
+        if (engine_->save_settings(settings) != suborno::settings::SettingsStatus::ok) {
+            show_error(window_, L"Could not disable personal learning.", E_FAIL);
+            return;
+        }
+        refresh_input_settings_controls();
+
+        try {
+            dictionary->clear_user_entries();
+        } catch (const std::exception&) {
+            show_error(window_,
+                       L"Automatic learning is disabled, but the personal dictionary could not "
+                       L"be cleared.",
+                       E_FAIL);
+            return;
+        }
+
+        ::MessageBoxW(window_,
+                      L"Personal dictionary data has been cleared and automatic learning is off.",
+                      L"Suborno",
+                      MB_OK | MB_ICONINFORMATION);
+    }
+
     void refresh_status() {
-        const bool phonetic = engine_->settings().active_layout_id == kLayouts[0].id;
+        refresh_input_settings_controls();
+        const std::string_view active_layout = engine_->settings().active_layout_id;
+        const bool phonetic = active_layout == "suborno-phonetic"
+                              || active_layout == "borno-phonetic"
+                              || active_layout == "avro-phonetic";
         ::SetWindowTextW(
             help_label_,
             phonetic
@@ -578,9 +793,31 @@ class Application final {
             apply_selected_layout();
             return;
         }
+        if ((id == kShowCandidateWindowCheck || id == kMapNumpadCheck || id == kIgnoreCapsLockCheck
+             || id == kSelectCandidateKeysCheck || id == kLearningEnabledCheck)
+            && notification == BN_CLICKED) {
+            save_input_settings();
+            return;
+        }
+        if (id == kClearPersonalDataButton && notification == BN_CLICKED) {
+            clear_personal_data();
+            return;
+        }
         if (id == kStartupCheck && notification == BN_CLICKED) {
             const bool enabled = ::SendMessageW(startup_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
-            const HRESULT result = write_startup_preference(enabled);
+            const HRESULT registry_result = write_startup_preference(enabled);
+            HRESULT result = registry_result;
+            if (SUCCEEDED(result)) {
+                auto settings = engine_->settings();
+                settings.general.start_with_windows = enabled;
+                if (engine_->save_settings(settings) != suborno::settings::SettingsStatus::ok) {
+                    result = HRESULT_FROM_WIN32(ERROR_WRITE_FAULT);
+                    const HRESULT rollback_result = write_startup_preference(startup_enabled_);
+                    if (FAILED(rollback_result)) {
+                        result = rollback_result;
+                    }
+                }
+            }
             if (FAILED(result)) {
                 ::SendMessageW(
                     startup_check_, BM_SETCHECK, startup_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);
@@ -786,6 +1023,12 @@ class Application final {
     HWND help_label_ = nullptr;
     HWND layout_combo_ = nullptr;
     HWND startup_check_ = nullptr;
+    HWND show_candidate_window_check_ = nullptr;
+    HWND map_numpad_check_ = nullptr;
+    HWND ignore_caps_lock_check_ = nullptr;
+    HWND select_candidate_keys_check_ = nullptr;
+    HWND learning_check_ = nullptr;
+    HWND clear_personal_data_button_ = nullptr;
     HWND hide_button_ = nullptr;
     HWND apps_settings_button_ = nullptr;
     bool startup_ = false;
@@ -800,12 +1043,17 @@ class Application final {
 }  // namespace
 
 int run(HINSTANCE instance, PWSTR command_line, int show_command) {
+    const bool startup =
+        command_line != nullptr && std::wcsstr(command_line, L"--startup") != nullptr;
+    const bool smoke_test =
+        command_line != nullptr && std::wcsstr(command_line, L"--smoke-test") != nullptr;
+
     HANDLE instance_mutex = ::CreateMutexW(nullptr, TRUE, L"Local\\Suborno.Desktop.Application");
     if (instance_mutex == nullptr) {
-        show_error(nullptr,
-                   L"Suborno could not establish its single-instance lock.",
-                   HRESULT_FROM_WIN32(::GetLastError()));
-        return 1;
+        const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
+        report_error(
+            nullptr, L"Suborno could not establish its single-instance lock.", error, !smoke_test);
+        return smoke_test ? smoke_test_exit_code(error) : 1;
     }
     if (::GetLastError() == ERROR_ALREADY_EXISTS) {
         for (int attempt = 0; attempt < 20; ++attempt) {
@@ -823,26 +1071,26 @@ int run(HINSTANCE instance, PWSTR command_line, int show_command) {
 
     const HRESULT com_result = ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(com_result)) {
-        show_error(nullptr, L"Suborno could not initialize Windows services.", com_result);
+        report_error(
+            nullptr, L"Suborno could not initialize Windows services.", com_result, !smoke_test);
         ::ReleaseMutex(instance_mutex);
         ::CloseHandle(instance_mutex);
-        return 1;
+        return smoke_test ? smoke_test_exit_code(com_result) : 1;
     }
-
-    const bool startup =
-        command_line != nullptr && std::wcsstr(command_line, L"--startup") != nullptr;
-    const bool smoke_test =
-        command_line != nullptr && std::wcsstr(command_line, L"--smoke-test") != nullptr;
     int exit_code = 1;
     try {
         Application application(instance, startup, smoke_test);
         exit_code = application.run(show_command);
     } catch (const std::bad_alloc&) {
-        show_error(nullptr, L"Suborno ran out of memory.", E_OUTOFMEMORY);
+        report_error(nullptr, L"Suborno ran out of memory.", E_OUTOFMEMORY, !smoke_test);
+        exit_code = smoke_test ? smoke_test_exit_code(E_OUTOFMEMORY) : 1;
     } catch (const std::filesystem::filesystem_error&) {
-        show_error(nullptr, L"Suborno could not access its user data.", E_FAIL);
+        report_error(nullptr, L"Suborno could not access its user data.", E_FAIL, !smoke_test);
+        exit_code = smoke_test ? smoke_test_exit_code(E_FAIL) : 1;
     } catch (const std::exception&) {
-        show_error(nullptr, L"Suborno could not initialize its input engine.", E_FAIL);
+        report_error(
+            nullptr, L"Suborno could not initialize its input engine.", E_FAIL, !smoke_test);
+        exit_code = smoke_test ? smoke_test_exit_code(E_FAIL) : 1;
     }
 
     ::CoUninitialize();

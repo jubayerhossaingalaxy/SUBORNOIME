@@ -56,7 +56,7 @@ HRESULT get_folder_path(REFKNOWNFOLDERID folder_id,
     return S_OK;
 }
 
-HRESULT create_directory(const std::filesystem::path& directory) {
+HRESULT ensure_directory_exists(const std::filesystem::path& directory) {
     std::error_code error;
     std::filesystem::create_directories(directory, error);
     return error ? HRESULT_FROM_WIN32(static_cast<DWORD>(error.value())) : S_OK;
@@ -204,14 +204,15 @@ HRESULT migrate_dictionary(const std::filesystem::path& source,
 }  // namespace
 
 HRESULT get_user_data_directory(std::filesystem::path& directory) noexcept {
-    HRESULT result = get_folder_path(FOLDERID_RoamingAppData, directory);
-    if (SUCCEEDED(result)) {
-        // Ensure the directory exists; create it if needed.
-        // SHGetKnownFolderPath with KF_FLAG_CREATE may not create the directory
-        // in all scenarios (e.g., admin-installed applications, first run).
-        ::std::filesystem::create_directories(directory);
+    const HRESULT result = get_folder_path(FOLDERID_RoamingAppData, directory);
+    if (FAILED(result)) {
+        return result;
     }
-    return result;
+    try {
+        return ensure_directory_exists(directory);
+    } catch (const std::bad_alloc&) {
+        return E_OUTOFMEMORY;
+    }
 }
 
 HRESULT get_legacy_user_data_directory(std::filesystem::path& directory) noexcept {
@@ -304,28 +305,13 @@ HRESULT get_shared_layouts_directory(std::filesystem::path& directory) noexcept 
 
 HRESULT prepare_user_data_directory(const std::filesystem::path& directory,
                                     const std::filesystem::path& legacy_directory) {
-    HRESULT result;
-    // use std::filesystem::create_directory with error_code to avoid C6216
-    // (compiler-inserted cast between semantically different integral types)
-    std::error_code dir_error;
-    bool dir_result = ::std::filesystem::create_directory(directory / L"dictionaries" / L"suborno_learnt_bn", dir_error);
-    if (dir_result) {
-        result = S_OK;
-    } else {
-        result = HRESULT_FROM_WIN32(dir_error.value());
-        if (FAILED(result)) {
-            return result;
-        }
+    HRESULT result = ensure_directory_exists(directory / L"dictionaries" / L"suborno_learnt_bn");
+    if (FAILED(result)) {
+        return result;
     }
-    dir_error = std::error_code{};
-    dir_result = ::std::filesystem::create_directory(directory / L"layouts", dir_error);
-    if (dir_result) {
-        result = S_OK;
-    } else {
-        result = HRESULT_FROM_WIN32(dir_error.value());
-        if (FAILED(result)) {
-            return result;
-        }
+    result = ensure_directory_exists(directory / L"layouts");
+    if (FAILED(result)) {
+        return result;
     }
 
     MigrationLock lock;

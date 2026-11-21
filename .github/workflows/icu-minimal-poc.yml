@@ -1,0 +1,85 @@
+name: Minimal ICU Data POC
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/icu/**"
+      - ".github/workflows/icu-minimal-poc.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: icu-minimal-poc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-minimal-icu:
+    name: MSVC v143 / Minimal ICU data POC
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-binary-cache
+      VCPKG_MAX_CONCURRENCY: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned vcpkg
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+          git clone --filter=blob:none --no-checkout https://github.com/microsoft/vcpkg.git "$env:VCPKG_ROOT"
+          if ($LASTEXITCODE -ne 0) { throw "Unable to clone vcpkg." }
+          git -C "$env:VCPKG_ROOT" fetch --depth 1 origin 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the pinned vcpkg baseline." }
+          git -C "$env:VCPKG_ROOT" checkout --detach 0df93a05b9de080129e653ec4776d7e14a1b2e4f
+          if ($LASTEXITCODE -ne 0) { throw "Unable to check out the pinned vcpkg baseline." }
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
+          if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed." }
+
+      - name: Configure custom ICU data
+        run: cmake --preset windows-msvc-minimal-icu-poc
+
+      - name: Build test and application targets
+        run: cmake --build --preset windows-msvc-minimal-icu-poc --target suborno_unit_tests suborno_integration_tests suborno_windows_tests suborno_app --parallel 1
+
+      - name: Run regression tests
+        run: ctest --test-dir build/icu-minimal-poc -C Release --output-on-failure
+
+      - name: Build all targets
+        run: cmake --build --preset windows-msvc-minimal-icu-poc --parallel 1
+
+      - name: Report exact binary and ICU data sizes
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $paths = @(
+            'build/icu-minimal-poc/Release/Suborno.exe',
+            'build/icu-minimal-poc/Release/suborno_windows_tsf.dll',
+            'build/icu-minimal-poc/vcpkg_installed/x64-windows-static/lib/icudt.lib'
+          )
+          foreach ($path in $paths) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Expected POC output not found: $path"
+            }
+            $item = Get-Item -LiteralPath $path
+            Write-Host ("{0}: {1} bytes ({2:N2} MiB)" -f $path, $item.Length, ($item.Length / 1MB))
+          }
+
+      - name: Upload POC binaries and ICU data archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: suborno-minimal-icu-poc
+          path: |
+            build/icu-minimal-poc/Release/Suborno.exe
+            build/icu-minimal-poc/Release/suborno_windows_tsf.dll
+            build/icu-minimal-poc/vcpkg_installed/x64-windows-static/lib/icudt.lib
+          if-no-files-found: error
+          retention-days: 14

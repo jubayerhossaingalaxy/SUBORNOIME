@@ -1,8 +1,10 @@
+#include <Windows.h>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <iterator>
 #include <msctf.h>
+#include <oleauto.h>
 #include <string>
 #include <vector>
 #include <wil/com.h>
@@ -10,6 +12,8 @@
 
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/platform/windows/app_paths.hpp"
+#include "suborno/platform/windows/key_translation.hpp"
+#include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
 #include "suborno/platform/windows/tsf/guids.hpp"
 extern "C" _Check_return_ HRESULT WINAPI DllCanUnloadNow();
 extern "C" _Check_return_ HRESULT WINAPI DllGetClassObject(_In_ REFCLSID class_id,
@@ -19,6 +23,20 @@ extern "C" HRESULT WINAPI DllRegisterServer();
 extern "C" HRESULT WINAPI DllUnregisterServer();
 
 namespace {
+
+bool is_process_elevated() noexcept {
+    HANDLE token = nullptr;
+    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &token)) {
+        return false;
+    }
+
+    TOKEN_ELEVATION elevation{};
+    DWORD returned_size = 0;
+    const BOOL queried =
+        ::GetTokenInformation(token, TokenElevation, &elevation, sizeof(elevation), &returned_size);
+    ::CloseHandle(token);
+    return queried != FALSE && returned_size == sizeof(elevation) && elevation.TokenIsElevated != 0;
+}
 
 class ComApartment final {
   public:
@@ -40,6 +58,16 @@ class ComApartment final {
 };
 
 }  // namespace
+
+TEST(WindowsKeyTranslationTest, RecognizesAllProbhatKlcExtendedPhysicalKeys) {
+    using suborno::layout::PhysicalKey;
+    using suborno::platform::windows::physical_key_from_virtual_key;
+
+    EXPECT_EQ(physical_key_from_virtual_key(VK_OEM_102), PhysicalKey::backslash);
+    EXPECT_EQ(physical_key_from_virtual_key(VK_DECIMAL), PhysicalKey::numpad_decimal);
+    EXPECT_EQ(physical_key_from_virtual_key(VK_OEM_5), PhysicalKey::backslash);
+    EXPECT_FALSE(physical_key_from_virtual_key(VK_F1).has_value());
+}
 
 TEST(WindowsBuildSmokeTest, LoadsTheNativeWindowsModuleTarget) {
     EXPECT_NE(::GetModuleHandleW(L"suborno_windows_tsf.dll"), nullptr);
@@ -188,6 +216,11 @@ TEST(WindowsTsfContractTest, RejectsUnknownClassesAndBalancesServerLocks) {
 }
 
 TEST(WindowsTsfContractTest, RegistersAndUnregistersTheLanguageProfile) {
+    if (!is_process_elevated()) {
+        GTEST_SKIP() << "This test performs real Windows COM/TSF registration. "
+                        "Run the test from an elevated terminal to exercise registration.";
+    }
+
     ComApartment apartment;
     ASSERT_TRUE(apartment.initialized());
 
@@ -227,4 +260,87 @@ TEST(WindowsTsfContractTest, RegistersAndUnregistersTheLanguageProfile) {
     }
 
     EXPECT_EQ(DllUnregisterServer(), S_OK);
+}
+
+TEST(CandidateListUIElementTest, SupportsDefaultAndHostDefinedCandidatePages) {
+    std::vector<suborno::layout::Candidate> candidates;
+    for (std::size_t index = 0; index < 10; ++index) {
+        candidates.push_back({
+            .text = "candidate-" + std::to_string(index),
+            .normalized_text = "candidate-" + std::to_string(index),
+            .stable_id = "candidate:" + std::to_string(index),
+        });
+    }
+
+    auto* element =
+        new suborno::platform::windows::CandidateListUIElement(nullptr, candidates, 0, {}, {});
+
+    UINT page_count = 0;
+    EXPECT_EQ(element->GetPageIndex(nullptr, 0, &page_count), S_OK);
+    EXPECT_EQ(page_count, 2U);
+
+    UINT default_pages[2]{};
+    EXPECT_EQ(element->GetPageIndex(default_pages, 2, &page_count), S_OK);
+    EXPECT_EQ(default_pages[0], 0U);
+    EXPECT_EQ(default_pages[1], 8U);
+
+    EXPECT_EQ(element->SetSelection(9), S_OK);
+    UINT current_page = 0;
+    EXPECT_EQ(element->GetCurrentPage(&current_page), S_OK);
+    EXPECT_EQ(current_page, 1U);
+
+    UINT custom_pages[]{0, 3, 7};
+    EXPECT_EQ(element->SetPageIndex(custom_pages, 3), S_OK);
+    EXPECT_EQ(element->GetCurrentPage(&current_page), S_OK);
+    EXPECT_EQ(current_page, 2U);
+
+    UINT actual_custom_pages[3]{};
+    EXPECT_EQ(element->GetPageIndex(actual_custom_pages, 3, &page_count), S_OK);
+    EXPECT_EQ(actual_custom_pages[0], 0U);
+    EXPECT_EQ(actual_custom_pages[1], 3U);
+    EXPECT_EQ(actual_custom_pages[2], 7U);
+
+    element->Release();
+}
+
+TEST(CandidateListUIElementTest, ExposesCandidateStringsAndSelectionThroughTsfContracts) {
+    const std::vector<suborno::layout::Candidate> candidates{
+        {.text = "আমি", .normalized_text = "ami", .stable_id = "candidate:ami"},
+        {.text = "আমরা", .normalized_text = "amra", .stable_id = "candidate:amra"},
+    };
+    auto* element =
+        new suborno::platform::windows::CandidateListUIElement(nullptr, candidates, 1, {}, {});
+
+    UINT count = 0;
+    EXPECT_EQ(element->GetCount(&count), S_OK);
+    EXPECT_EQ(count, 2U);
+
+    UINT selection = 0;
+    EXPECT_EQ(element->GetSelection(&selection), S_OK);
+    EXPECT_EQ(selection, 1U);
+
+    BSTR candidate = nullptr;
+    EXPECT_EQ(element->GetString(0, &candidate), S_OK);
+    ASSERT_NE(candidate, nullptr);
+    EXPECT_EQ(std::wstring(candidate), L"আমি");
+    ::SysFreeString(candidate);
+
+    BSTR invalid_candidate = ::SysAllocString(L"sentinel");
+    ASSERT_NE(invalid_candidate, nullptr);
+    BSTR allocated_sentinel = invalid_candidate;
+    EXPECT_EQ(element->GetString(count, &invalid_candidate), E_INVALIDARG);
+    EXPECT_EQ(invalid_candidate, nullptr);
+    ::SysFreeString(allocated_sentinel);
+    EXPECT_EQ(element->GetString(0, nullptr), E_INVALIDARG);
+
+    GUID element_guid{};
+    EXPECT_EQ(element->GetGUID(&element_guid), S_OK);
+    EXPECT_TRUE(::IsEqualGUID(element_guid,
+                              suborno::platform::windows::kSubornoCandidateListUIElementGuid));
+
+    UINT page_count = 0;
+    EXPECT_EQ(element->GetPageIndex(nullptr, 0, &page_count), S_OK);
+    EXPECT_EQ(page_count, 1U);
+
+    element->Release();
 }

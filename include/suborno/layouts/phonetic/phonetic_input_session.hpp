@@ -5,6 +5,7 @@
 #include <string_view>
 #include <vector>
 
+#include "suborno/layout-api/input_session.hpp"
 #include "suborno/layout-api/phonetic_layout.hpp"
 
 namespace suborno::dictionary {
@@ -13,61 +14,40 @@ class Dictionary;
 
 namespace suborno::layouts {
 
-enum class InputStatus {
-    updated,
-    pending,
-    literal_passthrough,
-    invalid_utf8,
-    input_limit,
-    candidate_out_of_range,
-    empty,
-};
+using InputStatus = layout::InputStatus;
+using CompositionSnapshot = layout::CompositionSnapshot;
+using CommitResult = layout::CommitResult;
+using InputSessionOptions = layout::InputSessionOptions;
 
-struct CompositionSnapshot {
-    std::string raw_input_utf8;
-    std::string preedit_utf8;
-    std::vector<layout::Candidate> candidates;
-    std::size_t selected_candidate_index = 0;
-    InputStatus status = InputStatus::empty;
-};
-
-struct CommitResult {
-    std::string text_utf8;
-    InputStatus status = InputStatus::empty;
-};
-
-struct InputSessionOptions {
-    std::size_t candidate_limit = 16;
-    bool learning_enabled = true;
-};
-
-class PhoneticInputSession final {
+class PhoneticInputSession final : public layout::InputSession {
   public:
-    static constexpr std::size_t kMaxInputCodePoints = 256;
+    static constexpr std::size_t kMaxInputCodePoints = layout::InputSession::kMaxInputCodePoints;
 
     PhoneticInputSession();
     explicit PhoneticInputSession(const layout::PhoneticLayout& layout,
-                                  InputSessionOptions options = {});
+                                  layout::InputSessionOptions options = {});
     PhoneticInputSession(const layout::PhoneticLayout& layout,
                          dictionary::Dictionary& dictionary,
-                         InputSessionOptions options = {});
+                         layout::InputSessionOptions options = {});
 
     // Each session owns mutable composition state and is thread-confined.
-    InputStatus append_utf8(std::string_view input);
-    InputStatus backspace();
-    CommitResult commit();
-    CommitResult commit_candidate(std::size_t index);
-    bool select_candidate(std::size_t index);
-    bool select_next_candidate();
-    bool select_previous_candidate() noexcept;
-    std::size_t selected_candidate_index() const noexcept;
-    void reset() noexcept;
-    CompositionSnapshot snapshot() const;
+    layout::InputStatus append_utf8(std::string_view input) override;
+    layout::InputStatus backspace() override;
+    layout::CommitResult commit() override;
+    layout::CommitResult commit_candidate(std::size_t index) override;
+    void set_learning_enabled(bool enabled) noexcept override;
+    bool select_candidate(std::size_t index) override;
+    bool select_next_candidate() override;
+    bool select_previous_candidate() noexcept override;
+    std::size_t selected_candidate_index() const noexcept override;
+    void reset() noexcept override;
+    layout::CompositionSnapshot snapshot() const override;
 
   private:
     const layout::PhoneticLayout* layout_ = nullptr;
     dictionary::Dictionary* dictionary_ = nullptr;
-    InputSessionOptions options_;
+    layout::InputSessionOptions options_;
+    bool pending_learning_enabled_ = false;
     std::string raw_input_;
     mutable std::size_t selected_candidate_index_ = 0;
 };

@@ -5,7 +5,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "suborno/layout-api/phonetic_layout.hpp"
+#include "suborno/layout-api/input_layout.hpp"
 
 namespace suborno::layout {
 
@@ -21,18 +21,18 @@ class LayoutRegistry {
     LayoutRegistry(const LayoutRegistry&) = delete;
     LayoutRegistry& operator=(const LayoutRegistry&) = delete;
 
-    bool register_layout(std::string_view id, std::unique_ptr<PhoneticLayout> layout);
+    bool register_layout(std::string_view id, std::unique_ptr<InputLayout> layout);
     bool register_layout(std::string_view id,
-                         std::unique_ptr<PhoneticLayout> layout,
+                         std::unique_ptr<InputLayout> layout,
                          LayoutMetadata metadata);
     const LayoutMetadata* find_metadata(std::string_view id) const;
     bool set_active(std::string_view id);
-    const PhoneticLayout* find(std::string_view id) const;
-    const PhoneticLayout* active() const;
+    const InputLayout* find(std::string_view id) const;
+    const InputLayout* active() const;
     std::string_view active_id() const noexcept;
 
   private:
-    std::unordered_map<std::string, std::unique_ptr<PhoneticLayout>> layouts_;
+    std::unordered_map<std::string, std::unique_ptr<InputLayout>> layouts_;
     std::unordered_map<std::string, LayoutMetadata> metadata_;
     std::string active_id_;
 };

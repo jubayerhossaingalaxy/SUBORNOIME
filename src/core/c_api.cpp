@@ -5,21 +5,21 @@
 #include <utility>
 
 #include "suborno/core/engine.hpp"
-#include "suborno/layouts/phonetic/phonetic_input_session.hpp"
 #include "suborno/suborno.h"
 
 struct SUBORNO_Engine {
-    suborno::core::Engine engine;
+    std::shared_ptr<suborno::core::Engine> engine = std::make_shared<suborno::core::Engine>();
 };
 
 struct SUBORNO_Session {
-    std::unique_ptr<suborno::layouts::PhoneticInputSession> session;
+    std::shared_ptr<suborno::core::Engine> engine_owner;
+    std::unique_ptr<suborno::layout::InputSession> session;
 };
 
 namespace {
 
-int to_c_status(suborno::layouts::InputStatus status) noexcept {
-    using suborno::layouts::InputStatus;
+int to_c_status(suborno::layout::InputStatus status) noexcept {
+    using suborno::layout::InputStatus;
     switch (status) {
     case InputStatus::updated:
         return SUBORNO_STATUS_UPDATED;
@@ -48,7 +48,7 @@ int protect_c_boundary(Function&& function) noexcept {
     }
 }
 
-int copy_commit_result(suborno::layouts::CommitResult result,
+int copy_commit_result(suborno::layout::CommitResult result,
                        char** committed,
                        std::size_t* committed_size) {
     if (result.text_utf8.size() == std::numeric_limits<std::size_t>::max()) {
@@ -95,11 +95,12 @@ SUBORNO_Session* suborno_session_create(SUBORNO_Engine* engine) {
         return nullptr;
     }
     try {
-        auto session = engine->engine.create_session();
+        const std::shared_ptr<suborno::core::Engine> engine_owner = engine->engine;
+        auto session = engine_owner->create_session();
         if (session == nullptr) {
             return nullptr;
         }
-        return new SUBORNO_Session{std::move(session)};
+        return new SUBORNO_Session{engine_owner, std::move(session)};
     } catch (...) {
         return nullptr;
     }

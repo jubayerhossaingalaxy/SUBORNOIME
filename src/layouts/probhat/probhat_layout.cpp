@@ -1,9 +1,13 @@
 #include "suborno/layouts/probhat/probhat_layout.hpp"
 
 #include <array>
-#include <optional>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "suborno/unicode/bengali.hpp"
@@ -11,155 +15,292 @@
 namespace suborno::layouts {
 namespace {
 
-struct ProbhatToken {
-    std::string_view input;
-    std::string_view independent;
-    std::string_view dependent;
+constexpr std::uint8_t kProbhatCapLok = 0x01;
+constexpr std::uint8_t kProbhatCapLokAltGr = 0x04;
+
+struct ProbhatKeyMapping {
+    std::uint32_t scan_code;
+    std::string_view unshifted;
+    std::string_view shifted;
+    std::uint8_t caps_flags;
+    std::string_view altgr = {};
+    std::string_view shifted_altgr = {};
 };
 
-constexpr std::array kProbhatTokens{
-    // Clusters (longest match first)
-    ProbhatToken{"kSh", "ক্ষ", {}},
-    ProbhatToken{"GY", "জ্ঞ", {}},
-    ProbhatToken{"JN", "জ্ঞ", {}},
-    // Two-letter consonants
-    ProbhatToken{"kh", "খ", {}},
-    ProbhatToken{"gh", "ঘ", {}},
-    ProbhatToken{"ch", "ছ", {}},
-    ProbhatToken{"jh", "ঝ", {}},
-    ProbhatToken{"Th", "ঠ", {}},
-    ProbhatToken{"Dh", "ঢ", {}},
-    ProbhatToken{"Ph", "ফ", {}},
-    ProbhatToken{"ph", "ফ", {}},
-    ProbhatToken{"Bh", "ভ", {}},
-    ProbhatToken{"bh", "ভ", {}},
-    ProbhatToken{"Sh", "ষ", {}},
-    ProbhatToken{"Rh", "ঢ়", {}},
-    // Single consonants
-    ProbhatToken{"k", "ক", {}},
-    ProbhatToken{"g", "গ", {}},
-    ProbhatToken{"c", "চ", {}},
-    ProbhatToken{"j", "জ", {}},
-    ProbhatToken{"T", "ট", {}},
-    ProbhatToken{"D", "ড", {}},
-    ProbhatToken{"N", "ণ", {}},
-    ProbhatToken{"t", "ত", {}},
-    ProbhatToken{"th", "থ", {}},
-    ProbhatToken{"d", "দ", {}},
-    ProbhatToken{"dh", "ধ", {}},
-    ProbhatToken{"n", "ন", "ং"},
-    ProbhatToken{"p", "প", {}},
-    ProbhatToken{"f", "ফ", {}},
-    ProbhatToken{"b", "ব", {}},
-    ProbhatToken{"v", "ভ", {}},
-    ProbhatToken{"m", "ম", {}},
-    ProbhatToken{"y", "য", {}},
-    ProbhatToken{"r", "র", {}},
-    ProbhatToken{"l", "ল", {}},
-    ProbhatToken{"sh", "শ", {}},
-    ProbhatToken{"s", "স", {}},
-    ProbhatToken{"h", "হ", {}},
-    ProbhatToken{"R", "ড়", {}},
-    // Vowels: independent / dependent
-    ProbhatToken{"a", "আ", "া"},
-    ProbhatToken{"A", "অ", ""},
-    ProbhatToken{"i", "ই", "ি"},
-    ProbhatToken{"I", "ঈ", "ী"},
-    ProbhatToken{"u", "উ", "ু"},
-    ProbhatToken{"U", "ঊ", "ূ"},
-    ProbhatToken{"e", "এ", "ে"},
-    ProbhatToken{"ai", "ঐ", "ৈ"},
-    ProbhatToken{"o", "ও", "ো"},
-    ProbhatToken{"au", "ঔ", "ৌ"},
-    // Signs
-    ProbhatToken{"M", "ং", {}},
-    ProbhatToken{"H", "ঃ", {}},
+// Base, Shift, AltGr, and CapsLock layers follow the MIT-licensed Probhat KLC table.
+constexpr ProbhatKeyMapping kProbhatMappings[] = {
+    {0x02, "১", "!", 0x00, "¡", "¹"},
+    {0x03, "২", "@", 0x00, "²", ""},
+    {0x04, "৩", "#", 0x00, "³", ""},
+    {0x05, "৪", "৳", 0x00, "¤", "£"},
+    {0x06, "৫", "%", 0x00, "€", ""},
+    {0x07, "৬", "^", 0x00, "¼", ""},
+    {0x08, "৭", "ঞ", 0x00, "½", ""},
+    {0x09, "৮", "ৎ", 0x00, "¾", ""},
+    {0x0A, "৯", "(", 0x00, "‘", ""},
+    {0x0B, "০", ")", 0x00, "’", ""},
+    {0x0C, "-", "_", 0x00, "¥", ""},
+    {0x0D, "=", "+", 0x00, "×", "÷"},
+    {0x10, "দ", "ধ", 0x05, "ä", "Ä"},
+    {0x11, "ূ", "ঊ", 0x05, "å", "Å"},
+    {0x12, "ী", "ঈ", 0x05, "é", "É"},
+    {0x13, "র", "ড়", 0x01, "®", ""},
+    {0x14, "ট", "ঠ", 0x05, "þ", "Þ"},
+    {0x15, "এ", "ঐ", 0x05, "ü", "Ü"},
+    {0x16, "ু", "উ", 0x05, "ú", "Ú"},
+    {0x17, "ি", "ই", 0x05, "í", "Í"},
+    {0x18, "ও", "ঔ", 0x05, "ó", "Ó"},
+    {0x19, "প", "ফ", 0x05, "ö", "Ö"},
+    {0x1A, "ে", "ৈ", 0x00, "«", ""},
+    {0x1B, "ো", "ৌ", 0x00, "»", ""},
+    {0x1E, "া", "অ", 0x05, "á", "Á"},
+    {0x1F, "স", "ষ", 0x01, "ß", "§"},
+    {0x20, "ড", "ঢ", 0x05, "ð", "Ð"},
+    {0x21, "ত", "থ", 0x01},
+    {0x22, "গ", "ঘ", 0x01},
+    {0x23, "হ", "ঃ", 0x01},
+    {0x24, "জ", "ঝ", 0x01},
+    {0x25, "ক", "খ", 0x01},
+    {0x26, "ল", "ং", 0x05, "ø", "Ø"},
+    {0x27, ";", ":", 0x00, "¶", "°"},
+    {0x28, "'", "\"", 0x00, "´", "¨"},
+    {0x29, "\x60", "~", 0x00},
+    {0x2B, "\\", "|", 0x00, "¬", "¦"},
+    {0x2C, "য়", "য", 0x05, "æ", "Æ"},
+    {0x2D, "শ", "ঢ়", 0x01},
+    {0x2E, "চ", "ছ", 0x01, "©", "¢"},
+    {0x2F, "আ", "ঋ", 0x01},
+    {0x30, "ব", "ভ", 0x01},
+    {0x31, "ন", "ণ", 0x05, "ñ", "Ñ"},
+    {0x32, "ম", "ঙ", 0x01, "µ", ""},
+    {0x33, ",", "ৃ", kProbhatCapLokAltGr, "ç", "Ç"},
+    {0x34, "।", "ঁ", 0x00},
+    {0x35, "্", "?", 0x00, "¿", ""},
+    {0x39, " ", " ", 0x00},
+    {0x53, ".", ".", 0x00},
+    {0x56, "\\", "|", 0x00},
 };
 
-bool is_bengali_consonant(char32_t cp) {
-    return cp >= 0x0995 && cp <= 0x09B9;
-}
-
-bool is_velar_token(std::string_view token) {
-    return token == "k" || token == "kh" || token == "g" || token == "gh" || token == "K"
-           || token == "Kh" || token == "G" || token == "Gh";
-}
-
-std::optional<std::string_view> match_next_token(std::string_view input, std::size_t offset) {
-    if (offset >= input.size()) {
-        return std::nullopt;
-    }
-    for (const auto& token : kProbhatTokens) {
-        if (token.input.size() <= input.size() - offset
-            && input.compare(offset, token.input.size(), token.input) == 0) {
-            return token.input;
+const ProbhatKeyMapping* find_mapping(std::uint32_t scan_code) noexcept {
+    for (const ProbhatKeyMapping& mapping : kProbhatMappings) {
+        if (mapping.scan_code == scan_code) {
+            return &mapping;
         }
     }
-    return std::nullopt;
+    return nullptr;
+}
+
+bool ascii_key_to_event(char value, layout::KeyEvent& event) noexcept {
+    event = {};
+    event.key_down = true;
+
+    constexpr std::array<std::uint8_t, 26> kLetterScanCodes{
+        0x1E, 0x30, 0x2E, 0x20, 0x12, 0x21, 0x22, 0x23, 0x17, 0x24, 0x25, 0x26, 0x32,
+        0x31, 0x18, 0x19, 0x10, 0x13, 0x1F, 0x14, 0x16, 0x2F, 0x11, 0x2D, 0x15, 0x2C};
+
+    if (value >= 'a' && value <= 'z') {
+        event.scan_code = kLetterScanCodes[static_cast<std::size_t>(value - 'a')];
+        return true;
+    }
+    if (value >= 'A' && value <= 'Z') {
+        event.scan_code = kLetterScanCodes[static_cast<std::size_t>(value - 'A')];
+        event.modifiers.shift = true;
+        return true;
+    }
+    if (value >= '1' && value <= '9') {
+        event.scan_code = static_cast<std::uint8_t>(0x02 + (value - '1'));
+        return true;
+    }
+    if (value == '0') {
+        event.scan_code = 0x0B;
+        return true;
+    }
+
+    struct PunctuationKey {
+        char unshifted;
+        char shifted;
+        std::uint8_t scan_code;
+    };
+    constexpr PunctuationKey kPunctuation[]{
+        {'1', '!', 0x02},
+        {'2', '@', 0x03},
+        {'3', '#', 0x04},
+        {'4', static_cast<char>(36), 0x05},
+        {'5', '%', 0x06},
+        {'6', '^', 0x07},
+        {'7', '&', 0x08},
+        {'8', '*', 0x09},
+        {'9', '(', 0x0A},
+        {'0', ')', 0x0B},
+        {'-', '_', 0x0C},
+        {'=', '+', 0x0D},
+        {'[', '{', 0x1A},
+        {']', '}', 0x1B},
+        {';', ':', 0x27},
+        {'\'', '"', 0x28},
+        {static_cast<char>(96), '~', 0x29},
+        {'\\', '|', 0x2B},
+        {',', '<', 0x33},
+        {'.', '>', 0x34},
+        {'/', '?', 0x35},
+        {' ', ' ', 0x39},
+    };
+    for (const PunctuationKey& key : kPunctuation) {
+        if (value == key.unshifted || value == key.shifted) {
+            event.scan_code = key.scan_code;
+            event.modifiers.shift = value == key.shifted;
+            return true;
+        }
+    }
+    return false;
+}
+
+std::string output_for_event(const layout::KeyEvent& event) {
+    if (!event.key_down || event.modifiers.windows
+        || ((event.modifiers.control || event.modifiers.alt) && !event.modifiers.alt_graph)) {
+        return {};
+    }
+
+    const ProbhatKeyMapping* mapping = find_mapping(event.scan_code);
+    if (mapping == nullptr) {
+        return {};
+    }
+
+    if (event.modifiers.alt_graph) {
+        const bool caplok_altgr_enabled = (mapping->caps_flags & kProbhatCapLokAltGr) != 0;
+        const bool shift_active =
+            event.modifiers.shift != (caplok_altgr_enabled && event.modifiers.caps_lock);
+        const std::string_view output = shift_active ? mapping->shifted_altgr : mapping->altgr;
+        return std::string(output);
+    }
+
+    const bool caplok_enabled = (mapping->caps_flags & kProbhatCapLok) != 0;
+    const bool shift_active =
+        event.modifiers.shift != (caplok_enabled && event.modifiers.caps_lock);
+    return std::string(shift_active ? mapping->shifted : mapping->unshifted);
 }
 
 std::string transliterate_probhat(std::string_view input) {
-    std::string result;
-    std::size_t offset = 0;
-    bool after_consonant = false;
-
-    while (offset < input.size()) {
-        const ProbhatToken* best = nullptr;
-        for (const auto& token : kProbhatTokens) {
-            if (token.input.size() <= input.size() - offset
-                && input.compare(offset, token.input.size(), token.input) == 0
-                && (best == nullptr || token.input.size() > best->input.size())) {
-                best = &token;
-            }
-        }
-
-        if (best == nullptr) {
-            result.push_back(static_cast<char>(input[offset]));
-            offset++;
-            after_consonant = false;
-            continue;
-        }
-
-        // Special handling for "n": dependent form (ং) before velar consonants,
-        // independent form (ন) otherwise.
-        if (best->input == "n") {
-            const auto next = match_next_token(input, offset + best->input.size());
-            if (next.has_value() && is_velar_token(*next)) {
-                result.append(best->dependent);
-            } else {
-                result.append(best->independent);
-            }
-            after_consonant = true;
-            offset += best->input.size();
-            continue;
-        }
-
-        if (after_consonant && !best->dependent.empty()) {
-            result.append(best->dependent);
-        } else {
-            result.append(best->independent);
-        }
-
-        // Track consonant state for dependent vowel selection
-        const std::string_view out = best->independent;
-        if (!out.empty()) {
-            const unsigned char lead = static_cast<unsigned char>(out[0]);
-            if (lead >= 0xE0 && lead <= 0xEF && out.size() >= 3) {
-                char32_t cp = static_cast<char32_t>((out[0] & 0x0F) << 12 | (out[1] & 0x3F) << 6
-                                                    | (out[2] & 0x3F));
-                after_consonant = is_bengali_consonant(cp);
-            } else {
-                after_consonant = false;
-            }
-        } else {
-            after_consonant = false;
-        }
-
-        offset += best->input.size();
+    if (!suborno::unicode::is_valid_utf8(input)) {
+        return {};
     }
 
-    return suborno::unicode::normalize_nfc(result);
+    std::string output;
+    output.reserve(input.size() * 3U);
+    for (const char value : input) {
+        layout::KeyEvent event;
+        if (ascii_key_to_event(value, event)) {
+            output.append(output_for_event(event));
+        } else {
+            output.push_back(value);
+        }
+    }
+    return suborno::unicode::normalize_nfc(output);
 }
+
+class ProbhatInputSession final : public layout::InputSession {
+  public:
+    layout::InputStatus append_utf8(std::string_view input) override {
+        if (!suborno::unicode::is_valid_utf8(input)) {
+            return layout::InputStatus::invalid_utf8;
+        }
+        if (input.empty()) {
+            return layout::InputStatus::empty;
+        }
+        std::string updated = composition_;
+        for (const char value : input) {
+            layout::KeyEvent event;
+            if (ascii_key_to_event(value, event)) {
+                updated.append(output_for_event(event));
+            } else {
+                updated.push_back(value);
+            }
+        }
+        return append_output(updated);
+    }
+
+    layout::InputStatus append_key(const layout::KeyEvent& event) override {
+        if (!event.key_down || event.modifiers.windows
+            || ((event.modifiers.control || event.modifiers.alt) && !event.modifiers.alt_graph)) {
+            return layout::InputStatus::empty;
+        }
+        const std::string output = output_for_event(event);
+        if (output.empty()) {
+            return layout::InputStatus::empty;
+        }
+        const std::size_t repeat_count = event.repeat_count == 0 ? 1 : event.repeat_count;
+        if (repeat_count > layout::InputSession::kMaxInputCodePoints) {
+            return layout::InputStatus::input_limit;
+        }
+
+        std::string updated = composition_;
+        for (std::size_t index = 0; index < repeat_count; ++index) {
+            updated.append(output);
+        }
+        return append_output(updated);
+    }
+
+    layout::InputStatus backspace() override {
+        if (composition_.empty()) {
+            return layout::InputStatus::empty;
+        }
+        const auto graphemes = suborno::unicode::split_graphemes(composition_);
+        if (graphemes.empty()) {
+            composition_.clear();
+            return layout::InputStatus::empty;
+        }
+        composition_.resize(composition_.size() - graphemes.back().size());
+        return composition_.empty() ? layout::InputStatus::empty : layout::InputStatus::updated;
+    }
+
+    layout::CommitResult commit() override {
+        if (composition_.empty()) {
+            return {.text_utf8 = {}, .status = layout::InputStatus::empty};
+        }
+        std::string committed = std::move(composition_);
+        composition_.clear();
+        return {.text_utf8 = std::move(committed), .status = layout::InputStatus::updated};
+    }
+
+    layout::CommitResult commit_candidate(std::size_t) override {
+        return {.text_utf8 = {}, .status = layout::InputStatus::candidate_out_of_range};
+    }
+    bool select_candidate(std::size_t) override {
+        return false;
+    }
+    bool select_next_candidate() override {
+        return false;
+    }
+    bool select_previous_candidate() noexcept override {
+        return false;
+    }
+    std::size_t selected_candidate_index() const noexcept override {
+        return 0;
+    }
+    void reset() noexcept override {
+        composition_.clear();
+    }
+    layout::CompositionSnapshot snapshot() const override {
+        layout::CompositionSnapshot result;
+        result.raw_input_utf8 = composition_;
+        result.preedit_utf8 = composition_;
+        result.status =
+            composition_.empty() ? layout::InputStatus::empty : layout::InputStatus::updated;
+        return result;
+    }
+
+  private:
+    layout::InputStatus append_output(const std::string& updated) {
+        if (suborno::unicode::count_utf8_code_points(updated)
+            > layout::InputSession::kMaxInputCodePoints) {
+            return layout::InputStatus::input_limit;
+        }
+        composition_ = updated;
+        return layout::InputStatus::updated;
+    }
+
+    std::string composition_;
+};
 
 }  // namespace
 
@@ -167,15 +308,24 @@ std::string ProbhatLayout::transliterate(const std::string& input) const {
     return transliterate_probhat(input);
 }
 
-std::vector<suborno::layout::Candidate> ProbhatLayout::generate_candidates(
-    const std::string& input) const {
+std::vector<layout::Candidate> ProbhatLayout::generate_candidates(const std::string& input) const {
     const std::string output = transliterate_probhat(input);
-    return {{output,
-             output,
-             "layout:probhat:" + output,
-             suborno::layout::CandidateSource::layout,
-             1.0,
-             "probhat phonetic output"}};
+    if (output.empty()) {
+        return {};
+    }
+    return {{
+        .text = output,
+        .normalized_text = output,
+        .stable_id = "layout:probhat:" + output,
+        .source = layout::CandidateSource::layout,
+        .score = 1.0,
+        .rationale = "Probhat physical-key output",
+    }};
+}
+
+std::unique_ptr<layout::InputSession> ProbhatLayout::create_session(
+    dictionary::Dictionary*, layout::InputSessionOptions) const {
+    return std::make_unique<ProbhatInputSession>();
 }
 
 }  // namespace suborno::layouts

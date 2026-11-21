@@ -11,6 +11,7 @@
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layout-api/declarative_layout.hpp"
 #include "suborno/layout-api/phonetic_layout.hpp"
+#include "suborno/layouts/phonetic/phonetic_input_session.hpp"
 #include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include "suborno/settings/settings.hpp"
 #include "suborno/suborno.h"
@@ -31,6 +32,32 @@ class TestLayout final : public suborno::layout::PhoneticLayout {
                  suborno::layout::CandidateSource::layout,
                  1.0,
                  "test layout"}};
+    }
+};
+
+class TestStatelessLayout final : public suborno::layout::StatelessInputLayout {
+  public:
+    suborno::layout::LayoutKind kind() const noexcept override {
+        return suborno::layout::LayoutKind::fixed;
+    }
+
+    std::string transliterate(const std::string& input) const override {
+        std::string output;
+        for (const char character : input) {
+            output += character == 'a' ? "ক" : std::string(1, character);
+        }
+        return output;
+    }
+
+    std::vector<suborno::layout::Candidate> generate_candidates(
+        const std::string& input) const override {
+        const std::string output = transliterate(input);
+        return {{output,
+                 output,
+                 "layout:stateless:" + output,
+                 suborno::layout::CandidateSource::layout,
+                 1.0,
+                 "stateless test layout"}};
     }
 };
 
@@ -117,6 +144,49 @@ TEST(EngineTest, RegistersAndSwitchesLayouts) {
     EXPECT_EQ(session->snapshot().preedit_utf8, "test:x");
 }
 
+TEST(EngineTest, CreatesSessionsThroughStatelessInputLayoutFactory) {
+    suborno::core::Engine engine;
+    ASSERT_TRUE(engine.register_layout("fixed-test", std::make_unique<TestStatelessLayout>()));
+    ASSERT_TRUE(engine.set_active_layout("fixed-test"));
+
+    auto session = engine.create_session();
+    ASSERT_NE(session, nullptr);
+    EXPECT_EQ(session->append_utf8("a"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
+}
+
+TEST(EngineTest, RegistersAndCreatesBornoPhoneticSessions) {
+    suborno::core::Engine engine;
+    ASSERT_TRUE(engine.set_active_layout("borno-phonetic"));
+
+    auto session = engine.create_session();
+    ASSERT_NE(session, nullptr);
+    EXPECT_EQ(session->append_utf8("ami"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "আমি");
+}
+
+TEST(EngineTest, RegistersAndCreatesKhiproCompositionalSessions) {
+    suborno::core::Engine engine;
+    ASSERT_TRUE(engine.set_active_layout("khipro"));
+    EXPECT_EQ(engine.active_layout_kind(), suborno::layout::LayoutKind::compositional);
+
+    auto session = engine.create_session();
+    ASSERT_NE(session, nullptr);
+    EXPECT_EQ(session->append_utf8("kt"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ক্ত");
+    EXPECT_EQ(session->commit().text_utf8, "ক্ত");
+}
+
+TEST(EngineTest, RegistersAndCreatesAvroPhoneticSessions) {
+    suborno::core::Engine engine;
+    ASSERT_TRUE(engine.set_active_layout("avro-phonetic"));
+
+    auto session = engine.create_session();
+    ASSERT_NE(session, nullptr);
+    EXPECT_EQ(session->append_utf8("ami"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "আমি");
+}
+
 TEST(EngineTest, CandidateEngineAddsDictionaryExactMatches) {
     const std::string db_path = temporary_database_path("suborno_candidate_engine_test.sqlite");
     std::remove(db_path.c_str());
@@ -148,7 +218,7 @@ TEST(EngineTest, DictionarySchemaCommitAndReset) {
     std::remove(db_path.c_str());
     suborno::dictionary::Dictionary dictionary(db_path);
 
-    EXPECT_EQ(dictionary.schema_version(), 1);
+    EXPECT_EQ(dictionary.schema_version(), 3);
     dictionary.add_entry("বাংলা", "bangla", 5);
     dictionary.record_commit("বাংলা", "bangla");
 
@@ -177,10 +247,8 @@ TEST(EngineTest, DictionaryRejectsInvalidSchemaVersion) {
         SQLITE_OK);
     sqlite3_close(db);
 
-    {
-        suborno::dictionary::Dictionary dictionary(db_path);
-        EXPECT_THROW(dictionary.schema_version(), suborno::dictionary::DictionaryError);
-    }
+    EXPECT_THROW(suborno::dictionary::Dictionary dictionary(db_path),
+                 suborno::dictionary::DictionaryError);
     std::remove(db_path.c_str());
 }
 
@@ -206,10 +274,51 @@ TEST(EngineTest, DictionaryMigratesLegacySchema) {
     sqlite3_close(db);
 
     suborno::dictionary::Dictionary dictionary(db_path);
-    EXPECT_EQ(dictionary.schema_version(), 1);
+    EXPECT_EQ(dictionary.schema_version(), 3);
     EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");
     dictionary.record_commit("বাংলা", "bangla");
     EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");
+    std::remove(db_path.c_str());
+}
+
+TEST(EngineTest, DictionaryMigratesVersionTwoLearnedWordsToAliasSchema) {
+    const std::string db_path =
+        temporary_database_path("suborno_dictionary_v2_to_v3_alias_test.sqlite");
+    std::remove(db_path.c_str());
+
+    sqlite3* db = nullptr;
+    ASSERT_EQ(sqlite3_open(db_path.c_str(), &db), SQLITE_OK);
+    ASSERT_EQ(
+        sqlite3_exec(db,
+                     "CREATE TABLE dictionary_metadata("
+                     "key TEXT PRIMARY KEY, value TEXT NOT NULL);"
+                     "INSERT INTO dictionary_metadata(key, value) VALUES('schema_version', '2');"
+                     "CREATE TABLE dictionary_entries("
+                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                     "word TEXT NOT NULL UNIQUE,"
+                     "normalized TEXT NOT NULL,"
+                     "frequency INTEGER NOT NULL DEFAULT 1,"
+                     "source TEXT NOT NULL DEFAULT 'system',"
+                     "user_frequency INTEGER NOT NULL DEFAULT 0,"
+                     "user_pinned INTEGER NOT NULL DEFAULT 0,"
+                     "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);"
+                     "INSERT INTO dictionary_entries("
+                     "word, normalized, frequency, source, user_frequency)"
+                     " VALUES('বাংলা', 'bang', 10, 'system', 3);",
+                     nullptr,
+                     nullptr,
+                     nullptr),
+        SQLITE_OK);
+    sqlite3_close(db);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path);
+        EXPECT_EQ(dictionary.schema_version(), 3);
+        EXPECT_EQ(dictionary.find_matches("bang"), std::vector<std::string>{"বাংলা"});
+        EXPECT_EQ(dictionary.find_prefix_matches("ban"), std::vector<std::string>{"বাংলা"});
+        EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 3);
+    }
+
     std::remove(db_path.c_str());
 }
 
@@ -268,6 +377,63 @@ TEST(EngineTest, EngineConfigPersistsSettingsAndOwnsDictionary) {
 
     std::filesystem::remove(settings_path);
     std::filesystem::remove(dictionary_path);
+}
+
+TEST(EngineTest, PreservesLastKnownGoodSettingsWhenReloadFileIsInvalid) {
+    const std::filesystem::path settings_path =
+        std::filesystem::temp_directory_path() / "suborno_engine_invalid_reload_test.conf";
+    std::filesystem::remove(settings_path);
+
+    suborno::core::EngineConfig config;
+    config.settings_path = settings_path;
+    {
+        suborno::core::Engine engine(config);
+        suborno::settings::EngineSettings external = engine.settings();
+        external.active_layout_id = "khipro";
+        external.candidate_limit = 7;
+        ASSERT_EQ(engine.save_settings(external), suborno::settings::SettingsStatus::ok);
+
+        std::ofstream invalid_settings(settings_path, std::ios::trunc);
+        ASSERT_TRUE(invalid_settings.is_open());
+        invalid_settings << "not-a-settings-line\n";
+        invalid_settings.close();
+        ASSERT_TRUE(invalid_settings.good());
+
+        const auto reloaded = engine.reload_settings();
+        EXPECT_EQ(reloaded.status, suborno::settings::SettingsStatus::invalid_format);
+        EXPECT_EQ(engine.active_layout_id(), "khipro");
+        EXPECT_EQ(engine.settings().candidate_limit, 7U);
+    }
+
+    std::filesystem::remove(settings_path);
+}
+
+TEST(EngineTest, ReloadsSettingsChangedByTheDesktopSettingsApplication) {
+    const std::filesystem::path settings_path =
+        std::filesystem::temp_directory_path() / "suborno_engine_reload_settings_test.conf";
+    std::filesystem::remove(settings_path);
+
+    suborno::core::EngineConfig config;
+    config.settings_path = settings_path;
+    {
+        suborno::core::Engine engine(config);
+        ASSERT_EQ(engine.active_layout_id(), "suborno-phonetic");
+
+        suborno::settings::EngineSettings external = engine.settings();
+        external.active_layout_id = "khipro";
+        external.candidate_limit = 7;
+        external.input.ignore_caps_lock_state_in_bangla = true;
+        ASSERT_EQ(suborno::settings::SettingsStore(settings_path).save(external),
+                  suborno::settings::SettingsStatus::ok);
+
+        const auto reloaded = engine.reload_settings();
+        ASSERT_EQ(reloaded.status, suborno::settings::SettingsStatus::ok);
+        EXPECT_EQ(engine.active_layout_id(), "khipro");
+        EXPECT_EQ(engine.settings().candidate_limit, 7U);
+        EXPECT_TRUE(engine.settings().input.ignore_caps_lock_state_in_bangla);
+    }
+
+    std::filesystem::remove(settings_path);
 }
 
 TEST(EngineTest, RestoresKnownLayoutAndFallsBackForUnknownLayout) {
@@ -373,9 +539,44 @@ TEST(EngineTest, SessionCandidatesIncludePhoneticDictionaryMatches) {
         const auto snapshot = session->snapshot();
         ASSERT_FALSE(snapshot.candidates.empty());
         EXPECT_EQ(snapshot.candidates.front().text, "আমি");
-        EXPECT_EQ(snapshot.candidates.front().rationale, "phonetic dictionary match");
+        EXPECT_EQ(snapshot.candidates.front().rationale, "input dictionary match");
     }
 
+    std::filesystem::remove(dictionary_path);
+}
+
+TEST(EngineTest, PhoneticSessionStoresCanonicalWordAndTypedAliasSeparately) {
+    const std::filesystem::path settings_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_alias_learning.conf";
+    const std::filesystem::path dictionary_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_alias_learning.sqlite";
+    std::filesystem::remove(settings_path);
+    std::filesystem::remove(dictionary_path);
+
+    suborno::core::EngineConfig config;
+    config.settings_path = settings_path;
+    config.dictionary_path = dictionary_path;
+    {
+        suborno::core::Engine engine(config);
+        ASSERT_NE(engine.dictionary(), nullptr);
+
+        auto settings = engine.settings();
+        settings.learning_enabled = true;
+        ASSERT_EQ(engine.save_settings(settings), suborno::settings::SettingsStatus::ok);
+
+        ASSERT_TRUE(engine.set_active_layout("suborno-phonetic"));
+        auto session = engine.create_session();
+        ASSERT_NE(session, nullptr);
+        ASSERT_EQ(session->append_utf8("ami"), suborno::layout::InputStatus::updated);
+
+        const auto committed = session->commit();
+        EXPECT_EQ(committed.text_utf8, "আমি");
+        EXPECT_EQ(engine.dictionary()->find_matches("আমি"), std::vector<std::string>{"আমি"});
+        EXPECT_EQ(engine.dictionary()->find_matches("ami"), std::vector<std::string>{"আমি"});
+        EXPECT_EQ(engine.dictionary()->find_prefix_matches("am"), std::vector<std::string>{"আমি"});
+    }
+
+    std::filesystem::remove(settings_path);
     std::filesystem::remove(dictionary_path);
 }
 

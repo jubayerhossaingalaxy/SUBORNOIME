@@ -78,7 +78,13 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
 Source: "{#MyBuildDir}\Release\Suborno.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildDir}\Release\suborno_windows_tsf.dll"; DestDir: "{commonappdata}\Suborno\components\tsf\{#MyArchitecture}"; Flags: ignoreversion
+Source: "..\..\assets\dictionaries\bn-wordlist-unlicense-v1-part-01.txt"; DestDir: "{commonappdata}\Suborno\dictionaries"; Flags: ignoreversion uninsneveruninstall
+Source: "..\..\assets\dictionaries\bn-wordlist-unlicense-v1-part-02.txt"; DestDir: "{commonappdata}\Suborno\dictionaries"; Flags: ignoreversion uninsneveruninstall
+Source: "..\..\assets\dictionaries\bn-wordlist-unlicense-v1-part-03.txt"; DestDir: "{commonappdata}\Suborno\dictionaries"; Flags: ignoreversion uninsneveruninstall
+Source: "..\..\assets\dictionaries\bn-wordlist-unlicense-v1-part-04.txt"; DestDir: "{commonappdata}\Suborno\dictionaries"; Flags: ignoreversion uninsneveruninstall
+Source: "..\..\assets\dictionaries\UNLICENSE-Sanjidh090.txt"; DestDir: "{commonappdata}\Suborno\dictionaries"; Flags: ignoreversion uninsneveruninstall
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional icons:"; Flags: checkedonce
@@ -373,9 +379,20 @@ begin
 end;
 
 
+procedure DeleteSharedFile(const Path: String);
+begin
+  if FileExists(Path) and not DeleteFile(Path) then begin
+    RaiseException(
+      'Unable to remove a bundled Suborno dictionary file: ' + Path
+    );
+  end;
+end;
+
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   SharedDirectory: String;
+  DictionaryDirectory: String;
 begin
 
   if CurUninstallStep = usPostUninstall then begin
@@ -399,9 +416,16 @@ begin
 
       SharedDirectory :=
         ExpandConstant('{commonappdata}\Suborno');
+      DictionaryDirectory := SharedDirectory + '\dictionaries';
+
+      DeleteSharedFile(DictionaryDirectory + '\bn-wordlist-unlicense-v1-part-01.txt');
+      DeleteSharedFile(DictionaryDirectory + '\bn-wordlist-unlicense-v1-part-02.txt');
+      DeleteSharedFile(DictionaryDirectory + '\bn-wordlist-unlicense-v1-part-03.txt');
+      DeleteSharedFile(DictionaryDirectory + '\bn-wordlist-unlicense-v1-part-04.txt');
+      DeleteSharedFile(DictionaryDirectory + '\UNLICENSE-Sanjidh090.txt');
 
       RemoveDirectoryIfEmpty(SharedDirectory + '\layouts');
-      RemoveDirectoryIfEmpty(SharedDirectory + '\dictionaries');
+      RemoveDirectoryIfEmpty(DictionaryDirectory);
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\fonts');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets\themes');
       RemoveDirectoryIfEmpty(SharedDirectory + '\assets');

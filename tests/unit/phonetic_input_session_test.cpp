@@ -1,10 +1,100 @@
 #include "suborno/layouts/phonetic/phonetic_input_session.hpp"
 
+#include <filesystem>
 #include <gtest/gtest.h>
 #include <string>
 
+#include "suborno/dictionary/dictionary.hpp"
+#include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
+
 using suborno::layouts::InputStatus;
 using suborno::layouts::PhoneticInputSession;
+
+TEST(PhoneticInputSessionTest, LearningIsDisabledByDefaultForPublicSessionConstruction) {
+    const std::filesystem::path db_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_default_learning.sqlite";
+    std::filesystem::remove(db_path);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path.string());
+        suborno::layouts::SubornoPhoneticLayout layout;
+        PhoneticInputSession session(layout, dictionary);
+        ASSERT_EQ(session.append_utf8("ami"), InputStatus::updated);
+
+        EXPECT_EQ(session.commit().text_utf8, "আমি");
+        EXPECT_EQ(dictionary.get_user_frequency("আমি"), 0);
+        EXPECT_TRUE(dictionary.list_user_words().empty());
+    }
+
+    std::filesystem::remove(db_path);
+}
+
+TEST(PhoneticInputSessionTest, DoesNotLearnAnEmptyControlOnlyCandidate) {
+    const std::filesystem::path db_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_empty_candidate.sqlite";
+    std::filesystem::remove(db_path);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path.string());
+        suborno::layouts::SubornoPhoneticLayout layout;
+        PhoneticInputSession session(layout, dictionary, {.learning_enabled = true});
+
+        ASSERT_EQ(session.append_utf8(":boundary:"), InputStatus::updated);
+        const auto snapshot = session.snapshot();
+        ASSERT_EQ(snapshot.candidates.size(), 1U);
+        EXPECT_TRUE(snapshot.preedit_utf8.empty());
+        EXPECT_TRUE(snapshot.candidates.front().text.empty());
+
+        EXPECT_TRUE(session.commit().text_utf8.empty());
+        EXPECT_TRUE(dictionary.list_user_words().empty());
+        EXPECT_EQ(dictionary.get_user_frequency(""), 0);
+    }
+
+    std::filesystem::remove(db_path);
+}
+
+TEST(PhoneticInputSessionTest, EnablingLearningDuringCompositionAppliesToTheNextComposition) {
+    const std::filesystem::path db_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_delayed_learning.sqlite";
+    std::filesystem::remove(db_path);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path.string());
+        suborno::layouts::SubornoPhoneticLayout layout;
+        PhoneticInputSession session(layout, dictionary);
+
+        ASSERT_EQ(session.append_utf8("ami"), InputStatus::updated);
+        session.set_learning_enabled(true);
+        EXPECT_EQ(session.commit().text_utf8, "আমি");
+        EXPECT_EQ(dictionary.get_user_frequency("আমি"), 0);
+
+        ASSERT_EQ(session.append_utf8("ami"), InputStatus::updated);
+        EXPECT_EQ(session.commit().text_utf8, "আমি");
+        EXPECT_EQ(dictionary.get_user_frequency("আমি"), 1);
+    }
+
+    std::filesystem::remove(db_path);
+}
+
+TEST(PhoneticInputSessionTest, DisablingLearningDuringCompositionPreventsDictionaryWrites) {
+    const std::filesystem::path db_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_learning_opt_out.sqlite";
+    std::filesystem::remove(db_path);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path.string());
+        suborno::layouts::SubornoPhoneticLayout layout;
+        PhoneticInputSession session(layout, dictionary, {.learning_enabled = true});
+        ASSERT_EQ(session.append_utf8("ami"), InputStatus::updated);
+
+        session.set_learning_enabled(false);
+        EXPECT_EQ(session.commit().text_utf8, "আমি");
+        EXPECT_EQ(dictionary.get_user_frequency("আমি"), 0);
+        EXPECT_TRUE(dictionary.list_user_words().empty());
+    }
+
+    std::filesystem::remove(db_path);
+}
 
 TEST(PhoneticInputSessionTest, AppendsValidInputAndCommitsPrimaryOutput) {
     PhoneticInputSession session;

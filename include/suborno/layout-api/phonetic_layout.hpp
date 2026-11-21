@@ -1,30 +1,27 @@
 #pragma once
 
-#include <string>
-#include <vector>
+#include <memory>
+
+#include "suborno/layout-api/input_layout.hpp"
 
 namespace suborno::layout {
 
-enum class CandidateSource {
-    layout,
-    system_dictionary,
-    user_dictionary,
-};
-
-struct Candidate {
-    std::string text;
-    std::string normalized_text;
-    std::string stable_id;
-    CandidateSource source = CandidateSource::layout;
-    double score = 0.0;
-    std::string rationale;
-};
-
-class PhoneticLayout {
+class PhoneticLayout : public InputLayout {
   public:
-    virtual ~PhoneticLayout() = default;
-    virtual std::string transliterate(const std::string& input) const = 0;
-    virtual std::vector<Candidate> generate_candidates(const std::string& input) const = 0;
+    LayoutKind kind() const noexcept final {
+        return LayoutKind::phonetic;
+    }
+
+    std::unique_ptr<InputSession> create_session(dictionary::Dictionary* dictionary,
+                                                 InputSessionOptions options) const override;
+};
+
+// Use this base when a phonetic layout has its own parser and must not reuse
+// the Suborno-specific parser state machine.
+class StatelessPhoneticLayout : public PhoneticLayout {
+  public:
+    std::unique_ptr<InputSession> create_session(dictionary::Dictionary* dictionary,
+                                                 InputSessionOptions options) const override;
 };
 
 }  // namespace suborno::layout

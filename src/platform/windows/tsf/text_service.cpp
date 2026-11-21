@@ -530,6 +530,24 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
             return hr;
         }
+        if (composing && (wParam == VK_PRIOR || wParam == VK_NEXT)) {
+            const auto current = state.session->snapshot();
+            if (!current.candidates.empty()) {
+                constexpr std::size_t kCandidatePageSize = 8;
+                const std::size_t selected = current.selected_candidate_index;
+                const std::size_t last = current.candidates.size() - 1;
+                const std::size_t next =
+                    wParam == VK_NEXT
+                        ? std::min(last, selected + kCandidatePageSize)
+                        : (selected > kCandidatePageSize ? selected - kCandidatePageSize : 0);
+                if (next != selected && state.session->select_candidate(next)) {
+                    const auto updated = state.session->snapshot();
+                    _UpdateCandidateUI(pContext, state, updated);
+                    *pbEaten = TRUE;
+                }
+            }
+            return S_OK;
+        }
         if (composing && (wParam == VK_UP || wParam == VK_DOWN)) {
             const bool changed = wParam == VK_DOWN ? state.session->select_next_candidate()
                                                    : state.session->select_previous_candidate();
@@ -779,6 +797,12 @@ HRESULT SubornoTextService::_UpdateCandidateUI(
         state.candidate_ui_owned = show != FALSE;
         if (state.candidate_ui_owned) {
             result = state.candidate_ui_element->Show(TRUE);
+            if (FAILED(result)) {
+                _EndCandidateUI(state);
+                return result;
+            }
+        } else {
+            result = m_uiElementMgr->UpdateUIElement(state.candidate_ui_element_id);
             if (FAILED(result)) {
                 _EndCandidateUI(state);
                 return result;

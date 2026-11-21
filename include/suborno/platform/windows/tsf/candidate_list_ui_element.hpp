@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <Windows.h>
 #include <msctf.h>
 #include <wil/com.h>
@@ -65,11 +69,17 @@ class CandidateListUIElement final : public ITfCandidateListUIElement,
     void update_native_window() noexcept;
     void destroy_native_window() noexcept;
     static std::wstring to_wide(std::string_view utf8);
+    void reset_page_index();
+    void update_current_page_for_selection() noexcept;
+    std::size_t current_page_start() const noexcept;
+    std::size_t current_page_end() const noexcept;
 
     LONG reference_count_ = 1;
     wil::com_ptr<ITfContext> context_;
     std::vector<std::wstring> candidates_;
+    std::vector<UINT> page_starts_;
     UINT selected_index_ = 0;
+    UINT current_page_ = 0;
     DWORD updated_flags_ = TF_CLUIE_COUNT | TF_CLUIE_SELECTION | TF_CLUIE_STRING
                            | TF_CLUIE_PAGEINDEX | TF_CLUIE_CURRENTPAGE;
     bool shown_ = false;

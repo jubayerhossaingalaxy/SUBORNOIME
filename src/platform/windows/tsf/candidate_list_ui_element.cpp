@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <iterator>
 #include <mutex>
 #include <new>
 #include <string>
@@ -15,7 +16,7 @@ namespace {
 constexpr wchar_t kCandidateWindowClass[] = L"SubornoCandidateListUIElement";
 constexpr int kCandidateRowHeight = 26;
 constexpr int kCandidateWindowWidth = 340;
-constexpr std::size_t kMaximumVisibleCandidates = 8;
+constexpr std::size_t kDefaultCandidatesPerPage = 8;
 
 ATOM register_candidate_window_class() {
     static std::once_flag registration;
@@ -56,6 +57,8 @@ CandidateListUIElement::CandidateListUIElement(ITfContext* context,
     } else if (selected_index_ >= candidates_.size()) {
         selected_index_ = static_cast<UINT>(candidates_.size() - 1);
     }
+    reset_page_index();
+    update_current_page_for_selection();
 }
 
 CandidateListUIElement::~CandidateListUIElement() {
@@ -201,22 +204,37 @@ STDMETHODIMP CandidateListUIElement::GetPageIndex(UINT* index, UINT size, UINT* 
     if (page_count == nullptr) {
         return E_INVALIDARG;
     }
-    *page_count = 1;
+    *page_count = static_cast<UINT>(page_starts_.size());
     if (index == nullptr) {
         return S_OK;
     }
-    if (size == 0) {
+    if (size < page_starts_.size()) {
         return E_INVALIDARG;
     }
-    index[0] = 0;
+    std::copy(page_starts_.begin(), page_starts_.end(), index);
     return S_OK;
 }
 
 STDMETHODIMP CandidateListUIElement::SetPageIndex(UINT* index, UINT page_count) {
-    if (index == nullptr || page_count != 1 || index[0] != 0) {
+    if (index == nullptr || page_count == 0 || candidates_.empty() || index[0] != 0) {
         return E_INVALIDARG;
     }
+
+    std::vector<UINT> updated;
+    updated.reserve(page_count);
+    UINT previous = 0;
+    for (UINT page = 0; page < page_count; ++page) {
+        if (index[page] >= candidates_.size() || (page != 0 && index[page] <= previous)) {
+            return E_INVALIDARG;
+        }
+        updated.push_back(index[page]);
+        previous = index[page];
+    }
+
+    page_starts_ = std::move(updated);
+    update_current_page_for_selection();
     updated_flags_ |= TF_CLUIE_PAGEINDEX | TF_CLUIE_CURRENTPAGE;
+    update_native_window();
     return S_OK;
 }
 
@@ -224,7 +242,7 @@ STDMETHODIMP CandidateListUIElement::GetCurrentPage(UINT* page) {
     if (page == nullptr) {
         return E_INVALIDARG;
     }
-    *page = 0;
+    *page = current_page_;
     return S_OK;
 }
 
@@ -235,6 +253,11 @@ STDMETHODIMP CandidateListUIElement::SetSelection(UINT index) {
     if (selected_index_ != index) {
         selected_index_ = index;
         updated_flags_ |= TF_CLUIE_SELECTION;
+        const UINT previous_page = current_page_;
+        update_current_page_for_selection();
+        if (previous_page != current_page_) {
+            updated_flags_ |= TF_CLUIE_CURRENTPAGE;
+        }
         update_native_window();
     }
     return S_OK;
@@ -273,10 +296,16 @@ void CandidateListUIElement::Update(const std::vector<layout::Candidate>& candid
         candidates_.empty()
             ? 0U
             : static_cast<UINT>(std::min(selected_index, candidates_.size() - 1));
-    updated_flags_ |= TF_CLUIE_COUNT | TF_CLUIE_STRING;
+    updated_flags_ |= TF_CLUIE_COUNT | TF_CLUIE_STRING | TF_CLUIE_PAGEINDEX;
+    const UINT previous_page = current_page_;
+    reset_page_index();
     if (selected_index_ != new_selection) {
         selected_index_ = new_selection;
         updated_flags_ |= TF_CLUIE_SELECTION;
+    }
+    update_current_page_for_selection();
+    if (previous_page != current_page_) {
+        updated_flags_ |= TF_CLUIE_CURRENTPAGE;
     }
     update_native_window();
 }
@@ -308,7 +337,7 @@ HRESULT CandidateListUIElement::show_native_window() {
         ::GetCursorPos(&anchor);
     }
 
-    const std::size_t visible_count = std::min(candidates_.size(), kMaximumVisibleCandidates);
+    const std::size_t visible_count = current_page_end() - current_page_start();
     const int height =
         static_cast<int>(std::max<std::size_t>(visible_count, 1)) * kCandidateRowHeight + 8;
     const HMONITOR monitor = ::MonitorFromPoint(anchor, MONITOR_DEFAULTTONEAREST);
@@ -360,6 +389,42 @@ void CandidateListUIElement::destroy_native_window() noexcept {
     }
 }
 
+void CandidateListUIElement::reset_page_index() {
+    page_starts_.clear();
+    for (std::size_t start = 0; start < candidates_.size();
+         start += kDefaultCandidatesPerPage) {
+        page_starts_.push_back(static_cast<UINT>(start));
+    }
+    if (page_starts_.empty()) {
+        current_page_ = 0;
+    } else if (current_page_ >= page_starts_.size()) {
+        current_page_ = static_cast<UINT>(page_starts_.size() - 1);
+    }
+}
+
+void CandidateListUIElement::update_current_page_for_selection() noexcept {
+    if (page_starts_.empty()) {
+        current_page_ = 0;
+        return;
+    }
+    const auto found = std::upper_bound(page_starts_.begin(), page_starts_.end(), selected_index_);
+    current_page_ = static_cast<UINT>(
+        std::distance(page_starts_.begin(), found == page_starts_.begin() ? found : found - 1));
+}
+
+std::size_t CandidateListUIElement::current_page_start() const noexcept {
+    return page_starts_.empty() ? 0 : page_starts_[current_page_];
+}
+
+std::size_t CandidateListUIElement::current_page_end() const noexcept {
+    if (page_starts_.empty()) {
+        return 0;
+    }
+    return current_page_ + 1 < page_starts_.size()
+               ? page_starts_[current_page_ + 1]
+               : candidates_.size();
+}
+
 LRESULT CALLBACK CandidateListUIElement::window_proc(HWND window,
                                                        UINT message,
                                                        WPARAM w_param,
@@ -387,8 +452,11 @@ LRESULT CALLBACK CandidateListUIElement::window_proc(HWND window,
         return TRUE;
     case WM_LBUTTONUP: {
         const int row = (static_cast<short>(HIWORD(l_param)) - 4) / kCandidateRowHeight;
-        if (row >= 0 && static_cast<std::size_t>(row) < element->candidates_.size()) {
-            element->SetSelection(static_cast<UINT>(row));
+        const std::size_t index =
+            row < 0 ? element->candidates_.size()
+                    : element->current_page_start() + static_cast<std::size_t>(row);
+        if (index < element->current_page_end()) {
+            element->SetSelection(static_cast<UINT>(index));
             element->Finalize();
         }
         return 0;
@@ -401,14 +469,15 @@ LRESULT CALLBACK CandidateListUIElement::window_proc(HWND window,
         ::FillRect(device_context, &client, ::GetSysColorBrush(COLOR_INFOBK));
         ::SetBkMode(device_context, TRANSPARENT);
 
-        const std::size_t visible_count =
-            std::min(element->candidates_.size(), kMaximumVisibleCandidates);
-        for (std::size_t index = 0; index < visible_count; ++index) {
+        const std::size_t page_start = element->current_page_start();
+        const std::size_t page_end = element->current_page_end();
+        for (std::size_t index = page_start; index < page_end; ++index) {
+            const std::size_t row_index = index - page_start;
             RECT row{
                 4,
-                static_cast<LONG>(4 + index * kCandidateRowHeight),
+                static_cast<LONG>(4 + row_index * kCandidateRowHeight),
                 client.right - 4,
-                static_cast<LONG>(4 + (index + 1) * kCandidateRowHeight),
+                static_cast<LONG>(4 + (row_index + 1) * kCandidateRowHeight),
             };
             if (index == element->selected_index_) {
                 ::FillRect(device_context, &row, ::GetSysColorBrush(COLOR_HIGHLIGHT));

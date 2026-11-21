@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 
 namespace suborno::layout {
 
@@ -77,9 +78,34 @@ struct KeyModifiers {
     bool windows = false;
 };
 
+struct KeyMessageData {
+    std::uint16_t repeat_count = 1;
+    std::uint8_t scan_code = 0;
+    bool extended_key = false;
+    bool previous_key_state = false;
+    bool key_down = true;
+};
+
+[[nodiscard]] constexpr KeyMessageData decode_key_message_lparam(
+    std::uint32_t lparam) noexcept {
+    return {
+        .repeat_count = static_cast<std::uint16_t>(lparam & 0xFFFFU),
+        .scan_code = static_cast<std::uint8_t>((lparam >> 16U) & 0xFFU),
+        .extended_key = ((lparam >> 24U) & 0x01U) != 0,
+        .previous_key_state = ((lparam >> 30U) & 0x01U) != 0,
+        .key_down = ((lparam >> 31U) & 0x01U) == 0,
+    };
+}
+
 struct KeyEvent {
     PhysicalKey key = PhysicalKey::unknown;
     KeyModifiers modifiers;
+    std::uint16_t scan_code = 0;
+    bool extended_key = false;
+    std::uint16_t repeat_count = 1;
+    bool previous_key_state = false;
+    bool key_down = true;
+    std::string logical_text_utf8;
 };
 
 [[nodiscard]] constexpr std::optional<char> key_event_to_ascii(const KeyEvent& event) noexcept {

@@ -4,6 +4,7 @@
 
 #include "suborno/platform/windows/tsf/text_service.hpp"
 
+#include <array>
 #include <limits>
 #include <memory>
 #include <new>
@@ -112,12 +113,77 @@ std::optional<suborno::layout::PhysicalKey> physical_key_from_virtual_key(
     }
 }
 
-std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(WPARAM virtual_key) noexcept {
+std::string logical_text_from_keyboard_layout(UINT virtual_key,
+                                                   UINT scan_code) {
+    std::array<BYTE, 256> keyboard_state{};
+    if (::GetKeyboardState(keyboard_state.data()) == FALSE) {
+        return {};
+    }
+
+    std::array<wchar_t, 8> translated{};
+    const HKL keyboard_layout = ::GetKeyboardLayout(0);
+    const int translated_count = ::ToUnicodeEx(virtual_key,
+                                                scan_code,
+                                                keyboard_state.data(),
+                                                translated.data(),
+                                                static_cast<int>(translated.size()),
+                                                0x4,
+                                                keyboard_layout);
+    if (translated_count <= 0) {
+        return {};
+    }
+
+    const int required = ::WideCharToMultiByte(CP_UTF8,
+                                               WC_ERR_INVALID_CHARS,
+                                               translated.data(),
+                                               translated_count,
+                                               nullptr,
+                                               0,
+                                               nullptr,
+                                               nullptr);
+    if (required <= 0) {
+        return {};
+    }
+
+    std::string result(static_cast<std::size_t>(required), '\0');
+    if (::WideCharToMultiByte(CP_UTF8,
+                              WC_ERR_INVALID_CHARS,
+                              translated.data(),
+                              translated_count,
+                              result.data(),
+                              required,
+                              nullptr,
+                              nullptr)
+        != required) {
+        return {};
+    }
+    return result;
+}
+
+std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(WPARAM virtual_key,
+                                                                    LPARAM lparam) {
     const auto physical_key = physical_key_from_virtual_key(virtual_key);
     if (!physical_key.has_value()) {
         return std::nullopt;
     }
-    return suborno::layout::KeyEvent{*physical_key, current_key_modifiers()};
+
+    const auto message_data = suborno::layout::decode_key_message_lparam(
+        static_cast<std::uint32_t>(static_cast<ULONG_PTR>(lparam)));
+    suborno::layout::KeyEvent event{
+        .key = *physical_key,
+        .modifiers = current_key_modifiers(),
+        .scan_code = message_data.scan_code,
+        .extended_key = message_data.extended_key,
+        .repeat_count = message_data.repeat_count == 0 ? 1 : message_data.repeat_count,
+        .previous_key_state = message_data.previous_key_state,
+        .key_down = message_data.key_down,
+    };
+    if (event.key_down && !event.modifiers.control && !event.modifiers.alt
+        && !event.modifiers.windows) {
+        event.logical_text_utf8 = logical_text_from_keyboard_layout(
+            static_cast<UINT>(virtual_key), message_data.scan_code);
+    }
+    return event;
 }
 
 bool has_text_modifier_chord() noexcept {
@@ -307,7 +373,7 @@ STDMETHODIMP SubornoTextService::OnUninitDocumentMgr(ITfDocumentMgr*) {
 
 STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                                                WPARAM wParam,
-                                               LPARAM,
+                                               LPARAM lParam,
                                                BOOL* pbEaten) {
     if (pbEaten == nullptr) {
         return E_INVALIDARG;
@@ -324,10 +390,16 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
         const auto found = m_contexts.find(pContext);
         const bool composing = found != m_contexts.end() && found->second.session != nullptr
                                && !found->second.session->snapshot().raw_input_utf8.empty();
-        const auto key_event = key_event_from_virtual_key(wParam);
+        const auto key_event = key_event_from_virtual_key(wParam, lParam);
         const bool printable =
             key_event.has_value() && suborno::layout::key_event_to_ascii(*key_event).has_value();
-        const bool starts_phonetic_input = wParam >= 'A' && wParam <= 'Z';
+        const bool starts_phonetic_input =
+            key_event.has_value() && !key_event->logical_text_utf8.empty()
+            && key_event->logical_text_utf8.size() == 1
+            && ((key_event->logical_text_utf8.front() >= 'A'
+                 && key_event->logical_text_utf8.front() <= 'Z')
+                || (key_event->logical_text_utf8.front() >= 'a'
+                    && key_event->logical_text_utf8.front() <= 'z'));
         const bool fixed_or_compositional =
             m_engine->active_layout_kind() != suborno::layout::LayoutKind::phonetic;
         const bool starts_composition = fixed_or_compositional ? printable : starts_phonetic_input;
@@ -350,7 +422,7 @@ STDMETHODIMP SubornoTextService::OnTestKeyUp(ITfContext*, WPARAM, LPARAM, BOOL* 
 
 STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                                            WPARAM wParam,
-                                           LPARAM,
+                                           LPARAM lParam,
                                            BOOL* pbEaten) {
     if (pbEaten == nullptr) {
         return E_INVALIDARG;
@@ -432,7 +504,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             return hr;
         }
 
-        const auto key_event = key_event_from_virtual_key(wParam);
+        const auto key_event = key_event_from_virtual_key(wParam, lParam);
         const bool starts_phonetic_input = wParam >= 'A' && wParam <= 'Z';
         const bool fixed_or_compositional =
             m_engine->active_layout_kind() != layout::LayoutKind::phonetic;

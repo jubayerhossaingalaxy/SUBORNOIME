@@ -1,6 +1,7 @@
 #include "suborno/layout-api/key_event.hpp"
 
 #include <gtest/gtest.h>
+#include <string>
 
 namespace {
 
@@ -43,3 +44,24 @@ TEST(KeyEventTest, DoesNotTreatModifierShortcutsAsText) {
 }
 
 }  // namespace
+
+
+TEST(KeyEventTest, DecodesWindowsRepeatScanCodeAndExtendedKeyBits) {
+    const auto decoded = suborno::layout::decode_key_message_lparam(0xC0340003U);
+
+    EXPECT_EQ(decoded.repeat_count, 3U);
+    EXPECT_EQ(decoded.scan_code, 0x34U);
+    EXPECT_TRUE(decoded.extended_key);
+    EXPECT_TRUE(decoded.previous_key_state);
+    EXPECT_FALSE(decoded.key_down);
+}
+
+TEST(KeyEventTest, DecodesFirstKeyDownMessage) {
+    const auto decoded = suborno::layout::decode_key_message_lparam(0x001E0001U);
+
+    EXPECT_EQ(decoded.repeat_count, 1U);
+    EXPECT_EQ(decoded.scan_code, 0x1EU);
+    EXPECT_FALSE(decoded.extended_key);
+    EXPECT_FALSE(decoded.previous_key_state);
+    EXPECT_TRUE(decoded.key_down);
+}

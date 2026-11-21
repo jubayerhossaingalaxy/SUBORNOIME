@@ -50,6 +50,14 @@ class InputSession {
     // The default maps a physical key event to its US-layout ASCII character.
     // Fixed-layout sessions may override this to use the physical key directly.
     virtual InputStatus append_key(const KeyEvent& event) {
+        if (event.modifiers.control || event.modifiers.alt || event.modifiers.windows
+            || !event.key_down) {
+            return InputStatus::empty;
+        }
+        if (!event.logical_text_utf8.empty()) {
+            return append_utf8(event.logical_text_utf8);
+        }
+
         const std::optional<char> character = key_event_to_ascii(event);
         if (!character.has_value()) {
             return InputStatus::empty;

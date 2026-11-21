@@ -8,10 +8,11 @@
 #include "suborno/suborno.h"
 
 struct SUBORNO_Engine {
-    suborno::core::Engine engine;
+    std::shared_ptr<suborno::core::Engine> engine = std::make_shared<suborno::core::Engine>();
 };
 
 struct SUBORNO_Session {
+    std::shared_ptr<suborno::core::Engine> engine_owner;
     std::unique_ptr<suborno::layout::InputSession> session;
 };
 
@@ -94,11 +95,12 @@ SUBORNO_Session* suborno_session_create(SUBORNO_Engine* engine) {
         return nullptr;
     }
     try {
-        auto session = engine->engine.create_session();
+        const std::shared_ptr<suborno::core::Engine> engine_owner = engine->engine;
+        auto session = engine_owner->create_session();
         if (session == nullptr) {
             return nullptr;
         }
-        return new SUBORNO_Session{std::move(session)};
+        return new SUBORNO_Session{engine_owner, std::move(session)};
     } catch (...) {
         return nullptr;
     }

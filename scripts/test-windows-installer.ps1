@@ -51,11 +51,16 @@ function Invoke-SubornoSetup {
 function Assert-CleanInstallDirectory {
     param([string]$Path)
 
-    $expectedFiles = @('Suborno.exe', 'unins000.dat', 'unins000.exe')
+    $expectedFiles = @('Suborno.exe', 'THIRD_PARTY_NOTICES.md', 'unins000.dat', 'unins000.exe')
     $actualFiles = @(Get-ChildItem -LiteralPath $Path -Force -File |
         Sort-Object Name | Select-Object -ExpandProperty Name)
     if (($actualFiles -join '|') -ne (($expectedFiles | Sort-Object) -join '|')) {
         throw "Unexpected Program Files contents: $($actualFiles -join ', ')"
+    }
+    $noticesPath = Join-Path $Path 'THIRD_PARTY_NOTICES.md'
+    if (-not (Test-Path -LiteralPath $noticesPath -PathType Leaf) -or
+        (Get-Item -LiteralPath $noticesPath).Length -eq 0) {
+        throw 'Third-party license notices are missing from the installed application.'
     }
     if (@(Get-ChildItem -LiteralPath $Path -Force -Directory).Count -ne 0) {
         throw 'Subdirectories were installed into the Suborno application directory.'

@@ -10,7 +10,7 @@ cmake_installer="$(mktemp)"
 ninja_archive="$(mktemp)"
 trap 'rm -f -- "${cmake_installer}" "${ninja_archive}"' EXIT
 
-curl -fsSL \
+curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 30 --max-time 600 \
     "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh" \
     -o "${cmake_installer}"
 printf '%s  %s\n' "${CMAKE_SHA256}" "${cmake_installer}" | sha256sum --check

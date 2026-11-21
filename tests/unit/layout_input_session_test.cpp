@@ -66,7 +66,7 @@ TEST(LayoutInputSessionTest, SelectsAndCommitsTheActiveCandidate) {
     ASSERT_NE(session, nullptr);
 
     ASSERT_EQ(session->append_utf8("ab"), suborno::layout::InputStatus::updated);
-    ASSERT_TRUE(session.select_candidate(0));
+    ASSERT_TRUE(session->select_candidate(0));
     EXPECT_EQ(session->commit().text_utf8, "কখ");
     EXPECT_EQ(session->snapshot().status, suborno::layout::InputStatus::empty);
 }

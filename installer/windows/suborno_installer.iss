@@ -78,6 +78,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
 Source: "{#MyBuildDir}\Release\Suborno.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#MyBuildDir}\Release\suborno_windows_tsf.dll"; DestDir: "{commonappdata}\Suborno\components\tsf\{#MyArchitecture}"; Flags: ignoreversion
 
 [Tasks]

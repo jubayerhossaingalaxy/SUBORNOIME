@@ -12,9 +12,11 @@ verified.
 | Generic InputLayout contract | Implemented, CI pending | Engine factory tests |
 | Generic InputSession contract | Implemented, CI pending | Stateless session tests |
 | Suborno Phonetic | Existing implementation | Phonetic regression corpus |
-| Borno Phonetic Regular Mode | Initial implementation | borno_phonetic_layout_test.cpp; CI pending |
+| Platform-neutral physical key events | Initial implementation, CI pending | key_event_test.cpp and generic session tests |
+| Borno Phonetic Regular Mode | Initial implementation, CI pending | borno_phonetic_layout_test.cpp |
+| Avro Phonetic profile | Initial implementation, CI pending | avro_phonetic_layout_test.cpp |
 | Borno Phonetic LM Mode | Planned | Context corpus and ranking evaluation |
-| Avro Phonetic | Planned | Official-behavior regression corpus |
+| Avro autocorrect and full context rules | Planned | Official-behavior regression corpus |
 | Khipro compositional layout | Planned | Stateful composition transition corpus |
 | National physical key layout | Not yet verified as fixed layout | Full physical-key matrix |
 | Probhat physical key layout | Not yet verified as fixed layout | Full physical-key matrix |
@@ -47,7 +49,10 @@ verified.
 | Candidate UIElement | Planned | UIElement lifecycle tests |
 | Topbar | Planned | Interactive UI tests |
 | System tray | Basic existing app support | Windows manual tests |
-| Settings UI | Basic existing app support | Save/reload and UI tests |
+| Versioned General/Interface/Topbar/Input settings storage | Implemented, CI pending | V1 migration, V2 round-trip and validation tests |
+| Start with Windows preference persistence | Initial integration, CI pending | Registry rollback and settings tests |
+| Remember last input layout | Implemented in engine startup, CI pending | Engine preference tests |
+| Settings UI | Basic existing app support; full sections planned | Save/reload and UI tests |
 | Theme system | Planned | Theme resource tests |
 | On-Screen Keyboard | Planned | Layout-to-key action tests |
 | Per-application profiles | Planned | Multi-process/window tests |

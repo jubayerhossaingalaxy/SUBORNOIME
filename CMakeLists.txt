@@ -266,6 +266,7 @@ if(WIN32)
         Uuid.lib
     )
     suborno_configure_target(suborno_windows_tsf)
+    add_dependencies(suborno_windows_tsf suborno_generate_icon)
     if(MSVC AND SUBORNO_ENABLE_MSVC_ANALYSIS)
         target_compile_options(suborno_windows_tsf PRIVATE /analyze:external-)
         suborno_mark_dependency_headers_external(suborno_windows_tsf WIL::WIL)
@@ -289,6 +290,7 @@ if(WIN32)
         Uuid.lib
     )
     suborno_configure_target(suborno_app)
+    add_dependencies(suborno_app suborno_generate_icon)
 endif()
 
 include(CTest)

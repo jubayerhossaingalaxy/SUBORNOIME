@@ -28,8 +28,8 @@ checks for updates.
 
 The Probhat fixed physical-key output table is independently implemented from the MIT-licensed
 princebillygk/probhat-layout-windows repository, layout.klc, upstream revision debc8310c60200143c6c0420433cca8506771e09.
-Only the key-position, base, Shift, and CapsLock output data are referenced; Suborno does not copy
-the upstream installer or keyboard driver.
+The key-position, base, Shift, Ctrl+Alt/AltGr, Shift+Ctrl+Alt, and CapsLock output data are
+referenced; Suborno does not copy the upstream installer or keyboard driver.
 
 MIT License
 

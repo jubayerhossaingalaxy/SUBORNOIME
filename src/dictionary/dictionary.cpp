@@ -105,7 +105,9 @@ void Dictionary::initialize_schema() {
         "  user_frequency INTEGER NOT NULL DEFAULT 0,"
         "  user_pinned INTEGER NOT NULL DEFAULT 0,"
         "  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-        "CREATE INDEX IF NOT EXISTS idx_dictionary_normalized ON dictionary_entries(normalized);";
+        "CREATE INDEX IF NOT EXISTS idx_dictionary_normalized ON dictionary_entries(normalized);"
+        "CREATE INDEX IF NOT EXISTS idx_dictionary_normalized_prefix "
+        "ON dictionary_entries(normalized COLLATE NOCASE);";
 
     char* error = nullptr;
     const int rc = sqlite3_exec(impl_->db, sql, nullptr, nullptr, &error);
@@ -351,6 +353,50 @@ std::vector<std::string> Dictionary::find_matches(const std::string& normalized,
         throw DictionaryError(DictionaryErrorCategory::bind,
                               sqlite3_extended_errcode(impl_->db),
                               "Unable to bind dictionary lookup");
+    }
+
+    std::vector<std::string> results;
+    int step_rc = SQLITE_OK;
+    while ((step_rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        const unsigned char* value = sqlite3_column_text(stmt, 0);
+        if (value != nullptr) {
+            results.emplace_back(reinterpret_cast<const char*>(value));
+        }
+    }
+    if (step_rc != SQLITE_DONE) {
+        const std::string message = sqlite3_errmsg(impl_->db);
+        sqlite3_finalize(stmt);
+        throw DictionaryError(DictionaryErrorCategory::step, step_rc, message);
+    }
+    sqlite3_finalize(stmt);
+    return results;
+}
+
+std::vector<std::string> Dictionary::find_prefix_matches(
+    const std::string& normalized_prefix, std::size_t limit) const {
+    if (normalized_prefix.empty() || limit == 0) {
+        return {};
+    }
+
+    const std::string query =
+        "SELECT word FROM dictionary_entries WHERE normalized LIKE ? ESCAPE '\\' "
+        "ORDER BY (frequency + COALESCE(user_frequency, 0)) DESC, word ASC LIMIT ?";
+    sqlite3_stmt* stmt = nullptr;
+    const int prepare_rc = sqlite3_prepare_v2(impl_->db, query.c_str(), -1, &stmt, nullptr);
+    if (prepare_rc != SQLITE_OK) {
+        throw DictionaryError(
+            DictionaryErrorCategory::prepare, prepare_rc, sqlite3_errmsg(impl_->db));
+    }
+
+    const std::string pattern = escape_like_prefix(normalized_prefix);
+    const std::size_t bounded_limit =
+        std::min(limit, static_cast<std::size_t>(std::numeric_limits<sqlite3_int64>::max()));
+    if (sqlite3_bind_text(stmt, 1, pattern.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_int64(stmt, 2, static_cast<sqlite3_int64>(bounded_limit)) != SQLITE_OK) {
+        sqlite3_finalize(stmt);
+        throw DictionaryError(DictionaryErrorCategory::bind,
+                              sqlite3_extended_errcode(impl_->db),
+                              "Unable to bind dictionary normalized prefix lookup");
     }
 
     std::vector<std::string> results;

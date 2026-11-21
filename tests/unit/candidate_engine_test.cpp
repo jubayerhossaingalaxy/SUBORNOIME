@@ -84,3 +84,25 @@ TEST(CandidateEngineTest, AppliesTheCandidateLimitAndSkipsDuplicateLayoutOutput)
 
     std::remove(db_path.c_str());
 }
+
+
+TEST(CandidateEngineTest, IncludesNormalizedPrefixPredictionsBelowExactMatches) {
+    const std::string db_path =
+        temporary_database_path("suborno_candidate_engine_prefix_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "bangla", 10);
+    dictionary.add_entry("বাংলাদেশ", "bangladesh", 8);
+
+    const TestFixedLayout layout;
+    const suborno::candidates::CandidateEngine engine(layout, dictionary);
+    const auto candidates = engine.make_candidates("bang", 4);
+
+    ASSERT_GE(candidates.size(), 2U);
+    EXPECT_EQ(candidates[0].text, "বাংলা");
+    EXPECT_EQ(candidates[1].text, "বাংলাদেশ");
+    EXPECT_EQ(candidates[0].rationale, "normalized input prefix match");
+
+    std::remove(db_path.c_str());
+}

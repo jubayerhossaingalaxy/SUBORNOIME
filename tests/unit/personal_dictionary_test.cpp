@@ -153,3 +153,43 @@ TEST(PersonalDictionaryTest, ClearingUserEntriesUnpinsSystemWordsAndDeletesUserO
 
     std::remove(db_path.c_str());
 }
+
+
+TEST(PersonalDictionaryTest, FindsCandidatesByNormalizedPhoneticPrefix) {
+    const std::string db_path =
+        temporary_database_path("suborno_dictionary_normalized_prefix_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "bangla", 10);
+    dictionary.add_entry("বাংলাদেশ", "bangladesh", 8);
+    dictionary.add_entry("বাংলাদেশি", "bangladeshi", 6);
+    dictionary.add_entry("ভারত", "bharat", 4);
+
+    const auto matches = dictionary.find_prefix_matches("bang", 2);
+    ASSERT_EQ(matches.size(), 2U);
+    EXPECT_EQ(matches[0], "বাংলা");
+    EXPECT_EQ(matches[1], "বাংলাদেশ");
+    EXPECT_TRUE(dictionary.find_prefix_matches("bang", 0).empty());
+    EXPECT_TRUE(dictionary.find_prefix_matches("", 10).empty());
+
+    std::remove(db_path.c_str());
+}
+
+TEST(PersonalDictionaryTest, EscapesSqlWildcardsInNormalizedPrefixSearch) {
+    const std::string db_path =
+        temporary_database_path("suborno_dictionary_normalized_prefix_wildcard_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("percent", "p%word", 2);
+    dictionary.add_entry("underscore", "p_word", 2);
+    dictionary.add_entry("backslash", "p\\word", 2);
+    dictionary.add_entry("other", "pXword", 1);
+
+    EXPECT_EQ(dictionary.find_prefix_matches("p%", 10), std::vector<std::string>{"percent"});
+    EXPECT_EQ(dictionary.find_prefix_matches("p_", 10), std::vector<std::string>{"underscore"});
+    EXPECT_EQ(dictionary.find_prefix_matches("p\\", 10), std::vector<std::string>{"backslash"});
+
+    std::remove(db_path.c_str());
+}

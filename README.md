@@ -55,7 +55,7 @@ The application is named **Suborno**. The repository and technical project ident
     </td>
     <td width="50%">
       <h3>🗺️ Multiple keyboard layouts</h3>
-      <p>Independent Phonetic profiles, Khipro compositional input, and developing Probhat/National layout modules.</p>
+      <p>Independent phonetic profiles, an initial Khipro compositional subset, a fixed Probhat keymap, and an experimental National phonetic prototype.</p>
     </td>
   </tr>
   <tr>
@@ -182,7 +182,7 @@ The project uses **CMake Presets** and **CTest**.
 Automated tests cover areas including:
 
 - Phonetic parsing, composition, and candidate alternatives
-- Probhat and National layout mappings
+- Initial Probhat fixed-key and experimental National draft mappings
 - Bengali Unicode validation, normalization, and grapheme handling
 - Dictionary, settings, and persistence behavior
 - Portable engine and integration contracts

@@ -40,6 +40,13 @@ TEST(ProbhatLayoutTest, MapsPhysicalLetterKeysAndShiftLayer) {
     EXPECT_EQ(layout.transliterate("ko"), "কো");
 }
 
+TEST(ProbhatLayoutTest, MapsApostropheAndShiftedQuoteFromTheSamePhysicalKey) {
+    const suborno::layouts::ProbhatLayout layout;
+
+    EXPECT_EQ(layout.transliterate("'"), "'");
+    EXPECT_EQ(layout.transliterate("\""), "\"");
+}
+
 TEST(ProbhatLayoutTest, MapsDigitsSignsAndPunctuation) {
     const suborno::layouts::ProbhatLayout layout;
 

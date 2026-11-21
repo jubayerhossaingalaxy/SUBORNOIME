@@ -63,7 +63,7 @@ constexpr std::array<LayoutOption, 6> kLayouts{{
     {"avro-phonetic", L"Avro Phonetic"},
     {"khipro", L"Khipro Classic"},
     {"probhat", L"Probhat"},
-    {"national", L"National"},
+    {"national", L"National (draft)"},
 }};
 
 HRESULT get_profiles(wil::com_ptr<ITfInputProcessorProfiles>& profiles) {

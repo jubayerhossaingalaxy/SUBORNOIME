@@ -19,7 +19,7 @@
 9. Performance baseline.
 10. Installer and signing.
 11. Borno and Avro phonetic profiles plus Khipro composition.
-12. Physical National/Probhat keymaps and keyboard event normalization.
+12. Physical National keymap (blocked on BDS 1738:2018 licensing clearance); Probhat mapping and keyboard event normalization.
 13. Candidate UIElement and candidate-window behavior.
 14. Versioned General/Interface/Topbar/Input desktop settings.
 15. Native Topbar, themes, on-screen keyboard, and layout studio.

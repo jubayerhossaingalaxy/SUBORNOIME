@@ -31,7 +31,7 @@ Engine::Engine() {
                              layout::LayoutMetadata{"probhat", "Probhat", "1"});
     layouts_.register_layout("national",
                              std::make_unique<layouts::NationalLayout>(),
-                             layout::LayoutMetadata{"national", "National", "1"});
+                             layout::LayoutMetadata{"national", "National (draft phonetic prototype)", "0.1"});
 }
 
 Engine::Engine(const EngineConfig& config)

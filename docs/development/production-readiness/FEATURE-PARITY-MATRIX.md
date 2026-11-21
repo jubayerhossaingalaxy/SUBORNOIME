@@ -18,7 +18,7 @@ verified.
 | Borno Phonetic LM Mode | Planned | Context corpus and ranking evaluation |
 | Avro autocorrect and full context rules | Planned | Official-behavior regression corpus |
 | Khipro Classic compositional subset | Initial implementation, CI pending; not full parity | Khipro composition, slicer, forced-vowel and separator vectors |
-| National physical key layout | Not yet verified as fixed layout | Full physical-key matrix |
+| National physical layout | Not implemented; current module is only a Roman-token prototype. BDS 1738:2018 licensing review required before reproducing the official chart | Written permission / licensing clearance plus an independently authored and tested physical-key matrix |
 | Probhat fixed keymap | Initial scan-code map and dependent-vowel context, CI pending; full keyboard matrix still required | Scan-code/Shift matrix and vowel-context tests |
 | Phonetic literal escaping | Partial | Single-EGC escape tests |
 | Automatic vowel forming | Planned | Avro compatibility vectors |

@@ -314,6 +314,14 @@ TEST(CandidateListUIElementTest, ExposesCandidateStringsAndSelectionThroughTsfCo
     EXPECT_EQ(std::wstring(candidate), L"আমি");
     ::SysFreeString(candidate);
 
+    BSTR invalid_candidate = ::SysAllocString(L"sentinel");
+    ASSERT_NE(invalid_candidate, nullptr);
+    BSTR allocated_sentinel = invalid_candidate;
+    EXPECT_EQ(element->GetString(count, &invalid_candidate), E_INVALIDARG);
+    EXPECT_EQ(invalid_candidate, nullptr);
+    ::SysFreeString(allocated_sentinel);
+    EXPECT_EQ(element->GetString(0, nullptr), E_INVALIDARG);
+
     GUID element_guid{};
     EXPECT_EQ(element->GetGUID(&element_guid), S_OK);
     EXPECT_TRUE(::IsEqualGUID(element_guid,

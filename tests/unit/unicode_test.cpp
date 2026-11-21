@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 #include "suborno/unicode/bengali.hpp"
 
@@ -27,6 +29,27 @@ TEST(UnicodeUtilitiesTest, NormalizesNfcAndNfkcExplicitly) {
     EXPECT_EQ(suborno::unicode::normalize_nfc("\u09A1\u09BC"), "\u09A1\u09BC");
     EXPECT_EQ(suborno::unicode::normalize_nfkc("\uFF21"), "A");
     EXPECT_THROW(suborno::unicode::normalize_nfc("\xF0\x80"), std::invalid_argument);
+}
+
+TEST(UnicodeUtilitiesTest, BengaliInventoryMatchesTheSupportedBanglaCharacterSet) {
+    const auto inventory = suborno::unicode::supported_bengali_inventory();
+    const auto count_character = [&inventory](std::string_view character) {
+        return std::count_if(inventory.begin(), inventory.end(), [character](const auto& item) {
+            return item.character == character;
+        });
+    };
+
+    EXPECT_EQ(count_character("এ"), 1);
+    EXPECT_EQ(count_character("ঐ"), 1);
+    EXPECT_EQ(count_character("ঔ"), 1);
+    EXPECT_EQ(count_character("ঁ"), 1);
+    EXPECT_EQ(count_character("ড়"), 1);
+    EXPECT_EQ(count_character("ঢ়"), 1);
+    EXPECT_EQ(count_character("য়"), 1);
+    EXPECT_EQ(count_character("ৎ"), 1);
+
+    EXPECT_EQ(count_character("ৰ"), 0);
+    EXPECT_EQ(count_character("ৱ"), 0);
 }
 
 TEST(UnicodeUtilitiesTest, SplitsExtendedGraphemeClusters) {

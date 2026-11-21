@@ -66,6 +66,28 @@ jobs:
       - name: Build
         run: cmake --build --preset ubuntu-ci
 
+      - name: Configure ASan/UBSan and libFuzzer
+        run: cmake --preset ubuntu-sanitizers-clang -DSUBORNO_BUILD_FUZZING=ON
+
+      - name: Run ASan/UBSan tests and libFuzzer smoke
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: |
+          cmake --build --preset ubuntu-sanitizers-clang --target suborno_unit_tests suborno_integration_tests suborno_phonetic_fuzz
+          ctest --preset ubuntu-sanitizers-clang --output-on-failure
+          mkdir -p build/ubuntu-sanitizers-clang/fuzz-artifacts
+          ./build/ubuntu-sanitizers-clang/suborno_phonetic_fuzz -runs=1000 -max_len=2048 -timeout=5 -print_final_stats=1 -artifact_prefix=build/ubuntu-sanitizers-clang/fuzz-artifacts/
+
+      - name: Upload sanitizer and fuzz artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: suborno-sanitizer-artifacts-${{ github.run_number }}
+          path: build/ubuntu-sanitizers-clang/fuzz-artifacts/**
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Install pinned security scanners
         run: scripts/install-security-tools-ubuntu.sh
 
@@ -182,6 +204,11 @@ jobs:
           $innoSetupUrl = "https://github.com/jrsoftware/issrc/releases/download/is-6_3_3/innosetup-6.3.3.exe"
           $innoSetupInstaller = Join-Path $env:TEMP 'inno-setup.exe'
           Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupInstaller
+          $expectedSha256 = '0bcb2a409dea17e305a27a6b09555cabe600e984f88570ab72575cd7e93c95e6'
+          $actualSha256 = (Get-FileHash -LiteralPath $innoSetupInstaller -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualSha256 -ne $expectedSha256) {
+            throw "Inno Setup installer SHA-256 mismatch: $actualSha256"
+          }
           $proc = Start-Process -FilePath $innoSetupInstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait -PassThru
           if ($proc.ExitCode -ne 0) { throw "Inno Setup installation failed with exit code $($proc.ExitCode)." }
 

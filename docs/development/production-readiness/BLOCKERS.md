@@ -11,9 +11,12 @@
 2. **Minimal ICU POC:** Must preserve ICU i18n functionality required by
    `icu::BreakIterator`, pass Unicode regression tests, and report reproducible
    binary/data size measurements before any production data-filter change.
-3. **Phonetic compatibility:** Avro autocorrect/context behavior, Borno LM and
-   context behavior, Khipro full composition parity, and complete golden corpora
-   remain incomplete.
+3. **Phonetic compatibility:** An Avro clean-room parser update adds 299 documented
+   conjunct input variants, strict consonant separation, contextual vowel behavior
+   and regression vectors. Current-head CI and the behavioral-reference data's
+   provenance/licensing review are still pending. Full Avro automatic vowel/reph,
+   autocorrect and context behavior remain incomplete; Borno LM/context and Khipro
+   full composition parity also remain incomplete.
 4. **Physical layouts:** Probhat Base/Shift/AltGr/Shift+AltGr and CapsLock output
    layers are implemented with regression tests; OEM_102 and numpad decimal are
    recognized at the Windows virtual-key boundary. TSF probes actual session acceptance

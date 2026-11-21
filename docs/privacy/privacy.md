@@ -14,7 +14,7 @@ SUBORNO does not transmit typed text or composition data over the network. Perso
 
 - Personal learning is disabled by default; version 1 and version 2 settings migrate with learning disabled.
 - When enabled, learned words and typed aliases are stored locally in the user dictionary; they are not uploaded.
-- Settings and learned entries are stored locally and can be removed by deleting the profile database.
+- Settings and learned entries are stored locally. Learned words and personal dictionary entries can be removed from the Desktop Settings window with **Clear personal data**; the bundled Bengali system dictionary remains installed.
 - Diagnostic logging must never include typed text content.
 - Before capturing each key, the Windows TSF adapter re-reads the active selection's InputScope. Known password, PIN, and private scopes are passed through. If the host does not publish an InputScope, the selection cannot be read, or the scope query fails, Suborno passes the key through rather than capturing it. This conservative fallback may reduce compatibility with applications that do not expose TSF InputScope. Host applications must still disable text services in password fields; interactive Windows host-app acceptance tests remain outstanding.
-- Personal learning remains disabled by default. Users can explicitly enable local learning from the desktop Settings window.
+- Personal learning remains disabled by default. Users can explicitly enable local learning from the desktop Settings window and clear learned/personal entries at any time.

@@ -42,7 +42,7 @@ verified.
 | Layout primary candidate | Implemented | Layout unit tests |
 | Dictionary candidate source | Implemented | Candidate and session tests |
 | Candidate-choice learning | Commit-frequency ranking is implemented for committed words/candidates; explicit choice-event analytics, negative feedback and decay are not implemented | Personal-dictionary commit lifecycle and ranking tests; language-quality evaluation pending |
-| Personal dictionary | Initial integration; system-word pinning and schema-v2 migration implemented, CI pending | Pin/unpin, clear, migration and ranking tests |
+| Personal dictionary | Initial integration; system-word pinning, schema migrations, and desktop clear-personal-data control implemented; CI pending | Pin/unpin, clear, migration and ranking tests plus Windows confirmation-dialog acceptance |
 | Spell correction | Separate module, not integrated | Engine integration tests |
 | Candidate popup | Basic native vertical Win32 popup implemented through TSF UIElement; hosted MSVC CI and live host-app verification pending | TSF UIElement contract tests, caret anchoring and monitor-work-area placement; keyboard/DPI/manual acceptance pending |
 | Horizontal/vertical candidate window | Fixed vertical layout only; orientation setting and per-monitor DPI scaling are not implemented | Multi-monitor, DPI-change and orientation tests |

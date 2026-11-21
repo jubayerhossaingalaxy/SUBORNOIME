@@ -19,6 +19,7 @@
 #include <wil/com.h>
 
 #include "suborno/core/engine.hpp"
+#include "suborno/dictionary/dictionary.hpp"
 #include "suborno/platform/windows/app/resource.h"
 #include "suborno/platform/windows/app_paths.hpp"
 #include "suborno/platform/windows/tsf/guids.hpp"
@@ -46,6 +47,7 @@ enum ControlId : UINT {
     kSelectCandidateKeysCheck = 1009,
     kShowCandidateWindowCheck = 1010,
     kLearningEnabledCheck = 1011,
+    kClearPersonalDataButton = 1012,
 };
 
 enum MenuId : UINT {
@@ -612,9 +614,18 @@ class Application final {
                                    BS_PUSHBUTTON,
                                    228,
                                    414,
-                                   220,
+                                   150,
                                    32,
                                    kHideButton);
+        clear_personal_data_button_ = add_control(0,
+                                                   L"BUTTON",
+                                                   L"Clear personal data",
+                                                   BS_PUSHBUTTON,
+                                                   392,
+                                                   414,
+                                                   180,
+                                                   32,
+                                                   kClearPersonalDataButton);
 
         add_control(0, L"STATIC", L"About Suborno", SS_LEFT, 24, 460, 520, 22, 0);
         add_control(0,
@@ -646,7 +657,8 @@ class Application final {
                && hide_button_ != nullptr && apps_settings_button_ != nullptr
                && show_candidate_window_check_ != nullptr && map_numpad_check_ != nullptr
                && ignore_caps_lock_check_ != nullptr && select_candidate_keys_check_ != nullptr
-               && learning_check_ != nullptr && help_label_ != nullptr;
+               && learning_check_ != nullptr && clear_personal_data_button_ != nullptr
+               && help_label_ != nullptr;
     }
 
     void refresh_input_settings_controls() {
@@ -693,6 +705,36 @@ class Application final {
             refresh_input_settings_controls();
             show_error(window_, L"Could not save the input preferences.", E_FAIL);
         }
+    }
+
+    void clear_personal_data() {
+        auto* dictionary = engine_->dictionary();
+        if (dictionary == nullptr) {
+            show_error(window_, L"The personal dictionary is unavailable.", E_UNEXPECTED);
+            return;
+        }
+
+        const int answer = ::MessageBoxW(
+            window_,
+            L"This removes words and aliases learned by Suborno, along with personal dictionary "
+            L"entries. The bundled Bengali system dictionary will remain. Continue?",
+            L"Clear personal data",
+            MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2);
+        if (answer != IDYES) {
+            return;
+        }
+
+        try {
+            dictionary->clear_user_entries();
+        } catch (const std::exception&) {
+            show_error(window_, L"Could not clear the personal dictionary.", E_FAIL);
+            return;
+        }
+
+        ::MessageBoxW(window_,
+                      L"Learned words and personal dictionary entries have been cleared.",
+                      L"Suborno",
+                      MB_OK | MB_ICONINFORMATION);
     }
 
     void refresh_status() {
@@ -743,6 +785,10 @@ class Application final {
              || id == kSelectCandidateKeysCheck || id == kLearningEnabledCheck)
             && notification == BN_CLICKED) {
             save_input_settings();
+            return;
+        }
+        if (id == kClearPersonalDataButton && notification == BN_CLICKED) {
+            clear_personal_data();
             return;
         }
         if (id == kStartupCheck && notification == BN_CLICKED) {
@@ -970,6 +1016,7 @@ class Application final {
     HWND ignore_caps_lock_check_ = nullptr;
     HWND select_candidate_keys_check_ = nullptr;
     HWND learning_check_ = nullptr;
+    HWND clear_personal_data_button_ = nullptr;
     HWND hide_button_ = nullptr;
     HWND apps_settings_button_ = nullptr;
     bool startup_ = false;

@@ -584,8 +584,13 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                 bool sensitive = false;
                 const HRESULT scope_result =
                     query_sensitive_input_scope(pContext, m_clientId, sensitive);
-                state.input_scope_checked = SUCCEEDED(scope_result);
-                state.sensitive_input_scope = SUCCEEDED(scope_result) && sensitive;
+                if (FAILED(scope_result)) {
+                    state.input_scope_checked = false;
+                    state.sensitive_input_scope = false;
+                    return S_OK;
+                }
+                state.input_scope_checked = true;
+                state.sensitive_input_scope = sensitive;
             }
             if (state.sensitive_input_scope) {
                 return S_OK;
@@ -773,8 +778,13 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             bool sensitive = false;
             const HRESULT scope_result =
                 query_sensitive_input_scope(pContext, m_clientId, sensitive);
-            state.input_scope_checked = SUCCEEDED(scope_result);
-            state.sensitive_input_scope = SUCCEEDED(scope_result) && sensitive;
+            if (FAILED(scope_result)) {
+                state.input_scope_checked = false;
+                state.sensitive_input_scope = false;
+                return S_OK;
+            }
+            state.input_scope_checked = true;
+            state.sensitive_input_scope = sensitive;
         }
         if (state.sensitive_input_scope) {
             return S_OK;

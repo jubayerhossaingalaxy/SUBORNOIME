@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
-
 #include "suborno/platform/windows/tsf/input_scope.hpp"
+
+#include <gtest/gtest.h>
 
 TEST(InputScopeTest, ClassifiesPasswordAndPrivateScopesAsSensitive) {
     EXPECT_TRUE(suborno::platform::windows::is_sensitive_input_scope_type(IS_PASSWORD));

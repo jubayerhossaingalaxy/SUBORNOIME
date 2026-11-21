@@ -1,8 +1,12 @@
 #pragma once
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <Windows.h>
-#include <msctf.h>
 #include <inputscope.h>
+#include <msctf.h>
 
 namespace suborno::platform::windows {
 

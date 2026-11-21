@@ -28,6 +28,16 @@ TEST(InputScopeTest, CapturesTextOnlyWhenTheScopeWasReadAndIsNotSensitive) {
     EXPECT_FALSE(may_capture_text_from_input_scope(E_FAIL, false));
 }
 
+TEST(InputScopeTest, LifecycleCommitsRequireAFreshSafeScopeAndNoPreviousDenial) {
+    using suborno::platform::windows::may_commit_composition_from_input_scope;
+
+    EXPECT_TRUE(may_commit_composition_from_input_scope(S_OK, false, false));
+    EXPECT_FALSE(may_commit_composition_from_input_scope(S_OK, true, false));
+    EXPECT_FALSE(may_commit_composition_from_input_scope(E_FAIL, false, false));
+    EXPECT_FALSE(may_commit_composition_from_input_scope(S_FALSE, false, false));
+    EXPECT_FALSE(may_commit_composition_from_input_scope(S_OK, false, true));
+}
+
 TEST(InputScopeTest, CancelsExistingCompositionWhenCaptureMustFailClosed) {
     using suborno::platform::windows::InputScopeCaptureDecision;
     using suborno::platform::windows::decide_input_scope_capture;

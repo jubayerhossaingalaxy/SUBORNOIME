@@ -482,13 +482,22 @@ STDMETHODIMP SubornoTextService::Deactivate() {
                 first_error = ui_result;
             }
             if (state.session != nullptr && state.composition != nullptr) {
+                bool sensitive = false;
+                const HRESULT scope_result =
+                    query_sensitive_input_scope(context, m_clientId, sensitive);
+                const bool may_commit = may_commit_composition_from_input_scope(
+                    scope_result, sensitive, state.input_scope_blocks_capture);
                 std::wstring text;
-                if (!state.input_scope_blocks_capture) {
+                if (may_commit) {
                     const std::string text_utf8 = state.session->commit().text_utf8;
                     text = utf8_to_utf16(text_utf8);
                     if (!text_utf8.empty() && text.empty() && SUCCEEDED(first_error)) {
                         first_error = E_INVALIDARG;
                     }
+                } else {
+                    state.input_scope_checked = false;
+                    state.input_scope_blocks_capture = true;
+                    state.session->reset();
                 }
                 const HRESULT finish_result = _FinishComposition(context, state, text);
                 if (FAILED(finish_result) && SUCCEEDED(first_error)) {
@@ -967,13 +976,22 @@ STDMETHODIMP SubornoTextService::OnPopContext(ITfContext* pContext) {
     HRESULT result = _EndCandidateUI(found->second);
     try {
         if (found->second.session != nullptr && found->second.composition != nullptr) {
+            bool sensitive = false;
+            const HRESULT scope_result =
+                query_sensitive_input_scope(pContext, m_clientId, sensitive);
+            const bool may_commit = may_commit_composition_from_input_scope(
+                scope_result, sensitive, found->second.input_scope_blocks_capture);
             std::wstring text;
-            if (!found->second.input_scope_blocks_capture) {
+            if (may_commit) {
                 const auto committed = found->second.session->commit();
                 text = utf8_to_utf16(committed.text_utf8);
                 if (!committed.text_utf8.empty() && text.empty()) {
                     result = E_INVALIDARG;
                 }
+            } else {
+                found->second.input_scope_checked = false;
+                found->second.input_scope_blocks_capture = true;
+                found->second.session->reset();
             }
             const HRESULT finish_result = _FinishComposition(pContext, found->second, text);
             if (FAILED(finish_result) || SUCCEEDED(result)) {
@@ -1097,8 +1115,8 @@ HRESULT SubornoTextService::_FinalizeCandidate(ITfContext* context, UINT index) 
     ContextState& state = found->second;
     bool sensitive = false;
     const HRESULT scope_result = query_sensitive_input_scope(context, m_clientId, sensitive);
-    if (state.input_scope_blocks_capture
-        || !may_capture_text_from_input_scope(scope_result, sensitive)) {
+    if (!may_commit_composition_from_input_scope(
+            scope_result, sensitive, state.input_scope_blocks_capture)) {
         state.input_scope_checked = false;
         state.input_scope_blocks_capture = true;
         return _FinishComposition(context, state, {});

@@ -28,6 +28,12 @@ constexpr bool may_capture_text_from_input_scope(HRESULT query_result, bool sens
     return query_result == S_OK && !sensitive;
 }
 
+constexpr bool may_commit_composition_from_input_scope(HRESULT query_result,
+                                                       bool sensitive,
+                                                       bool previously_blocked) noexcept {
+    return !previously_blocked && may_capture_text_from_input_scope(query_result, sensitive);
+}
+
 enum class InputScopeCaptureDecision {
     allow_capture,
     pass_through,

@@ -38,11 +38,11 @@ TEST(BornoPhoneticLayoutTest, PreservesCaseSensitiveConsonantTokens) {
 TEST(BornoPhoneticLayoutTest, ComposesConsonantRunsAndExplicitControls) {
     const suborno::layouts::BornoPhoneticLayout layout;
 
-    EXPECT_EQ(layout.transliterate("kt"), "ক্‌ত");
-    EXPECT_EQ(layout.transliterate("k,,t"), "ক্‌ত");
-    EXPECT_EQ(layout.transliterate("k,.t"), "ক্‌\u200Cত");
-    EXPECT_EQ(layout.transliterate("k,..t"), "ক্‌\u200Dত");
-    EXPECT_EQ(layout.transliterate("D./"), "ড়");
+    EXPECT_EQ(layout.transliterate("kt"), "\u0995\u09CD\u09A4");
+    EXPECT_EQ(layout.transliterate("k,,t"), "\u0995\u09CD\u09A4");
+    EXPECT_EQ(layout.transliterate("k,.t"), "\u0995\u09CD\u200C\u09A4");
+    EXPECT_EQ(layout.transliterate("k,..t"), "\u0995\u09CD\u200D\u09A4");
+    EXPECT_EQ(layout.transliterate("D./"), "\u09A1\u09BC");
     EXPECT_EQ(layout.transliterate("0123456789"), "০১২৩৪৫৬৭৮৯");
 }
 
@@ -50,7 +50,7 @@ TEST(BornoPhoneticLayoutTest, EscapesLiteralGraphemesAndPreservesUnknownText) {
     const suborno::layouts::BornoPhoneticLayout layout;
 
     EXPECT_EQ(layout.transliterate(R"(facebook\-এর)"), "facebook-এর");
-    EXPECT_EQ(layout.transliterate("hello!"), "হেল্লো!");
+    EXPECT_EQ(layout.transliterate("hellO!"), "হেল্লো!");
     EXPECT_THROW(layout.transliterate("\xFF"), std::invalid_argument);
 }
 

@@ -316,7 +316,10 @@ if(BUILD_TESTING)
         add_test(NAME suborno.windows.tsf_contract COMMAND suborno_windows_tests)
         set_tests_properties(suborno.windows.tsf_contract PROPERTIES LABELS "windows;non-interactive")
         add_test(NAME suborno.windows.app_smoke COMMAND suborno_app --smoke-test)
-        set_tests_properties(suborno.windows.app_smoke PROPERTIES LABELS "windows;non-interactive")
+        set_tests_properties(suborno.windows.app_smoke PROPERTIES
+            LABELS "windows;non-interactive"
+            TIMEOUT 30
+        )
     endif()
 endif()
 

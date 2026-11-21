@@ -23,26 +23,28 @@ struct ProbhatKeyMapping {
     std::string_view unshifted;
     std::string_view shifted;
     std::uint8_t caps_flags;
+    std::string_view altgr = {};
+    std::string_view shifted_altgr = {};
 };
 
 // Base, Shift, and CapsLock layers follow the MIT-licensed Probhat KLC table.
 constexpr ProbhatKeyMapping kProbhatMappings[] = {
-    {0x02, "১", "!", 0x00},  {0x03, "২", "@", 0x00},  {0x04, "৩", "#", 0x00},
-    {0x05, "৪", "৳", 0x00},  {0x06, "৫", "%", 0x00},  {0x07, "৬", "^", 0x00},
-    {0x08, "৭", "ঞ", 0x00},  {0x09, "৮", "ৎ", 0x00},  {0x0A, "৯", "(", 0x00},
-    {0x0B, "০", ")", 0x00},  {0x0C, "-", "_", 0x00},  {0x0D, "=", "+", 0x00},
-    {0x10, "দ", "ধ", 0x05},  {0x11, "ূ", "ঊ", 0x05},   {0x12, "ী", "ঈ", 0x05},
-    {0x13, "র", "ড়", 0x01},  {0x14, "ট", "ঠ", 0x05},  {0x15, "এ", "ঐ", 0x05},
-    {0x16, "ু", "উ", 0x05},   {0x17, "ি", "ই", 0x05},  {0x18, "ও", "ঔ", 0x05},
-    {0x19, "প", "ফ", 0x05},  {0x1A, "ে", "ৈ", 0x00},  {0x1B, "ো", "ৌ", 0x00},
-    {0x1E, "া", "অ", 0x05},  {0x1F, "স", "ষ", 0x01},  {0x20, "ড", "ঢ", 0x05},
+    {0x02, "১", "!", 0x00, "¡", "¹"},  {0x03, "২", "@", 0x00, "²", ""},  {0x04, "৩", "#", 0x00, "³", ""},
+    {0x05, "৪", "৳", 0x00, "¤", "£"},  {0x06, "৫", "%", 0x00, "€", ""},  {0x07, "৬", "^", 0x00, "¼", ""},
+    {0x08, "৭", "ঞ", 0x00, "½", ""},  {0x09, "৮", "ৎ", 0x00, "¾", ""},  {0x0A, "৯", "(", 0x00, "‘", ""},
+    {0x0B, "০", ")", 0x00, "’", ""},  {0x0C, "-", "_", 0x00, "¥", ""},  {0x0D, "=", "+", 0x00, "×", "÷"},
+    {0x10, "দ", "ধ", 0x05, "ä", "Ä"},  {0x11, "ূ", "ঊ", 0x05, "å", "Å"},   {0x12, "ী", "ঈ", 0x05, "é", "É"},
+    {0x13, "র", "ড়", 0x01, "®", ""},  {0x14, "ট", "ঠ", 0x05, "þ", "Þ"},  {0x15, "এ", "ঐ", 0x05, "ü", "Ü"},
+    {0x16, "ু", "উ", 0x05, "ú", "Ú"},   {0x17, "ি", "ই", 0x05, "í", "Í"},  {0x18, "ও", "ঔ", 0x05, "ó", "Ó"},
+    {0x19, "প", "ফ", 0x05, "ö", "Ö"},  {0x1A, "ে", "ৈ", 0x00, "«", ""},  {0x1B, "ো", "ৌ", 0x00, "»", ""},
+    {0x1E, "া", "অ", 0x05, "á", "Á"},  {0x1F, "স", "ষ", 0x01, "ß", "§"},  {0x20, "ড", "ঢ", 0x05, "ð", "Ð"},
     {0x21, "ত", "থ", 0x01},  {0x22, "গ", "ঘ", 0x01},  {0x23, "হ", "ঃ", 0x01},
-    {0x24, "জ", "ঝ", 0x01},  {0x25, "ক", "খ", 0x01},  {0x26, "ল", "ং", 0x05},
-    {0x27, ";", ":", 0x00},  {0x28, "'", "\"", 0x00}, {0x29, "\x60", "~", 0x00},
-    {0x2B, "\\", "|", 0x00}, {0x2C, "য়", "য", 0x05},  {0x2D, "শ", "ঢ়", 0x01},
-    {0x2E, "চ", "ছ", 0x01},  {0x2F, "আ", "ঋ", 0x01},  {0x30, "ব", "ভ", 0x01},
-    {0x31, "ন", "ণ", 0x05},  {0x32, "ম", "ঙ", 0x01},  {0x33, ",", "ৃ", kProbhatCapLokAltGr},
-    {0x34, "।", "ঁ", 0x00},   {0x35, "্", "?", 0x00},   {0x39, " ", " ", 0x00},
+    {0x24, "জ", "ঝ", 0x01},  {0x25, "ক", "খ", 0x01},  {0x26, "ল", "ং", 0x05, "ø", "Ø"},
+    {0x27, ";", ":", 0x00, "¶", "°"},  {0x28, "'", "\"", 0x00, "´", "¨"}, {0x29, "\x60", "~", 0x00},
+    {0x2B, "\\", "|", 0x00, "¬", "¦"}, {0x2C, "য়", "য", 0x05, "æ", "Æ"},  {0x2D, "শ", "ঢ়", 0x01},
+    {0x2E, "চ", "ছ", 0x01, "©", "¢"},  {0x2F, "আ", "ঋ", 0x01},  {0x30, "ব", "ভ", 0x01},
+    {0x31, "ন", "ণ", 0x05, "ñ", "Ñ"},  {0x32, "ম", "ঙ", 0x01, "µ", ""},  {0x33, ",", "ৃ", kProbhatCapLokAltGr, "ç", "Ç"},
+    {0x34, "।", "ঁ", 0x00},   {0x35, "্", "?", 0x00, "¿", ""},   {0x39, " ", " ", 0x00},
     {0x53, ".", ".", 0x00},  {0x56, "\\", "|", 0x00},
 };
 
@@ -121,14 +123,22 @@ bool ascii_key_to_event(char value, layout::KeyEvent& event) noexcept {
 }
 
 std::string output_for_event(const layout::KeyEvent& event) {
-    if (!event.key_down || event.modifiers.control || event.modifiers.alt
-        || event.modifiers.windows) {
+    if (!event.key_down || event.modifiers.windows
+        || ((event.modifiers.control || event.modifiers.alt) && !event.modifiers.alt_graph)) {
         return {};
     }
 
     const ProbhatKeyMapping* mapping = find_mapping(event.scan_code);
     if (mapping == nullptr) {
         return {};
+    }
+
+    if (event.modifiers.alt_graph) {
+        const bool caplok_altgr_enabled = (mapping->caps_flags & kProbhatCapLokAltGr) != 0;
+        const bool shift_active =
+            event.modifiers.shift != (caplok_altgr_enabled && event.modifiers.caps_lock);
+        const std::string_view output = shift_active ? mapping->shifted_altgr : mapping->altgr;
+        return std::string(output);
     }
 
     const bool caplok_enabled = (mapping->caps_flags & kProbhatCapLok) != 0;
@@ -177,8 +187,8 @@ class ProbhatInputSession final : public layout::InputSession {
     }
 
     layout::InputStatus append_key(const layout::KeyEvent& event) override {
-        if (!event.key_down || event.modifiers.control || event.modifiers.alt
-            || event.modifiers.windows) {
+        if (!event.key_down || event.modifiers.windows
+            || ((event.modifiers.control || event.modifiers.alt) && !event.modifiers.alt_graph)) {
             return layout::InputStatus::empty;
         }
         const std::string output = output_for_event(event);

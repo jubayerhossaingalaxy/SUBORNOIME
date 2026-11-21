@@ -30,6 +30,8 @@ current-head CI evidence and the applicable real-world acceptance checks.
   UTF-8; a Bengali filename regression test was added.
 - TSF keeps last-known-good settings if a settings reload fails; engine regression
   coverage verifies that the active layout and settings remain intact.
+- Avro ya-phala composition now ends the dependent-consonant run correctly so
+  the documented `bybohar` vector produces `ব্যবহার`; a regression test was added.
 - ICU i18n is explicitly linked because grapheme segmentation uses
   `icu::BreakIterator`; the minimal-data POC must retain the required character
   break rules and pass the full Unicode regression suite.

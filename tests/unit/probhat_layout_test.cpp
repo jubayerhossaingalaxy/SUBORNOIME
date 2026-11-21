@@ -9,7 +9,13 @@ suborno::layout::KeyEvent event(std::uint16_t scan_code,
                                 bool caps_lock = false,
                                 bool alt_graph = false) {
     return {
-        .modifiers = {.shift = shift, .caps_lock = caps_lock, .alt_graph = alt_graph},
+        .modifiers = {
+            .shift = shift,
+            .caps_lock = caps_lock,
+            .control = alt_graph,
+            .alt = alt_graph,
+            .alt_graph = alt_graph,
+        },
         .scan_code = scan_code,
         .key_down = true,
     };

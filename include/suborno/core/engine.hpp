@@ -28,6 +28,7 @@ class Engine {
     bool register_layout(std::string_view id, std::unique_ptr<layout::InputLayout> layout);
     bool set_active_layout(std::string_view id);
     std::string_view active_layout_id() const noexcept;
+    layout::LayoutKind active_layout_kind() const noexcept;
     const layout::LayoutMetadata* layout_metadata(std::string_view id) const;
 
     std::unique_ptr<layout::InputSession> create_session();

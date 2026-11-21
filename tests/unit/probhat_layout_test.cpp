@@ -39,7 +39,7 @@ TEST(ProbhatLayoutTest, MapsPhysicalKeyPositionsAndShiftLayer) {
     EXPECT_EQ(layout.transliterate("A"), "অ");
     EXPECT_EQ(layout.transliterate("q"), "দ");
     EXPECT_EQ(layout.transliterate("Q"), "ধ");
-    EXPECT_EQ(layout.transliterate("z"), "য়");
+    EXPECT_EQ(layout.transliterate("z"), "\u09AF\u09BC");
     EXPECT_EQ(layout.transliterate("Z"), "য");
     EXPECT_EQ(layout.transliterate("y"), "এ");
     EXPECT_EQ(layout.transliterate("Y"), "ঐ");

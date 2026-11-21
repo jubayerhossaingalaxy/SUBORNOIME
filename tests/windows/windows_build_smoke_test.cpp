@@ -253,6 +253,47 @@ TEST(WindowsTsfContractTest, RegistersAndUnregistersTheLanguageProfile) {
 }
 
 
+TEST(CandidateListUIElementTest, SupportsDefaultAndHostDefinedCandidatePages) {
+    std::vector<suborno::layout::Candidate> candidates;
+    for (std::size_t index = 0; index < 10; ++index) {
+        candidates.push_back({
+            .text = "candidate-" + std::to_string(index),
+            .normalized_text = "candidate-" + std::to_string(index),
+            .stable_id = "candidate:" + std::to_string(index),
+        });
+    }
+
+    auto* element = new suborno::platform::windows::CandidateListUIElement(
+        nullptr, candidates, 0, {}, {});
+
+    UINT page_count = 0;
+    EXPECT_EQ(element->GetPageIndex(nullptr, 0, &page_count), S_OK);
+    EXPECT_EQ(page_count, 2U);
+
+    UINT default_pages[2]{};
+    EXPECT_EQ(element->GetPageIndex(default_pages, 2, &page_count), S_OK);
+    EXPECT_EQ(default_pages[0], 0U);
+    EXPECT_EQ(default_pages[1], 8U);
+
+    EXPECT_EQ(element->SetSelection(9), S_OK);
+    UINT current_page = 0;
+    EXPECT_EQ(element->GetCurrentPage(&current_page), S_OK);
+    EXPECT_EQ(current_page, 1U);
+
+    UINT custom_pages[]{0, 3, 7};
+    EXPECT_EQ(element->SetPageIndex(custom_pages, 3), S_OK);
+    EXPECT_EQ(element->GetCurrentPage(&current_page), S_OK);
+    EXPECT_EQ(current_page, 2U);
+
+    UINT actual_custom_pages[3]{};
+    EXPECT_EQ(element->GetPageIndex(actual_custom_pages, 3, &page_count), S_OK);
+    EXPECT_EQ(actual_custom_pages[0], 0U);
+    EXPECT_EQ(actual_custom_pages[1], 3U);
+    EXPECT_EQ(actual_custom_pages[2], 7U);
+
+    element->Release();
+}
+
 TEST(CandidateListUIElementTest, ExposesCandidateStringsAndSelectionThroughTsfContracts) {
     const std::vector<suborno::layout::Candidate> candidates{
         {.text = "আমি", .normalized_text = "ami", .stable_id = "candidate:ami"},

@@ -3,6 +3,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -18,8 +19,8 @@ struct ProbhatKeyMapping {
     std::uint8_t scan_code;
     std::string_view unshifted;
     std::string_view shifted;
-    std::string_view unshifted_dependent;
-    std::string_view shifted_dependent;
+    std::string_view unshifted_dependent{};
+    std::string_view shifted_dependent{};
 };
 
 // Independently authored mapping from the published Probhat key chart.
@@ -139,7 +140,7 @@ bool ascii_key_to_event(char value, layout::KeyEvent& event) noexcept {
 }
 
 bool ends_with_bengali_consonant(std::string_view text) {
-    const auto graphemes = suborno::unicode::split_graphemes(text);
+    const auto graphemes = suborno::unicode::split_graphemes(std::string(text));
     if (graphemes.empty()) {
         return false;
     }
@@ -187,7 +188,11 @@ std::string output_for_event(const layout::KeyEvent& event, bool after_consonant
         return std::string(kBengaliDigits[physical_key - first_numpad]);
     }
 
-    const ProbhatKeyMapping* mapping = find_mapping(event.scan_code);
+    if (event.scan_code > std::numeric_limits<std::uint8_t>::max()) {
+        return {};
+    }
+    const ProbhatKeyMapping* mapping =
+        find_mapping(static_cast<std::uint8_t>(event.scan_code));
     if (mapping == nullptr) {
         return {};
     }

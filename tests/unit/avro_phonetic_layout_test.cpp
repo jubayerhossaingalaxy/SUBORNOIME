@@ -24,8 +24,11 @@ TEST(AvroPhoneticLayoutTest, ConvertsIndependentAndDependentVowels) {
 TEST(AvroPhoneticLayoutTest, PreservesCaseSensitiveConsonantTokens) {
     const suborno::layouts::AvroPhoneticLayout layout;
 
-    EXPECT_EQ(layout.transliterate("ch"), "চ");
+    EXPECT_EQ(layout.transliterate("c"), "চ");
+    EXPECT_EQ(layout.transliterate("ch"), "ছ");
     EXPECT_EQ(layout.transliterate("chh"), "ছ");
+    EXPECT_EQ(layout.transliterate("j"), "জ");
+    EXPECT_EQ(layout.transliterate("J"), "জ");
     EXPECT_EQ(layout.transliterate("t"), "ত");
     EXPECT_EQ(layout.transliterate("T"), "ট");
     EXPECT_EQ(layout.transliterate("th"), "থ");
@@ -43,6 +46,8 @@ TEST(AvroPhoneticLayoutTest, HandlesAccentKeyOverrides) {
     EXPECT_EQ(layout.transliterate(std::string("a") + '\x60'), "া");
     EXPECT_EQ(layout.transliterate(std::string("k") + '\x60' + "i"), "কই");
     EXPECT_EQ(layout.transliterate(std::string("k") + '\x60' + "ta"), "কতা");
+    EXPECT_EQ(layout.transliterate(std::string(".") + '\x60'), ".");
+    EXPECT_EQ(layout.transliterate(std::string(":") + '\x60'), ":");
 }
 
 TEST(AvroPhoneticLayoutTest, SupportsRephPhalaAndSpecialSigns) {

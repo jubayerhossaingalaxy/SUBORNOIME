@@ -16,6 +16,7 @@ class CandidateEngine {
   public:
     explicit CandidateEngine(const layout::InputLayout& layout,
                              const dictionary::Dictionary* dictionary = nullptr);
+    CandidateEngine(const layout::InputLayout& layout, const dictionary::Dictionary& dictionary);
 
     std::vector<layout::Candidate> make_candidates(std::string_view input,
                                                    std::size_t candidate_limit = 16) const;

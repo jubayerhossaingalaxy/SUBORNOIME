@@ -14,6 +14,10 @@ CandidateEngine::CandidateEngine(const suborno::layout::InputLayout& layout,
     : layout_(layout),
       dictionary_(dictionary) {}
 
+CandidateEngine::CandidateEngine(const suborno::layout::InputLayout& layout,
+                                 const suborno::dictionary::Dictionary& dictionary)
+    : CandidateEngine(layout, &dictionary) {}
+
 std::vector<suborno::layout::Candidate> CandidateEngine::make_candidates(
     std::string_view input,
     std::size_t candidate_limit) const {

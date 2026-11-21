@@ -85,6 +85,33 @@ std::vector<std::string> bengali_replacement_graphemes() {
     return result;
 }
 
+std::vector<std::string> replacement_graphemes_for(
+    const std::vector<std::string>& graphemes) {
+    const bool is_ascii_latin_word =
+        !graphemes.empty()
+        && std::all_of(graphemes.begin(), graphemes.end(), [](const std::string& grapheme) {
+               return grapheme.size() == 1
+                      && ((grapheme[0] >= 'a' && grapheme[0] <= 'z')
+                          || (grapheme[0] >= 'A' && grapheme[0] <= 'Z'));
+           });
+    if (!is_ascii_latin_word) {
+        return bengali_replacement_graphemes();
+    }
+
+    const bool uppercase_word =
+        std::all_of(graphemes.begin(), graphemes.end(), [](const std::string& grapheme) {
+            return grapheme[0] >= 'A' && grapheme[0] <= 'Z';
+        });
+    std::vector<std::string> result;
+    result.reserve(26);
+    for (char letter = 'a'; letter <= 'z'; ++letter) {
+        const char replacement =
+            uppercase_word ? static_cast<char>(letter - ('a' - 'A')) : letter;
+        result.emplace_back(1, replacement);
+    }
+    return result;
+}
+
 }  // namespace
 
 SpellChecker::SpellChecker(const dictionary::Dictionary& dictionary)
@@ -183,7 +210,7 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
         return {};
     }
 
-    const auto replacements = bengali_replacement_graphemes();
+    const auto replacements = replacement_graphemes_for(graphemes);
     std::vector<std::string> edits;
     edits.reserve(kMaximumGeneratedEdits);
     std::unordered_set<std::string> seen;
@@ -225,23 +252,7 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
         append_edit(std::move(candidate));
     }
 
-    // Replacements (using Bengali graphemes)
-    for (std::size_t i = 0;
-         i < graphemes.size() && edits.size() < kMaximumGeneratedEdits;
-         ++i) {
-        for (const auto& replacement : replacements) {
-            if (edits.size() >= kMaximumGeneratedEdits) {
-                break;
-            }
-            std::string candidate;
-            for (std::size_t j = 0; j < graphemes.size(); ++j) {
-                candidate += j == i ? replacement : graphemes[j];
-            }
-            append_edit(std::move(candidate));
-        }
-    }
-
-    // Insertions
+    // Insertions are searched before substitutions so missing letters remain reachable.
     for (std::size_t i = 0;
          i <= graphemes.size() && edits.size() < kMaximumGeneratedEdits;
          ++i) {
@@ -262,6 +273,23 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
             append_edit(std::move(candidate));
         }
     }
+
+    // Replacements use the input script's alphabet.
+    for (std::size_t i = 0;
+         i < graphemes.size() && edits.size() < kMaximumGeneratedEdits;
+         ++i) {
+        for (const auto& replacement : replacements) {
+            if (edits.size() >= kMaximumGeneratedEdits) {
+                break;
+            }
+            std::string candidate;
+            for (std::size_t j = 0; j < graphemes.size(); ++j) {
+                candidate += j == i ? replacement : graphemes[j];
+            }
+            append_edit(std::move(candidate));
+        }
+    }
+
 
     return edits;
 }

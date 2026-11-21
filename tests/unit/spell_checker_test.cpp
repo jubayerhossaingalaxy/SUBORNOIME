@@ -1,5 +1,6 @@
 #include "suborno/spell/spell_checker.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <stdexcept>
@@ -45,6 +46,42 @@ TEST(SpellCheckerTest, UnknownWordGetsSuggestions) {
     EXPECT_FALSE(result.is_correct);
     // Should have some suggestions
     EXPECT_FALSE(result.suggestions.empty());
+
+    std::remove(db_path.c_str());
+}
+
+TEST(SpellCheckerTest, CorrectsMissingRomanPhoneticLetters) {
+    const std::string db_path = temporary_database_path("suborno_spell_missing_roman_letter_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "bangla", 5);
+
+    suborno::spell::SpellChecker checker(dictionary);
+    const auto edits = checker.generate_edits("bngla");
+    EXPECT_NE(std::find(edits.begin(), edits.end(), "bangla"), edits.end());
+
+    const auto result = checker.check("bngla");
+    ASSERT_FALSE(result.suggestions.empty());
+    EXPECT_EQ(result.suggestions.front().text, "বাংলা");
+
+    std::remove(db_path.c_str());
+}
+
+TEST(SpellCheckerTest, CorrectsSubstitutedRomanPhoneticLetters) {
+    const std::string db_path = temporary_database_path("suborno_spell_substituted_roman_letter_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "bangla", 5);
+
+    suborno::spell::SpellChecker checker(dictionary);
+    const auto edits = checker.generate_edits("bongla");
+    EXPECT_NE(std::find(edits.begin(), edits.end(), "bangla"), edits.end());
+
+    const auto result = checker.check("bongla");
+    ASSERT_FALSE(result.suggestions.empty());
+    EXPECT_EQ(result.suggestions.front().text, "বাংলা");
 
     std::remove(db_path.c_str());
 }

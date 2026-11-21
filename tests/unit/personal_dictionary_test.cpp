@@ -75,6 +75,87 @@ TEST(PersonalDictionaryTest, RejectsNewerSchemaWithoutMutatingTheDatabase) {
     std::remove(db_path.c_str());
 }
 
+TEST(PersonalDictionaryTest, RollsBackPartiallyFailedSchemaMigration) {
+    const std::string db_path =
+        temporary_database_path("suborno_dictionary_failed_migration_rollback_test.sqlite");
+    std::remove(db_path.c_str());
+
+    sqlite3* database = nullptr;
+    ASSERT_EQ(sqlite3_open(db_path.c_str(), &database), SQLITE_OK);
+    ASSERT_NE(database, nullptr);
+
+    const char* create_legacy_schema =
+        "CREATE TABLE dictionary_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);"
+        "INSERT INTO dictionary_metadata(key, value) VALUES('schema_version', '1');"
+        "CREATE TABLE dictionary_entries ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "word TEXT NOT NULL UNIQUE,"
+        "normalized TEXT NOT NULL,"
+        "frequency INTEGER NOT NULL DEFAULT 1);"
+        "CREATE TRIGGER reject_schema_version_update "
+        "BEFORE UPDATE OF value ON dictionary_metadata "
+        "WHEN OLD.key='schema_version' AND NEW.value='2' "
+        "BEGIN SELECT RAISE(ABORT, 'simulated schema migration failure'); END;";
+    ASSERT_EQ(sqlite3_exec(database, create_legacy_schema, nullptr, nullptr, nullptr), SQLITE_OK);
+    ASSERT_EQ(sqlite3_close(database), SQLITE_OK);
+
+    EXPECT_THROW(
+        { suborno::dictionary::Dictionary dictionary(db_path); },
+        suborno::dictionary::DictionaryError);
+
+    ASSERT_EQ(sqlite3_open(db_path.c_str(), &database), SQLITE_OK);
+    ASSERT_NE(database, nullptr);
+
+    sqlite3_stmt* version_stmt = nullptr;
+    ASSERT_EQ(sqlite3_prepare_v2(database,
+                                 "SELECT value FROM dictionary_metadata WHERE key='schema_version'",
+                                 -1,
+                                 &version_stmt,
+                                 nullptr),
+              SQLITE_OK);
+    ASSERT_EQ(sqlite3_step(version_stmt), SQLITE_ROW);
+    EXPECT_STREQ(reinterpret_cast<const char*>(sqlite3_column_text(version_stmt, 0)), "1");
+    EXPECT_EQ(sqlite3_finalize(version_stmt), SQLITE_OK);
+
+    sqlite3_stmt* column_stmt = nullptr;
+    ASSERT_EQ(sqlite3_prepare_v2(
+                  database, "PRAGMA table_info(dictionary_entries)", -1, &column_stmt, nullptr),
+              SQLITE_OK);
+    bool has_source_column = false;
+    bool has_user_frequency_column = false;
+    bool has_user_pinned_column = false;
+    int step_result = SQLITE_OK;
+    while ((step_result = sqlite3_step(column_stmt)) == SQLITE_ROW) {
+        const auto* column_name = sqlite3_column_text(column_stmt, 1);
+        if (column_name == nullptr) {
+            continue;
+        }
+        const std::string name(reinterpret_cast<const char*>(column_name));
+        has_source_column = has_source_column || name == "source";
+        has_user_frequency_column = has_user_frequency_column || name == "user_frequency";
+        has_user_pinned_column = has_user_pinned_column || name == "user_pinned";
+    }
+    EXPECT_EQ(step_result, SQLITE_DONE);
+    EXPECT_FALSE(has_source_column);
+    EXPECT_FALSE(has_user_frequency_column);
+    EXPECT_FALSE(has_user_pinned_column);
+    EXPECT_EQ(sqlite3_finalize(column_stmt), SQLITE_OK);
+
+    sqlite3_stmt* aliases_table_stmt = nullptr;
+    ASSERT_EQ(sqlite3_prepare_v2(database,
+                                 "SELECT name FROM sqlite_master "
+                                 "WHERE type='table' AND name='dictionary_user_aliases'",
+                                 -1,
+                                 &aliases_table_stmt,
+                                 nullptr),
+              SQLITE_OK);
+    EXPECT_EQ(sqlite3_step(aliases_table_stmt), SQLITE_DONE);
+    EXPECT_EQ(sqlite3_finalize(aliases_table_stmt), SQLITE_OK);
+
+    EXPECT_EQ(sqlite3_close(database), SQLITE_OK);
+    std::remove(db_path.c_str());
+}
+
 TEST(PersonalDictionaryTest, OpensDatabaseAtUnicodeFilesystemPath) {
     const std::filesystem::path database_path =
         std::filesystem::temp_directory_path()

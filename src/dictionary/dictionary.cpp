@@ -25,7 +25,7 @@ std::string read_dictionary_metadata(sqlite3* database, const char* key) {
         throw DictionaryError(
             DictionaryErrorCategory::prepare,
             prepare_result,
-                              sqlite3_errmsg(database));
+            sqlite3_errmsg(database));
     }
 
     if (sqlite3_bind_text(statement, 1, key, -1, SQLITE_STATIC) != SQLITE_OK) {
@@ -47,7 +47,7 @@ std::string read_dictionary_metadata(sqlite3* database, const char* key) {
         throw DictionaryError(
             DictionaryErrorCategory::step,
             step_result,
-                              sqlite3_errmsg(database));
+            sqlite3_errmsg(database));
     }
 
     sqlite3_finalize(statement);
@@ -118,6 +118,31 @@ void commit_dictionary_transaction(sqlite3* database) {
     }
 }
 
+class DictionaryTransaction final {
+  public:
+    explicit DictionaryTransaction(sqlite3* database) : database_(database) {
+        begin_dictionary_transaction(database_);
+    }
+
+    DictionaryTransaction(const DictionaryTransaction&) = delete;
+    DictionaryTransaction& operator=(const DictionaryTransaction&) = delete;
+
+    ~DictionaryTransaction() noexcept {
+        if (!committed_) {
+            rollback_dictionary_transaction(database_);
+        }
+    }
+
+    void commit() {
+        commit_dictionary_transaction(database_);
+        committed_ = true;
+    }
+
+  private:
+    sqlite3* database_;
+    bool committed_ = false;
+};
+
 }  // namespace
 
 DictionaryError::DictionaryError(DictionaryErrorCategory category,
@@ -182,6 +207,7 @@ Dictionary::Dictionary(const std::string& database_path)
 Dictionary::~Dictionary() = default;
 
 void Dictionary::initialize_schema() {
+    DictionaryTransaction transaction(impl_->db);
     sqlite3_stmt* metadata_stmt = nullptr;
     const int metadata_prepare_rc = sqlite3_prepare_v2(
         impl_->db,
@@ -378,6 +404,7 @@ void Dictionary::initialize_schema() {
                               SQLITE_SCHEMA,
                               "Dictionary database schema is newer than this engine");
     }
+    transaction.commit();
 }
 
 std::size_t Dictionary::import_word_lists_if_needed(const WordListPaths& word_list_paths,

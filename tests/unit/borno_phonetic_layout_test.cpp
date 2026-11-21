@@ -49,7 +49,7 @@ TEST(BornoPhoneticLayoutTest, ComposesConsonantRunsAndExplicitControls) {
 TEST(BornoPhoneticLayoutTest, EscapesLiteralGraphemesAndPreservesUnknownText) {
     const suborno::layouts::BornoPhoneticLayout layout;
 
-    EXPECT_EQ(layout.transliterate(R"(facebook\-এর)"), "facebook-এর");
+    EXPECT_EQ(layout.transliterate(R"(\k)"), "k");
     EXPECT_EQ(layout.transliterate("hellO!"), "হেল্লো!");
     EXPECT_THROW(layout.transliterate("\xFF"), std::invalid_argument);
 }

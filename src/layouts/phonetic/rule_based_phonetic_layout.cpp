@@ -57,6 +57,31 @@ TokenMatch match_token(std::span<const PhoneticTokenDefinition> tokens,
     return best;
 }
 
+TokenMatch prefer_vowel_boundary(std::span<const PhoneticTokenDefinition> tokens,
+                                 std::string_view input,
+                                 std::size_t offset,
+                                 TokenMatch match) {
+    if (match.definition == nullptr || match.definition->kind != PhoneticTokenKind::consonant) {
+        return match;
+    }
+
+    TokenMatch preferred;
+    for (const PhoneticTokenDefinition& token : tokens) {
+        if (token.kind != PhoneticTokenKind::consonant || token.input.size() >= match.length
+            || input.compare(offset, token.input.size(), token.input) != 0) {
+            continue;
+        }
+
+        const TokenMatch suffix = match_token(tokens, input, offset + token.input.size());
+        if (suffix.definition != nullptr && suffix.definition->kind == PhoneticTokenKind::vowel
+            && token.input.size() > preferred.length) {
+            preferred = {&token, token.input.size()};
+        }
+    }
+
+    return preferred.definition == nullptr ? match : preferred;
+}
+
 const ControlToken* match_control(std::string_view input, std::size_t offset) {
     for (const ControlToken& control : kControls) {
         if (control.input.size() <= input.size() - offset
@@ -275,7 +300,8 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
             continue;
         }
 
-        const TokenMatch match = match_token(tokens_, input, offset);
+        const TokenMatch match =
+            prefer_vowel_boundary(tokens_, input, offset, match_token(tokens_, input, offset));
         if (match.definition != nullptr) {
             bool consumed_accent = false;
             if (match.definition->kind == PhoneticTokenKind::vowel && accent_key_enabled_

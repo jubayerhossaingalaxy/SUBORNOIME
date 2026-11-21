@@ -85,7 +85,7 @@ TEST(SettingsTest, MissingFileUsesDefaults) {
     EXPECT_EQ(loaded.status, suborno::settings::SettingsStatus::ok);
     EXPECT_EQ(loaded.settings.active_layout_id, "suborno-phonetic");
     EXPECT_EQ(loaded.settings.candidate_limit, 16U);
-    EXPECT_TRUE(loaded.settings.learning_enabled);
+    EXPECT_FALSE(loaded.settings.learning_enabled);
 }
 
 TEST(SettingsTest, MigratesLegacyVersionOneSettingsToCurrentDefaults) {
@@ -116,8 +116,38 @@ TEST(SettingsTest, MigratesLegacyVersionOneSettingsToCurrentDefaults) {
         ASSERT_TRUE(migrated.is_open());
         std::string first_line;
         ASSERT_TRUE(std::getline(migrated, first_line));
-        EXPECT_EQ(first_line, "version=2");
+        EXPECT_EQ(first_line, "version=3");
     }
+    std::filesystem::remove(path);
+}
+
+TEST(SettingsTest, DisablesImplicitLearningWhenMigratingVersionTwoSettings) {
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "suborno_settings_v2_learning_migration_test.conf";
+    {
+        std::ofstream output(path, std::ios::trunc);
+        output << "version=2\n"
+               << "active_layout=suborno-phonetic\n"
+               << "candidate_limit=16\n"
+               << "learning_enabled=true\n";
+    }
+
+    suborno::settings::SettingsStore store(path);
+    const auto loaded = store.load();
+    ASSERT_EQ(loaded.status, suborno::settings::SettingsStatus::ok);
+    EXPECT_FALSE(loaded.settings.learning_enabled);
+
+    EXPECT_EQ(store.save(loaded.settings), suborno::settings::SettingsStatus::ok);
+    {
+        std::ifstream migrated(path);
+        ASSERT_TRUE(migrated.is_open());
+        std::string first_line;
+        ASSERT_TRUE(std::getline(migrated, first_line));
+        EXPECT_EQ(first_line, "version=3");
+    }
+    const auto reloaded = store.load();
+    EXPECT_EQ(reloaded.status, suborno::settings::SettingsStatus::ok);
+    EXPECT_FALSE(reloaded.settings.learning_enabled);
     std::filesystem::remove(path);
 }
 

@@ -68,7 +68,7 @@ struct InputSettings {
 struct EngineSettings {
     std::string active_layout_id = "suborno-phonetic";
     std::size_t candidate_limit = 16;
-    bool learning_enabled = true;
+    bool learning_enabled = false;
     GeneralSettings general;
     InterfaceSettings interface_settings;
     TopbarSettings topbar;

@@ -1,6 +1,6 @@
 # Privacy and security boundaries for SUBORNO
 
-SUBORNO does not collect or transmit typed text by default. The first release stores local dictionary and user settings in SQLite under the current user profile and avoids any network transmission of composition data.
+SUBORNO does not transmit typed text or composition data over the network. Personal learning is disabled by default. If enabled through the settings file, committed words and typed aliases may be stored in the local user dictionary under the current user profile.
 
 ## Requirements
 
@@ -12,6 +12,8 @@ SUBORNO does not collect or transmit typed text by default. The first release st
 
 ## User controls
 
-- User dictionary entries are local and optional.
-- Settings are stored locally and can be removed by deleting the profile database.
+- Personal learning is disabled by default; version 1 and version 2 settings migrate with learning disabled.
+- When enabled, learned words and typed aliases are stored locally in the user dictionary; they are not uploaded.
+- Settings and learned entries are stored locally and can be removed by deleting the profile database.
 - Diagnostic logging must never include typed text content.
+- Password/sensitive-field detection and automatic suppression of learning have not yet passed Windows host-app acceptance tests; keep personal learning disabled until that release gate is complete.

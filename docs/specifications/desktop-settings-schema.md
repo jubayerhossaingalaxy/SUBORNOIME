@@ -3,17 +3,31 @@
 ## Format and compatibility
 
 Settings are stored as UTF-8, newline-delimited key/value pairs and written
-atomically. The current schema version is **2**.
+atomically. The current schema version is **3**.
 
-- Version 1 contained only engine settings: active layout, candidate limit, and
+- Version 1 contained engine settings: active layout, candidate limit, and
   learning enablement.
 - Version 2 adds General, Interface, Topbar, and Input groups.
-- A version 1 file loads with version 2 defaults for the new groups.
-- The next successful save writes the complete version 2 representation.
+- Version 3 changes personal learning to an explicit opt-in: it is disabled by
+  default, and version 1/2 files migrate with learning disabled.
+- The next successful save writes the complete version 3 representation.
 - Unknown keys, duplicate keys, malformed values, unsupported enum values,
   integer overflow, and values outside supported ranges are rejected.
 - A missing file returns default settings. An unreadable existing file is an
   I/O error.
+
+## Engine
+
+| Key | Type | Default | Allowed values |
+|---|---|---|---|
+| active_layout | string | suborno-phonetic | registered layout ID |
+| candidate_limit | integer | 16 | 1–100 |
+| learning_enabled | boolean | false | true / false; false until explicitly enabled |
+
+Personal learning records committed words and typed aliases in the local user
+dictionary. It must remain disabled unless the user explicitly opts in. Password
+and other sensitive-field suppression is a separate release requirement and
+must be verified before enabling learning in production.
 
 ## General
 

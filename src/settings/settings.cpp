@@ -14,8 +14,9 @@
 namespace suborno::settings {
 namespace {
 
-constexpr std::size_t kSettingsVersion = 2;
+constexpr std::size_t kSettingsVersion = 3;
 constexpr std::size_t kLegacySettingsVersion = 1;
+constexpr std::size_t kPreviousSettingsVersion = 2;
 constexpr std::size_t kMaximumSettingsLineLength = 4096;
 
 bool valid_value_string(const std::string& value) {
@@ -405,7 +406,8 @@ SettingsLoadResult SettingsStore::load() const {
         result.error = "Missing settings version";
         return result;
     }
-    if (version != kLegacySettingsVersion && version != kSettingsVersion) {
+    if (version != kLegacySettingsVersion && version != kPreviousSettingsVersion
+        && version != kSettingsVersion) {
         result.status = SettingsStatus::unsupported_version;
         result.error = "Unsupported settings version";
         return result;
@@ -414,6 +416,11 @@ SettingsLoadResult SettingsStore::load() const {
         result.status = SettingsStatus::invalid_format;
         result.error = "Missing required engine settings";
         return result;
+    }
+    if (version < kSettingsVersion) {
+        // Earlier defaults enabled learning without an in-app opt-in control.
+        // Require explicit opt-in after upgrading to avoid silently retaining typed words.
+        settings.learning_enabled = false;
     }
     if (!validate(settings)) {
         result.status = SettingsStatus::invalid_format;

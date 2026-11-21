@@ -3,9 +3,19 @@
 ## Portable code
 
 Portable C++20 targets must not include Windows headers or WIL. ICU and SQLite
-are surfaced through dependency-specific targets. Intended module boundaries
-are represented by `suborno_layout_api`, `suborno_dictionary`, and
-`suborno_persistence`; these targets do not currently implement product logic.
+are surfaced through dependency-specific targets.
+
+- `suborno_layout_api` defines the host-neutral input-layout, input-session,
+  candidate, and physical-key-event contracts.
+- `suborno_dictionary` implements the SQLite-backed dictionary, normalized
+  lookup, prefix lookup, and user-word persistence.
+- `suborno_persistence` implements atomic file replacement for settings and
+  other small application data; it has no SQLite dependency.
+- `suborno_layout_sessions` provides shared stateless layout-session and
+  candidate plumbing. Phonetic layouts retain their specialized parser and
+  composition-session implementation.
+- `suborno_unicode` owns UTF-8 validation, Unicode normalization, and
+  grapheme segmentation through ICU.
 
 ## Windows-only code
 
@@ -16,9 +26,11 @@ profile registration, per-context composition sessions, keyboard event
 handling, and TSF edit-session text insertion.
 
 The Windows desktop executable owns the notification-area shell, layout
-selection, startup preference, and Windows input settings integration.
-Candidate-window UIElement, Topbar, theme rendering, on-screen keyboard, and
-the full settings surface remain planned work.
+selection, startup preference, and Windows input settings integration. A
+native TSF candidate UIElement and basic non-activating vertical popup are
+implemented; host-driven rendering, keyboard interaction, accessibility,
+and per-monitor DPI behavior still require acceptance testing. Topbar, theme
+rendering, on-screen keyboard, and the full settings surface remain planned.
 
 ## Verification
 

@@ -363,7 +363,19 @@ class Application final {
             if (loaded.status != suborno::settings::SettingsStatus::ok) {
                 return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
             }
-            return read_startup_preference(startup_enabled_);
+            result = read_startup_preference(startup_enabled_);
+            if (FAILED(result)) {
+                return result;
+            }
+
+            auto settings = engine_->settings();
+            if (settings.general.start_with_windows != startup_enabled_) {
+                settings.general.start_with_windows = startup_enabled_;
+                if (engine_->save_settings(settings) != suborno::settings::SettingsStatus::ok) {
+                    return HRESULT_FROM_WIN32(ERROR_WRITE_FAULT);
+                }
+            }
+            return S_OK;
         } catch (const std::bad_alloc&) {
             return E_OUTOFMEMORY;
         } catch (const std::exception&) {
@@ -610,7 +622,19 @@ class Application final {
         }
         if (id == kStartupCheck && notification == BN_CLICKED) {
             const bool enabled = ::SendMessageW(startup_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
-            const HRESULT result = write_startup_preference(enabled);
+            const HRESULT registry_result = write_startup_preference(enabled);
+            HRESULT result = registry_result;
+            if (SUCCEEDED(result)) {
+                auto settings = engine_->settings();
+                settings.general.start_with_windows = enabled;
+                if (engine_->save_settings(settings) != suborno::settings::SettingsStatus::ok) {
+                    result = HRESULT_FROM_WIN32(ERROR_WRITE_FAULT);
+                    const HRESULT rollback_result = write_startup_preference(startup_enabled_);
+                    if (FAILED(rollback_result)) {
+                        result = rollback_result;
+                    }
+                }
+            }
             if (FAILED(result)) {
                 ::SendMessageW(
                     startup_check_, BM_SETCHECK, startup_enabled_ ? BST_CHECKED : BST_UNCHECKED, 0);

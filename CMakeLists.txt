@@ -74,6 +74,16 @@ add_library(suborno_dictionary STATIC src/dictionary/dictionary.cpp)
 target_include_directories(suborno_dictionary PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(suborno_dictionary PUBLIC unofficial::sqlite3::sqlite3)
 
+add_library(suborno_layout_sessions STATIC
+    src/layouts/layout_input_session.cpp
+)
+target_include_directories(suborno_layout_sessions PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(suborno_layout_sessions PUBLIC
+    suborno_layout_api
+    suborno_unicode
+    suborno_dictionary
+)
+
 add_library(suborno_persistence STATIC src/persistence/atomic_file.cpp)
 target_include_directories(suborno_persistence PUBLIC
     "${PROJECT_SOURCE_DIR}/include"
@@ -102,6 +112,7 @@ target_link_libraries(suborno_core
         suborno_dictionary
         suborno_persistence
         suborno_layout_registry
+        suborno_layout_sessions
         suborno_settings
 )
 target_compile_definitions(suborno_core PUBLIC SUBORNO_API_STATIC)
@@ -138,6 +149,7 @@ suborno_configure_target(suborno_layout_registry)
 suborno_configure_target(suborno_settings)
 suborno_configure_target(suborno_persistence)
 suborno_configure_target(suborno_dictionary)
+suborno_configure_target(suborno_layout_sessions)
 suborno_configure_target(suborno_core)
 
 if(UNIX AND NOT APPLE)
@@ -259,6 +271,7 @@ if(BUILD_TESTING)
         tests/unit/project_smoke_test.cpp
         tests/unit/phonetic_parser_test.cpp
         tests/unit/phonetic_input_session_test.cpp
+        tests/unit/layout_input_session_test.cpp
         tests/unit/phonetic_candidate_test.cpp
         tests/unit/phonetic_tokenizer_test.cpp
         tests/unit/unicode_test.cpp

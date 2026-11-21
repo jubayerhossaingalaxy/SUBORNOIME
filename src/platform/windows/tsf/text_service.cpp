@@ -405,11 +405,24 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                                        input_settings.ignore_caps_lock_state_in_bangla,
                                        m_engine->active_layout_kind() != layout::LayoutKind::fixed);
         apply_input_settings(key_event, m_engine->settings());
-        const bool printable =
-            key_event.has_value()
-            && (key_event->logical_text_available
-                    ? !key_event->logical_text_utf8.empty()
-                    : suborno::layout::key_event_to_ascii(*key_event).has_value());
+        const bool fixed_or_compositional =
+            m_engine->active_layout_kind() != suborno::layout::LayoutKind::phonetic;
+        bool printable = false;
+        if (key_event.has_value()) {
+            if (fixed_or_compositional) {
+                auto probe_session = m_engine->create_session();
+                if (probe_session != nullptr) {
+                    const layout::InputStatus probe_status = probe_session->append_key(*key_event);
+                    printable = probe_status == layout::InputStatus::updated
+                                || probe_status == layout::InputStatus::pending
+                                || probe_status == layout::InputStatus::literal_passthrough;
+                }
+            } else {
+                printable = key_event->logical_text_available
+                                ? !key_event->logical_text_utf8.empty()
+                                : suborno::layout::key_event_to_ascii(*key_event).has_value();
+            }
+        }
         const bool starts_phonetic_input =
             key_event.has_value()
             && (key_event->logical_text_available
@@ -422,8 +435,6 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
         const bool starts_numpad_input = key_event.has_value()
                                          && input_settings.map_numpad_to_bangla_numbers
                                          && wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9;
-        const bool fixed_or_compositional =
-            m_engine->active_layout_kind() != suborno::layout::LayoutKind::phonetic;
         const bool starts_composition =
             fixed_or_compositional ? printable : (starts_phonetic_input || starts_numpad_input);
         *pbEaten = (composing || starts_composition) && (composing || wParam != VK_SPACE);
@@ -608,7 +619,15 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             if (input_status == layout::InputStatus::invalid_utf8
                 || input_status == layout::InputStatus::input_limit
                 || input_status == layout::InputStatus::empty) {
-                return S_OK;
+                if (!composing) {
+                    return S_OK;
+                }
+                const auto committed = state.session->commit();
+                const std::wstring text = utf8_to_utf16(committed.text_utf8);
+                if (!committed.text_utf8.empty() && text.empty()) {
+                    return E_INVALIDARG;
+                }
+                return _FinishComposition(pContext, state, text);
             }
             const auto updated = state.session->snapshot();
             const std::wstring preedit = utf8_to_utf16(updated.preedit_utf8);

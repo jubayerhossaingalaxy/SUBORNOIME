@@ -70,7 +70,8 @@ constexpr std::array kAvroTokens{
     PhoneticTokenDefinition{"h", PhoneticTokenKind::consonant, "হ", {}},
     PhoneticTokenDefinition{"R", PhoneticTokenKind::consonant, "ড়", {}, false},
     PhoneticTokenDefinition{"y", PhoneticTokenKind::consonant, "য়", "য", false},
-    PhoneticTokenDefinition{"Y", PhoneticTokenKind::consonant, "য়", "য", false},
+    PhoneticTokenDefinition{"Y", PhoneticTokenKind::consonant, "য়", "য", false, true},
+    PhoneticTokenDefinition{"Z", PhoneticTokenKind::consonant, "য", "য", false, false, true},
     PhoneticTokenDefinition{"w", PhoneticTokenKind::consonant, "ব", {}},
 
     PhoneticTokenDefinition{"ng", PhoneticTokenKind::sign, "ং", {}},

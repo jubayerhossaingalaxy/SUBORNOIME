@@ -23,6 +23,8 @@ struct PhoneticTokenDefinition {
     // used after an existing consonant run (for example, ya-phala).
     std::string_view dependent_output;
     bool nukta_eligible = true;
+    bool force_independent_form = false;
+    bool force_dependent_form = false;
 };
 
 // A small immutable token table drives a complete, independent phonetic parser.

@@ -35,20 +35,20 @@ No Avro source code, mapping table, dictionary, test, or artwork is included.
 | o | অ / inherent অ | O | ও / ো |
 | OU | ঔ / ৌ | k, kh | ক, খ |
 | g, gh | গ, ঘ | Ng | ঙ |
-| ch, chh | চ, ছ | j, jh | জ, ঝ |
+| c | চ | ch, chh | ছ | j, jh | জ, ঝ |
 | NG | ঞ | T, Th | ট, ঠ |
 | D, Dh | ড, ঢ | N | ণ |
 | t, th | ত, থ | d, dh | দ, ধ |
 | n | ন | p | প |
 | ph, f | ফ | b | ব |
 | bh, v | ভ | m | ম |
-| z, J | য | r | র |
+| z | য | J, j | জ | r | র |
 | l | ল | sh, S | শ |
 | Sh | ষ | s | স |
 | h | হ | R, Rh | ড়, ঢ় |
-| y, Y | য় at a boundary; য-ফলা after a consonant | w | ব |
+| y | য় at a boundary; য-ফলা after a consonant | Y | force য় independently |
 | rr | reph prefix (র্) | ng | ং |
-| t plus two accent keys | ৎ | : | ঃ |
+| t plus two accent keys | ৎ | Z | force য-ফলা at any position |
 | ^ | ঁ | . | । |
 | $ | ৳ | | |
 

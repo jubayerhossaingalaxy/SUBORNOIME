@@ -192,11 +192,12 @@ bool has_text_modifier_chord() noexcept {
 }
 
 std::optional<std::size_t> candidate_index_from_virtual_key(WPARAM virtual_key) noexcept {
-    const auto key_event = key_event_from_virtual_key(virtual_key);
-    if (!key_event.has_value()) {
+    const auto physical_key = physical_key_from_virtual_key(virtual_key);
+    if (!physical_key.has_value()) {
         return std::nullopt;
     }
-    const auto character = suborno::layout::key_event_to_ascii(*key_event);
+    const suborno::layout::KeyEvent key_event{*physical_key, current_key_modifiers()};
+    const auto character = suborno::layout::key_event_to_ascii(key_event);
     if (!character.has_value() || *character < '1' || *character > '9') {
         return std::nullopt;
     }
@@ -505,7 +506,13 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         }
 
         const auto key_event = key_event_from_virtual_key(wParam, lParam);
-        const bool starts_phonetic_input = wParam >= 'A' && wParam <= 'Z';
+        const bool starts_phonetic_input =
+            key_event.has_value() && !key_event->logical_text_utf8.empty()
+            && key_event->logical_text_utf8.size() == 1
+            && ((key_event->logical_text_utf8.front() >= 'A'
+                 && key_event->logical_text_utf8.front() <= 'Z')
+                || (key_event->logical_text_utf8.front() >= 'a'
+                    && key_event->logical_text_utf8.front() <= 'z'));
         const bool fixed_or_compositional =
             m_engine->active_layout_kind() != layout::LayoutKind::phonetic;
         const bool should_append_key =

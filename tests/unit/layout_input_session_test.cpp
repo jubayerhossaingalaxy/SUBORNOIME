@@ -143,3 +143,19 @@ TEST(LayoutInputSessionTest, SharedCandidateEngineAddsDictionaryMatchesForFixedL
 
     std::filesystem::remove(db_path);
 }
+
+
+TEST(LayoutInputSessionTest, UsesLogicalUnicodeTextFromActiveKeyboardLayout) {
+    TestStatelessLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    suborno::layout::KeyEvent event{
+        .key = suborno::layout::PhysicalKey::letter_a,
+        .logical_text_utf8 = "ক",
+    };
+
+    EXPECT_EQ(session->append_key(event), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().raw_input_utf8, "ক");
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
+}

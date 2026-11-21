@@ -108,7 +108,7 @@ struct KeyEvent {
     std::string logical_text_utf8;
 };
 
-[[nodiscard]] constexpr std::optional<char> key_event_to_ascii(const KeyEvent& event) noexcept {
+[[nodiscard]] inline std::optional<char> key_event_to_ascii(const KeyEvent& event) noexcept {
     if (event.modifiers.control || event.modifiers.alt || event.modifiers.windows) {
         return std::nullopt;
     }

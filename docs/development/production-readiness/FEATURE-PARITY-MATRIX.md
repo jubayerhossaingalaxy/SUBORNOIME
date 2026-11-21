@@ -25,6 +25,16 @@ verified.
 | Old-style/automatic reph | Planned | Reph composition corpus |
 | ANSI/Bijoy encoding | Planned | Converter and legacy-app tests |
 
+## Unicode and text handling
+
+| Feature | Status | Acceptance evidence |
+|---|---|---|
+| Strict UTF-8 validation | Implemented foundation, CI pending | Malformed, overlong, truncated and out-of-range UTF-8 vectors |
+| NFC / NFKC normalization | Implemented foundation, CI pending | Bengali nukta canonical decomposition and explicit compatibility-normalization tests |
+| Unicode 18 Bengali inventory | Assigned Bengali-block inventory and General_Category metadata implemented; Assamese U+09F0/U+09F1 excluded; CI pending | Inventory uniqueness, category checks, reserved-codepoint and Assamese-exclusion tests |
+| Grapheme segmentation | ICU root-locale character BreakIterator; CI pending | UAX #29 combining-mark, Bengali conjunct, ZWJ/ZWNJ, emoji and regional-indicator corpus |
+| Host cursor and deletion behavior | Not fully accepted | Interactive TSF editing and grapheme-aware deletion in supported host apps |
+
 ## Candidate and language intelligence
 
 | Feature | Status | Acceptance evidence |

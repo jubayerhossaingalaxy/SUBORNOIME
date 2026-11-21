@@ -86,8 +86,10 @@ void append_consonant(const PhoneticTokenDefinition& token,
                       bool& nukta_eligible) {
     if (state == CompositionState::consonant_run) {
         output.append(kVirama);
+        output.append(token.dependent_output.empty() ? token.output : token.dependent_output);
+    } else {
+        output.append(token.output);
     }
-    output.append(token.dependent_output.empty() ? token.output : token.dependent_output);
     state = CompositionState::consonant_run;
     nukta_eligible = token.nukta_eligible;
 }

@@ -31,6 +31,7 @@ class DictionaryError final : public std::runtime_error {
 
 class Dictionary {
   public:
+    // database_path is UTF-8 encoded on every platform.
     explicit Dictionary(const std::string& database_path);
     ~Dictionary();
     Dictionary(const Dictionary&) = delete;

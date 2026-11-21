@@ -33,8 +33,12 @@ current-head CI evidence and the applicable real-world acceptance checks.
   do not survive a failed migration.
 - Phonetic learning skips empty committed strings; a control-only candidate regression
   prevents empty entries from entering the personal dictionary.
-- TSF InputScope is revalidated before candidate acceptance and before automatic
+- TSF InputScope is revalidated before starting composition, before processing
+  each active-composition key, before candidate acceptance, and before automatic
   deactivation/context-removal commits; unsafe or failed checks discard pending text.
+- OnTestKeyDown avoids translating an active-composition key before OnKeyDown performs
+  the fresh InputScope check; OnKeyDown also treats an active TSF composition object as
+  composing even if the session's raw input is empty.
 - TSF keeps last-known-good settings if a settings reload fails; engine regression
   coverage verifies that the active layout and settings remain intact.
 - Avro ya-phala composition now ends the dependent-consonant run correctly so

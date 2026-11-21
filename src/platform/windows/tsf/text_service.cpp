@@ -702,7 +702,8 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         }
 
         const auto snapshot = state.session->snapshot();
-        const bool composing = !snapshot.raw_input_utf8.empty();
+        const bool composing =
+            state.composition != nullptr || !snapshot.raw_input_utf8.empty();
         const auto active_composition_scope_is_safe = [&]() {
             bool sensitive = false;
             const HRESULT scope_result =

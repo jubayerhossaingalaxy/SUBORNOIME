@@ -35,10 +35,11 @@
    next-word prediction are not complete. Personal learning defaults OFF,
    supports desktop opt-in and clear-data controls, and defers opt-in until the
    next composition when a composition is already active.
-7. **Windows TSF and privacy:** A conservative per-key TSF InputScope guard
-   passes through known password/PIN/private scopes and unknown or failed queries.
-   It still needs live validation in Notepad, Office, browsers and real password
-   and PIN controls. Hosts must disable text services in password fields.
+7. **Windows TSF and privacy:** TSF checks InputScope before composition capture,
+   candidate acceptance, deactivation commits and context-removal commits. Sensitive,
+   unknown, failed or previously denied scopes cancel pending composition instead of
+   committing it. The guard still needs live validation in Notepad, Office, browsers
+   and real password/PIN controls. Hosts must disable text services in password fields.
 8. **Desktop UX:** Full General/Interface/Input settings, Topbar, themes,
    on-screen keyboard, accessibility and per-monitor DPI behavior remain
    incomplete.

@@ -29,6 +29,30 @@ TEST(PhoneticInputSessionTest, LearningIsDisabledByDefaultForPublicSessionConstr
     std::filesystem::remove(db_path);
 }
 
+TEST(PhoneticInputSessionTest, DoesNotLearnAnEmptyControlOnlyCandidate) {
+    const std::filesystem::path db_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_empty_candidate.sqlite";
+    std::filesystem::remove(db_path);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path.string());
+        suborno::layouts::SubornoPhoneticLayout layout;
+        PhoneticInputSession session(layout, dictionary, {.learning_enabled = true});
+
+        ASSERT_EQ(session.append_utf8(":boundary:"), InputStatus::updated);
+        const auto snapshot = session.snapshot();
+        ASSERT_EQ(snapshot.candidates.size(), 1U);
+        EXPECT_TRUE(snapshot.preedit_utf8.empty());
+        EXPECT_TRUE(snapshot.candidates.front().text.empty());
+
+        EXPECT_TRUE(session.commit().text_utf8.empty());
+        EXPECT_TRUE(dictionary.list_user_words().empty());
+        EXPECT_EQ(dictionary.get_user_frequency(""), 0);
+    }
+
+    std::filesystem::remove(db_path);
+}
+
 TEST(PhoneticInputSessionTest, EnablingLearningDuringCompositionAppliesToTheNextComposition) {
     const std::filesystem::path db_path =
         std::filesystem::temp_directory_path() / "suborno_phonetic_session_delayed_learning.sqlite";

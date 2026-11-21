@@ -28,6 +28,13 @@ current-head CI evidence and the applicable real-world acceptance checks.
   coverage verifies the database schema remains unchanged.
 - Dictionary filesystem paths are interpreted as UTF-8 and passed to SQLite as
   UTF-8; a Bengali filename regression test was added.
+- Dictionary schema initialization runs inside a rollback-protected SQLite transaction;
+  an injected migration failure test verifies that partially added columns and tables
+  do not survive a failed migration.
+- Phonetic learning skips empty committed strings; a control-only candidate regression
+  prevents empty entries from entering the personal dictionary.
+- TSF InputScope is revalidated before candidate acceptance and before automatic
+  deactivation/context-removal commits; unsafe or failed checks discard pending text.
 - TSF keeps last-known-good settings if a settings reload fails; engine regression
   coverage verifies that the active layout and settings remain intact.
 - Avro ya-phala composition now ends the dependent-consonant run correctly so

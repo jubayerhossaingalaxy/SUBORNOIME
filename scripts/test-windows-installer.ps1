@@ -7,7 +7,7 @@ if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
 }
 
 $setupVersion = (Get-Item -LiteralPath $installer).VersionInfo
-if ($setupVersion.ProductName -ne 'Suborno') {
+if ($setupVersion.ProductName.Trim() -ne 'Suborno') {
     throw "Unexpected installer ProductName: $($setupVersion.ProductName)"
 }
 $signature = Get-AuthenticodeSignature -LiteralPath $installer

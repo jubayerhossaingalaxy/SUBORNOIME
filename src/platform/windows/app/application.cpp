@@ -630,10 +630,11 @@ class Application final {
     void refresh_input_settings_controls() {
         const auto& settings = engine_->settings();
         const auto& input = settings.input;
-        ::SendMessageW(show_candidate_window_check_,
-                       BM_SETCHECK,
-                       settings.interface_settings.show_candidate_window ? BST_CHECKED : BST_UNCHECKED,
-                       0);
+        ::SendMessageW(
+            show_candidate_window_check_,
+            BM_SETCHECK,
+            settings.interface_settings.show_candidate_window ? BST_CHECKED : BST_UNCHECKED,
+            0);
         ::SendMessageW(map_numpad_check_,
                        BM_SETCHECK,
                        input.map_numpad_to_bangla_numbers ? BST_CHECKED : BST_UNCHECKED,

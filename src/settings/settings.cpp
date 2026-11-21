@@ -189,7 +189,8 @@ bool valid_switching_shortcut(const std::string& shortcut) {
 
 bool validate(const EngineSettings& settings) {
     return valid_layout_id(settings.active_layout_id) && settings.candidate_limit > 0
-           && settings.candidate_limit <= 100 && valid_theme_id(settings.interface_settings.theme_id)
+           && settings.candidate_limit <= 100
+           && valid_theme_id(settings.interface_settings.theme_id)
            && settings.topbar.idle_opacity_percent <= 100 && settings.topbar.idle_time_seconds >= 1
            && settings.topbar.idle_time_seconds <= 3600
            && valid_switching_shortcut(settings.input.layout_switch_shortcut)
@@ -268,7 +269,8 @@ bool parse_settings_value(EngineSettings& settings,
             return false;
         }
     } else if (key == "follow_mouse_pointer_if_caret_tracking_fails") {
-        if (!parse_bool(value, settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails)) {
+        if (!parse_bool(
+                value, settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails)) {
             return false;
         }
     } else if (key == "idle_dimming_enabled") {
@@ -453,17 +455,20 @@ SettingsStatus SettingsStore::save(const EngineSettings& settings) const {
            << (settings.interface_settings.show_candidate_window ? "true" : "false") << '\n'
            << "next_word_prediction_enabled="
            << (settings.interface_settings.next_word_prediction_enabled ? "true" : "false") << '\n'
-           << "candidate_orientation=" << orientation_name(settings.interface_settings.candidate_orientation)
-           << '\n'
+           << "candidate_orientation="
+           << orientation_name(settings.interface_settings.candidate_orientation) << '\n'
            << "candidate_fixed_height="
            << (settings.interface_settings.candidate_fixed_height ? "true" : "false") << '\n'
            << "use_os_default_bangla_font="
            << (settings.interface_settings.use_os_default_bangla_font ? "true" : "false") << '\n'
            << "enable_sliding_effect="
            << (settings.interface_settings.enable_sliding_effect ? "true" : "false") << '\n'
-           << "follow_caret=" << (settings.interface_settings.follow_caret ? "true" : "false") << '\n'
+           << "follow_caret="
+           << (settings.interface_settings.follow_caret ? "true" : "false") << '\n'
            << "follow_mouse_pointer_if_caret_tracking_fails="
-           << (settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails ? "true" : "false")
+           << (settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails
+                   ? "true"
+                   : "false")
            << '\n'
            << "idle_dimming_enabled=" << (settings.topbar.idle_dimming_enabled ? "true" : "false")
            << '\n'

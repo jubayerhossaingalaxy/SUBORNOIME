@@ -43,10 +43,10 @@ TEST(LayoutInputSessionTest, BuildsPreeditFromTheCompleteKeySequence) {
     auto session = layout.create_session(nullptr, {});
     ASSERT_NE(session, nullptr);
 
-    EXPECT_EQ(session.append_utf8("a"), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session.append_utf8("b"), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session.snapshot().raw_input_utf8, "ab");
-    EXPECT_EQ(session.snapshot().preedit_utf8, "কখ");
+    EXPECT_EQ(session->append_utf8("a"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->append_utf8("b"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().raw_input_utf8, "ab");
+    EXPECT_EQ(session->snapshot().preedit_utf8, "কখ");
 }
 
 TEST(LayoutInputSessionTest, BackspaceRemovesOneGraphemeAndRebuildsPreedit) {
@@ -54,10 +54,10 @@ TEST(LayoutInputSessionTest, BackspaceRemovesOneGraphemeAndRebuildsPreedit) {
     auto session = layout.create_session(nullptr, {});
     ASSERT_NE(session, nullptr);
 
-    ASSERT_EQ(session.append_utf8("ab"), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session.backspace(), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session.snapshot().raw_input_utf8, "a");
-    EXPECT_EQ(session.snapshot().preedit_utf8, "ক");
+    ASSERT_EQ(session->append_utf8("ab"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->backspace(), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().raw_input_utf8, "a");
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
 }
 
 TEST(LayoutInputSessionTest, SelectsAndCommitsTheActiveCandidate) {
@@ -65,10 +65,10 @@ TEST(LayoutInputSessionTest, SelectsAndCommitsTheActiveCandidate) {
     auto session = layout.create_session(nullptr, {});
     ASSERT_NE(session, nullptr);
 
-    ASSERT_EQ(session.append_utf8("ab"), suborno::layout::InputStatus::updated);
+    ASSERT_EQ(session->append_utf8("ab"), suborno::layout::InputStatus::updated);
     ASSERT_TRUE(session.select_candidate(0));
-    EXPECT_EQ(session.commit().text_utf8, "কখ");
-    EXPECT_EQ(session.snapshot().status, suborno::layout::InputStatus::empty);
+    EXPECT_EQ(session->commit().text_utf8, "কখ");
+    EXPECT_EQ(session->snapshot().status, suborno::layout::InputStatus::empty);
 }
 
 TEST(LayoutInputSessionTest, RejectsInvalidUtf8WithoutMutatingTheSession) {
@@ -76,8 +76,8 @@ TEST(LayoutInputSessionTest, RejectsInvalidUtf8WithoutMutatingTheSession) {
     auto session = layout.create_session(nullptr, {});
     ASSERT_NE(session, nullptr);
 
-    EXPECT_EQ(session.append_utf8("\xFF"), suborno::layout::InputStatus::invalid_utf8);
-    EXPECT_TRUE(session.snapshot().raw_input_utf8.empty());
+    EXPECT_EQ(session->append_utf8("\xFF"), suborno::layout::InputStatus::invalid_utf8);
+    EXPECT_TRUE(session->snapshot().raw_input_utf8.empty());
 }
 
 TEST(LayoutInputSessionTest, AcceptsPhysicalKeysThroughTheSharedSessionContract) {
@@ -111,9 +111,9 @@ TEST(LayoutInputSessionTest, EnforcesTheSharedInputLimit) {
     ASSERT_NE(session, nullptr);
 
     const std::string input(suborno::layout::InputSession::kMaxInputCodePoints, 'a');
-    ASSERT_EQ(session.append_utf8(input), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session.append_utf8("b"), suborno::layout::InputStatus::input_limit);
-    EXPECT_EQ(session.snapshot().raw_input_utf8, input);
+    ASSERT_EQ(session->append_utf8(input), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->append_utf8("b"), suborno::layout::InputStatus::input_limit);
+    EXPECT_EQ(session->snapshot().raw_input_utf8, input);
 }
 
 }  // namespace

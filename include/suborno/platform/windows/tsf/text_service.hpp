@@ -8,7 +8,7 @@
 #include <wil/resource.h>
 
 #include "suborno/core/engine.hpp"
-#include "suborno/layouts/phonetic/phonetic_input_session.hpp"
+#include "suborno/layout-api/input_session.hpp"
 
 namespace suborno::platform::windows {
 
@@ -64,7 +64,7 @@ class SubornoTextService final : public ITfTextInputProcessor,
     // Per-context composition state
     struct ContextState {
         wil::com_ptr<ITfContext> context;
-        std::unique_ptr<layouts::PhoneticInputSession> session;
+        std::unique_ptr<layout::InputSession> session;
         wil::com_ptr<ITfComposition> composition;
     };
     HRESULT _CommitString(ITfContext* pContext, const std::wstring& text);

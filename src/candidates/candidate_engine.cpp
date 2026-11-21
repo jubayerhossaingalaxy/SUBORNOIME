@@ -28,8 +28,6 @@ std::vector<suborno::layout::Candidate> CandidateEngine::make_candidates(
 
     std::unordered_set<std::string> seen;
     const std::string input_text(input);
-    const std::string normalized_input =
-        suborno::unicode::normalize_nfc(layout_.transliterate(input_text));
 
     const auto append_dictionary_matches = [&](const std::string& query,
                                                 double score,
@@ -49,7 +47,7 @@ std::vector<suborno::layout::Candidate> CandidateEngine::make_candidates(
                 result.push_back({
                     .text = word,
                     .normalized_text = normalized_word,
-                    .stable_id = "dictionary:" + normalized_word,
+                    .stable_id = "system-dictionary:" + normalized_word,
                     .source = suborno::layout::CandidateSource::system_dictionary,
                     .score = score,
                     .rationale = rationale,
@@ -58,9 +56,13 @@ std::vector<suborno::layout::Candidate> CandidateEngine::make_candidates(
         }
     };
 
-    append_dictionary_matches(normalized_input, 1.0, "exact dictionary match");
-    if (input_text != normalized_input) {
-        append_dictionary_matches(input_text, 0.9, "input dictionary match");
+    if (dictionary_ != nullptr) {
+        const std::string normalized_input =
+            suborno::unicode::normalize_nfc(layout_.transliterate(input_text));
+        append_dictionary_matches(normalized_input, 1.0, "exact dictionary match");
+        if (input_text != normalized_input) {
+            append_dictionary_matches(input_text, 0.9, "input dictionary match");
+        }
     }
 
     if (result.size() < candidate_limit) {

@@ -13,11 +13,14 @@ produces ঊ.
 
 ## CapsLock semantics
 
-The KLC CAP column is a bit field. Suborno preserves CAPLOK (0x01) and CAPLOKALTGR (0x04)
-separately. Values 1 and 5 enable ordinary CapsLock-to-Shift behavior; value 4 applies only
-with AltGr and must not change output when CapsLock is pressed alone. Holding Shift and
-CapsLock together returns the base output for CAPLOK keys. AltGr and CAPLOKALTGR output
-states are not implemented yet, so this is not complete KLC state parity.
+The KLC defines base, Shift, Ctrl+Alt, and Shift+Ctrl+Alt columns. Suborno maps the
+Ctrl+Alt columns through the Windows Right-Alt (AltGr) key state. Ordinary Ctrl+Alt chords
+remain shortcuts and are not consumed unless Right Alt is active. The KLC CAP column is a
+bit field: CAPLOK (0x01) controls the base/Shift layers and CAPLOKALTGR (0x04) controls
+the AltGr/Shift+AltGr layers. Values 1 and 5 enable ordinary CapsLock-to-Shift behavior;
+value 4 changes output only in AltGr mode and must not affect base/Shift output. Holding
+Shift and CapsLock together returns the unshifted output within the applicable layer.
+Dead-key composition remains incomplete.
 
 ## Physical-key policy
 
@@ -30,7 +33,8 @@ uses literal visible output for those layers; full dead-key composition is not c
 
 ## Test coverage
 
-Unit tests cover base/Shift pairs, ordinary CAPLOK behavior, CAPLOKALTGR non-effect without
-AltGr, literal vowel-sign concatenation, punctuation/currency, scan-code precedence,
-unmapped numpad keys, and grapheme-safe backspace. AltGr/dead-key compatibility remains
-incomplete.
+Unit tests cover base/Shift pairs, both AltGr layers, ordinary CAPLOK behavior,
+CAPLOKALTGR behavior within AltGr only, shortcut pass-through, literal vowel-sign
+concatenation, punctuation/currency, scan-code precedence, unmapped numpad keys, and
+grapheme-safe backspace. Dead-key composition remains incomplete pending its own stateful
+implementation and tests.

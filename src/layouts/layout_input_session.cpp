@@ -1,6 +1,5 @@
 #include "suborno/layouts/layout_input_session.hpp"
 
-#include <algorithm>
 #include <unordered_set>
 #include <utility>
 
@@ -10,7 +9,7 @@
 namespace suborno::layouts {
 namespace {
 
-constexpr double kPhoneticDictionaryScore = 0.9;
+constexpr double kInputDictionaryScore = 0.9;
 
 void append_dictionary_matches(std::vector<suborno::layout::Candidate>& candidates,
                               std::unordered_set<std::string>& seen,

@@ -61,5 +61,5 @@ TEST(BornoPhoneticLayoutTest, ExposesIndependentCandidateIdentity) {
     ASSERT_EQ(candidates.size(), 1U);
     EXPECT_EQ(candidates.front().text, "আমি");
     EXPECT_EQ(candidates.front().source, suborno::layout::CandidateSource::layout);
-    EXPECT_EQ(candidates.front().stable_id, "rule-phonetic:আমি");
+    EXPECT_EQ(candidates.front().stable_id, "borno-phonetic:আমি");
 }

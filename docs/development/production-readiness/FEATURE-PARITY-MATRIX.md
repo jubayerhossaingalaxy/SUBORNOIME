@@ -40,9 +40,9 @@ verified.
 | Feature | Status | Acceptance evidence |
 |---|---|---|
 | Layout primary candidate | Implemented | Layout unit tests |
-| Dictionary candidate source | Implemented | Candidate and session tests |
+| Dictionary candidate source | SQLite import and candidate integration implemented; 454,649-entry Unlicense-claimed baseline corpus bundled; linguistic provenance and quality review pending | Import/idempotency/lookup tests plus provenance, coverage and ranking evaluation |
 | Candidate-choice learning | Commit-frequency ranking is implemented for committed words/candidates; explicit choice-event analytics, negative feedback and decay are not implemented | Personal-dictionary commit lifecycle and ranking tests; language-quality evaluation pending |
-| Personal dictionary | Initial integration; system-word pinning, schema migrations, and desktop clear-personal-data control implemented; CI pending | Pin/unpin, clear, migration and ranking tests plus Windows confirmation-dialog acceptance |
+| Personal dictionary and learning controls | Initial integration; learning OFF by default; desktop opt-in and clear-personal-data controls; enabling during a composition takes effect next composition; CI pending | Pin/unpin, clear, schema migration, active-composition opt-in/opt-out regression tests and Windows confirmation-dialog acceptance |
 | Spell correction | Separate module, not integrated | Engine integration tests |
 | Candidate popup | Basic native vertical Win32 popup implemented through TSF UIElement; hosted MSVC CI and live host-app verification pending | TSF UIElement contract tests, caret anchoring and monitor-work-area placement; keyboard/DPI/manual acceptance pending |
 | Horizontal/vertical candidate window | Fixed vertical layout only; orientation setting and per-monitor DPI scaling are not implemented | Multi-monitor, DPI-change and orientation tests |
@@ -54,7 +54,7 @@ verified.
 | Feature | Status | Acceptance evidence |
 |---|---|---|
 | Windows COM/TSF service | Implementation present; validation ongoing | MSVC build and live typing |
-| Password/PIN/private InputScope pass-through | Conservative TSF InputScope guard implemented; re-reads scope for every key and passes through unsupported/failed queries | InputScope unit tests plus live password/PIN controls; host app must disable TSF in password fields |
+| Password/PIN/private InputScope pass-through | Conservative TSF InputScope guard implemented; re-reads scope for every key and passes through unsupported/failed queries | InputScope unit tests plus live password/PIN controls in supported apps; host app must disable TSF in password fields |
 | Native Language Bar / Win+Space | Registration path present; live validation pending | Windows interactive test |
 | Per-context composition | Implemented foundation | TSF contract and host-app tests |
 | Candidate UIElement | COM/UIElement contracts and basic lifecycle implemented; host-driven rendering and interactive activation remain unverified | Count/string/selection/GUID/page-index contract tests; elevated TSF registration and live-app tests pending |

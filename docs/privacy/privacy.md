@@ -1,6 +1,6 @@
 # Privacy and security boundaries for SUBORNO
 
-SUBORNO does not transmit typed text or composition data over the network. Personal learning is disabled by default. If enabled through the settings file, committed words and typed aliases may be stored in the local user dictionary under the current user profile.
+SUBORNO does not transmit typed text or composition data over the network. Personal learning is disabled by default. Users can explicitly enable it from Desktop Settings; only compositions started after opt-in are eligible for learning. Turning learning off takes effect immediately. Committed words and typed aliases are stored locally in the user dictionary under the current user profile.
 
 ## Requirements
 
@@ -13,6 +13,7 @@ SUBORNO does not transmit typed text or composition data over the network. Perso
 ## User controls
 
 - Personal learning is disabled by default; version 1 and version 2 settings migrate with learning disabled.
+- Users explicitly opt in from Desktop Settings. Enabling learning during an existing composition does not retroactively learn that composition; it applies from the next composition. Disabling learning immediately stops recording, including for an active composition.
 - When enabled, learned words and typed aliases are stored locally in the user dictionary; they are not uploaded.
 - Settings and learned entries are stored locally. Learned words and personal dictionary entries can be removed from the Desktop Settings window with **Clear personal data**; the bundled Bengali system dictionary remains installed.
 - Diagnostic logging must never include typed text content.

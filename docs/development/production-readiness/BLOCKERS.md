@@ -28,22 +28,25 @@
    metadata have been expanded, excluding Assamese-specific U+09F0/U+09F1. Full
    corpus validation remains outstanding for malformed UTF-8, combining sequences,
    ZWJ/ZWNJ, cursor movement and grapheme-aware deletion.
-6. **Dictionary and language quality:** Full dictionary corpus provenance,
-   license clearance, ranking evaluation, spell-correction integration and
-   next-word prediction remain outstanding. Personal learning now defaults OFF,
-   migrates older settings to OFF, and has a desktop opt-in; password/PIN/private InputScope pass-through now re-reads the active scope on
-   every candidate key and rejects unknown/failed scope queries; it still requires
-   interactive host-app verification.
-7. **Windows TSF:** Hosted MSVC CI is necessary but not sufficient. Interactive
-   activation, composition, candidate UI, keyboard navigation, InputScope
-   pass-through and compatibility must be tested in Notepad, Office, browsers and
-   password/PIN entry controls.
+6. **Dictionary and language quality:** A first-run SQLite importer and a
+   454,649-entry Bengali baseline wordlist are present, but original data
+   provenance, license review, linguistic quality, ranking evaluation and
+   coverage validation remain outstanding. Spell-correction integration and
+   next-word prediction are not complete. Personal learning defaults OFF,
+   supports desktop opt-in and clear-data controls, and defers opt-in until the
+   next composition when a composition is already active.
+7. **Windows TSF and privacy:** A conservative per-key TSF InputScope guard
+   passes through known password/PIN/private scopes and unknown or failed queries.
+   It still needs live validation in Notepad, Office, browsers and real password
+   and PIN controls. Hosts must disable text services in password fields.
 8. **Desktop UX:** Full General/Interface/Input settings, Topbar, themes,
    on-screen keyboard, accessibility and per-monitor DPI behavior remain
    incomplete.
-9. **Reliability and security:** Current-head sanitizer/fuzz/security/performance
-   evidence, concurrency/lifetime review and supported Windows compatibility
-   matrix remain outstanding.
+9. **Reliability and security:** ASan/UBSan, libFuzzer smoke, SBOM generation and
+   High/Critical dependency vulnerability gates have been added to CI, but their
+   exact-candidate results are pending. Dictionary-backed hot-path performance,
+   first-launch import cost, concurrency/lifetime review and the supported
+   Windows compatibility matrix remain outstanding.
 10. **Installer/release:** Clean-machine install, upgrade, rollback and uninstall
     must pass. Production binaries require a valid signing certificate and
     verified signature/timestamp; a SHA-256 checksum is not a code signature.

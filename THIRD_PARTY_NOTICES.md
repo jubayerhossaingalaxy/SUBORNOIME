@@ -20,9 +20,9 @@ inventory. The resolved package graph is recorded by vcpkg under the ignored
 build directory; verify it after configuring a platform.
 
 vcpkg, CMake, Ninja, LLVM tools, GitHub Actions, and Grype are build/security
-tools rather than application runtime dependencies. The repository's
-third-party GitHub Actions are pinned to immutable commit SHAs; Dependabot
-checks for updates.
+tools rather than application runtime dependencies. The repository's third-party GitHub Actions are pinned to immutable
+commit SHAs, with the upstream release tags recorded as comments in the workflow
+files. Dependabot checks for updates.
 
 ## Avro phonetic behavioral reference (not a runtime dependency)
 

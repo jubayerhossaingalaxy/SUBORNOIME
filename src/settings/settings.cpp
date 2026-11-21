@@ -270,8 +270,8 @@ bool parse_settings_value(EngineSettings& settings,
             return false;
         }
     } else if (key == "follow_mouse_pointer_if_caret_tracking_fails") {
-        if (!parse_bool(
-                value, settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails)) {
+        if (!parse_bool(value,
+                        settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails)) {
             return false;
         }
     } else if (key == "idle_dimming_enabled") {
@@ -470,12 +470,11 @@ SettingsStatus SettingsStore::save(const EngineSettings& settings) const {
            << (settings.interface_settings.use_os_default_bangla_font ? "true" : "false") << '\n'
            << "enable_sliding_effect="
            << (settings.interface_settings.enable_sliding_effect ? "true" : "false") << '\n'
-           << "follow_caret="
-           << (settings.interface_settings.follow_caret ? "true" : "false") << '\n'
+           << "follow_caret=" << (settings.interface_settings.follow_caret ? "true" : "false")
+           << '\n'
            << "follow_mouse_pointer_if_caret_tracking_fails="
-           << (settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails
-                   ? "true"
-                   : "false")
+           << (settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails ? "true"
+                                                                                       : "false")
            << '\n'
            << "idle_dimming_enabled=" << (settings.topbar.idle_dimming_enabled ? "true" : "false")
            << '\n'

@@ -98,7 +98,7 @@ TEST(KeyEventTest, RecognizesAltGrAsPrintableInsteadOfAControlShortcut) {
 }  // namespace
 
 TEST(KeyEventTest, DecodesWindowsRepeatScanCodeAndExtendedKeyBits) {
-    const auto decoded = suborno::layout::decode_key_message_lparam(0xC0340003U);
+    const auto decoded = suborno::layout::decode_key_message_lparam(0xC1340003U);
 
     EXPECT_EQ(decoded.repeat_count, 3U);
     EXPECT_EQ(decoded.scan_code, 0x34U);

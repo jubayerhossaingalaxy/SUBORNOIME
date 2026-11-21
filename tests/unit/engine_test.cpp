@@ -218,7 +218,7 @@ TEST(EngineTest, DictionarySchemaCommitAndReset) {
     std::remove(db_path.c_str());
     suborno::dictionary::Dictionary dictionary(db_path);
 
-    EXPECT_EQ(dictionary.schema_version(), 2);
+    EXPECT_EQ(dictionary.schema_version(), 3);
     dictionary.add_entry("বাংলা", "bangla", 5);
     dictionary.record_commit("বাংলা", "bangla");
 
@@ -276,10 +276,50 @@ TEST(EngineTest, DictionaryMigratesLegacySchema) {
     sqlite3_close(db);
 
     suborno::dictionary::Dictionary dictionary(db_path);
-    EXPECT_EQ(dictionary.schema_version(), 2);
+    EXPECT_EQ(dictionary.schema_version(), 3);
     EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");
     dictionary.record_commit("বাংলা", "bangla");
     EXPECT_EQ(dictionary.find_matches("bangla").front(), "বাংলা");
+    std::remove(db_path.c_str());
+}
+
+TEST(EngineTest, DictionaryMigratesVersionTwoLearnedWordsToAliasSchema) {
+    const std::string db_path =
+        temporary_database_path("suborno_dictionary_v2_to_v3_alias_test.sqlite");
+    std::remove(db_path.c_str());
+
+    sqlite3* db = nullptr;
+    ASSERT_EQ(sqlite3_open(db_path.c_str(), &db), SQLITE_OK);
+    ASSERT_EQ(
+        sqlite3_exec(db,
+                     "CREATE TABLE dictionary_metadata("
+                     "key TEXT PRIMARY KEY, value TEXT NOT NULL);"
+                     "INSERT INTO dictionary_metadata(key, value) VALUES('schema_version', '2');"
+                     "CREATE TABLE dictionary_entries("
+                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                     "word TEXT NOT NULL UNIQUE,"
+                     "normalized TEXT NOT NULL,"
+                     "frequency INTEGER NOT NULL DEFAULT 1,"
+                     "source TEXT NOT NULL DEFAULT 'system',"
+                     "user_frequency INTEGER NOT NULL DEFAULT 0,"
+                     "user_pinned INTEGER NOT NULL DEFAULT 0,"
+                     "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);"
+                     "INSERT INTO dictionary_entries(word, normalized, frequency, source, user_frequency)"
+                     " VALUES('বাংলা', 'bang', 10, 'system', 3);",
+                     nullptr,
+                     nullptr,
+                     nullptr),
+        SQLITE_OK);
+    sqlite3_close(db);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path);
+        EXPECT_EQ(dictionary.schema_version(), 3);
+        EXPECT_EQ(dictionary.find_matches("bang"), std::vector<std::string>{"বাংলা"});
+        EXPECT_EQ(dictionary.find_prefix_matches("ban"), std::vector<std::string>{"বাংলা"});
+        EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 3);
+    }
+
     std::remove(db_path.c_str());
 }
 

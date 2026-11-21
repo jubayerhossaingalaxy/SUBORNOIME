@@ -211,6 +211,37 @@ TEST(PersonalDictionaryTest, RecordsNewWordsAsLearnedPersonalEntries) {
     std::remove(db_path.c_str());
 }
 
+TEST(PersonalDictionaryTest, StoresUserInputAsAliasWithoutOverwritingCanonicalNormalization) {
+    const std::string db_path =
+        temporary_database_path("suborno_dictionary_alias_preserves_canonical_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "bangla", 10);
+    dictionary.record_commit("বাংলা", "bang");
+
+    EXPECT_EQ(dictionary.find_matches("bangla"), std::vector<std::string>{"বাংলা"});
+    EXPECT_EQ(dictionary.find_matches("bang"), std::vector<std::string>{"বাংলা"});
+    EXPECT_EQ(dictionary.find_prefix_matches("ban"), std::vector<std::string>{"বাংলা"});
+    EXPECT_EQ(dictionary.find_prefix_matches("bang"), std::vector<std::string>{"বাংলা"});
+    EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 1);
+    EXPECT_EQ(dictionary.list_user_words(), std::vector<std::string>{"বাংলা"});
+
+    dictionary.record_commit("বাংলা", "bngla");
+    EXPECT_EQ(dictionary.find_matches("bangla"), std::vector<std::string>{"বাংলা"});
+    EXPECT_EQ(dictionary.find_matches("bang"), std::vector<std::string>{"বাংলা"});
+    EXPECT_EQ(dictionary.find_matches("bngla"), std::vector<std::string>{"বাংলা"});
+    EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 2);
+
+    dictionary.remove_user_word("বাংলা");
+    EXPECT_TRUE(dictionary.find_matches("bang").empty());
+    EXPECT_TRUE(dictionary.find_matches("bngla").empty());
+    EXPECT_EQ(dictionary.find_matches("bangla"), std::vector<std::string>{"বাংলা"});
+    EXPECT_TRUE(dictionary.list_user_words().empty());
+
+    std::remove(db_path.c_str());
+}
+
 TEST(PersonalDictionaryTest, LearnedSystemWordsAppearInPersonalListAndCanBeRemoved) {
     const std::string db_path =
         temporary_database_path("suborno_learned_system_word_lifecycle_test.sqlite");

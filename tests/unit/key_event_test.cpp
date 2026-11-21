@@ -49,6 +49,8 @@ TEST(KeyEventTest, RemapsNumpadDigitsToTheTopRowWhenNumLockIsEnabled) {
     EXPECT_EQ(numpad_two.scan_code, 0x03U);
     EXPECT_FALSE(numpad_two.modifiers.shift);
     EXPECT_FALSE(numpad_two.modifiers.caps_lock);
+    EXPECT_FALSE(numpad_two.logical_text_available);
+    EXPECT_TRUE(numpad_two.logical_text_utf8.empty());
     EXPECT_EQ(key_event_to_ascii(numpad_two), '2');
 
     KeyEvent numpad_zero{

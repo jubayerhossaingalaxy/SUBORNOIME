@@ -459,9 +459,13 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                               || (key_event->logical_text_utf8.front() >= 'a'
                                   && key_event->logical_text_utf8.front() <= 'z'))
                     : wParam >= 'A' && wParam <= 'Z');
+        const bool starts_numpad_input =
+            key_event.has_value() && input_settings.map_numpad_to_bangla_numbers
+            && wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9;
         const bool fixed_or_compositional =
             m_engine->active_layout_kind() != suborno::layout::LayoutKind::phonetic;
-        const bool starts_composition = fixed_or_compositional ? printable : starts_phonetic_input;
+        const bool starts_composition =
+            fixed_or_compositional ? printable : (starts_phonetic_input || starts_numpad_input);
         *pbEaten = (composing || starts_composition) && (composing || wParam != VK_SPACE);
         return S_OK;
     } catch (const std::bad_alloc&) {
@@ -630,10 +634,14 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                                                 && key_event->logical_text_utf8.front() <= 'Z')
                                                || (key_event->logical_text_utf8.front() >= 'a'
                                                    && key_event->logical_text_utf8.front() <= 'z'));
+        const bool starts_numpad_input =
+            key_event.has_value() && input_settings.map_numpad_to_bangla_numbers
+            && wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9;
         const bool fixed_or_compositional =
             m_engine->active_layout_kind() != layout::LayoutKind::phonetic;
         const bool should_append_key =
-            key_event.has_value() && (composing || fixed_or_compositional || starts_phonetic_input);
+            key_event.has_value()
+            && (composing || fixed_or_compositional || starts_phonetic_input || starts_numpad_input);
         if (should_append_key) {
             const layout::InputStatus input_status = state.session->append_key(*key_event);
             if (input_status == layout::InputStatus::invalid_utf8

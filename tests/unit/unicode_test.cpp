@@ -39,14 +39,51 @@ TEST(UnicodeUtilitiesTest, BengaliInventoryMatchesTheSupportedBanglaCharacterSet
         });
     };
 
+    EXPECT_EQ(count_character("ঀ"), 1);
     EXPECT_EQ(count_character("এ"), 1);
     EXPECT_EQ(count_character("ঐ"), 1);
     EXPECT_EQ(count_character("ঔ"), 1);
+    EXPECT_EQ(count_character("ঌ"), 1);
+    EXPECT_EQ(count_character("ৠ"), 1);
+    EXPECT_EQ(count_character("ৡ"), 1);
     EXPECT_EQ(count_character("ঁ"), 1);
+    EXPECT_EQ(count_character("ং"), 1);
+    EXPECT_EQ(count_character("়"), 1);
+    EXPECT_EQ(count_character("ঽ"), 1);
     EXPECT_EQ(count_character("ড়"), 1);
     EXPECT_EQ(count_character("ঢ়"), 1);
     EXPECT_EQ(count_character("য়"), 1);
     EXPECT_EQ(count_character("ৎ"), 1);
+    EXPECT_EQ(count_character("ৄ"), 1);
+    EXPECT_EQ(count_character("ৗ"), 1);
+    EXPECT_EQ(count_character("ৢ"), 1);
+    EXPECT_EQ(count_character("ৣ"), 1);
+    EXPECT_EQ(count_character("৲"), 1);
+    EXPECT_EQ(count_character("৴"), 1);
+    EXPECT_EQ(count_character("৵"), 1);
+    EXPECT_EQ(count_character("৶"), 1);
+    EXPECT_EQ(count_character("৷"), 1);
+    EXPECT_EQ(count_character("৸"), 1);
+    EXPECT_EQ(count_character("৹"), 1);
+    EXPECT_EQ(count_character("৺"), 1);
+    EXPECT_EQ(count_character("৻"), 1);
+    EXPECT_EQ(count_character("ৼ"), 1);
+    EXPECT_EQ(count_character("৽"), 1);
+    EXPECT_EQ(count_character("৾"), 1);
+
+    const auto find_character = [&inventory](std::string_view character) {
+        const auto found = std::find_if(inventory.begin(), inventory.end(), [character](const auto& item) {
+            return item.character == character;
+        });
+        return found == inventory.end() ? std::string_view{} : std::string_view(found->category);
+    };
+    EXPECT_EQ(find_character("ং"), "Mc");
+    EXPECT_EQ(find_character("া"), "Mc");
+    EXPECT_EQ(find_character("ী"), "Mc");
+    EXPECT_EQ(find_character("ে"), "Mc");
+    EXPECT_EQ(find_character("্"), "Mn");
+    EXPECT_EQ(find_character("৴"), "No");
+    EXPECT_EQ(find_character("৾"), "Mn");
 
     EXPECT_EQ(count_character("ৰ"), 0);
     EXPECT_EQ(count_character("ৱ"), 0);

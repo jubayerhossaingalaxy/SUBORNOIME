@@ -196,7 +196,8 @@ TEST(PersonalDictionaryTest, EscapesSqlWildcardsInNormalizedPrefixSearch) {
 
 
 TEST(PersonalDictionaryTest, RecordsNewWordsAsLearnedPersonalEntries) {
-    const std::string db_path = temporary_database_path("suborno_personal_learned_word_test.sqlite");
+    const std::string db_path =
+        temporary_database_path("suborno_personal_learned_word_test.sqlite");
     std::remove(db_path.c_str());
 
     suborno::dictionary::Dictionary dictionary(db_path);
@@ -264,7 +265,8 @@ TEST(PersonalDictionaryTest, LearnedSystemWordsAppearInPersonalListAndCanBeRemov
 }
 
 TEST(PersonalDictionaryTest, LearnedFrequencyChangesDictionaryRanking) {
-    const std::string db_path = temporary_database_path("suborno_personal_learned_rank_test.sqlite");
+    const std::string db_path =
+        temporary_database_path("suborno_personal_learned_rank_test.sqlite");
     std::remove(db_path.c_str());
 
     suborno::dictionary::Dictionary dictionary(db_path);

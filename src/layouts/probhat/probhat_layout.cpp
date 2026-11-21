@@ -71,7 +71,7 @@ constexpr ProbhatKeyMapping kProbhatMappings[] = {
     {0x30, "ব", "ভ", 0x01},
     {0x31, "ন", "ণ", 0x05},
     {0x32, "ম", "ঙ", 0x01},
-    {0x33, ",", "ৃ", 0x04},
+    {0x33, ",", "ৃ", kProbhatCapLokAltGr},
     {0x34, "।", "ঁ", 0x00},
     {0x35, "্", "?", 0x00},
     {0x39, " ", " ", 0x00},

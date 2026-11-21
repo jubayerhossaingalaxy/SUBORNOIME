@@ -304,7 +304,8 @@ TEST(EngineTest, DictionaryMigratesVersionTwoLearnedWordsToAliasSchema) {
                      "user_frequency INTEGER NOT NULL DEFAULT 0,"
                      "user_pinned INTEGER NOT NULL DEFAULT 0,"
                      "created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);"
-                     "INSERT INTO dictionary_entries(word, normalized, frequency, source, user_frequency)"
+                     "INSERT INTO dictionary_entries("
+                     "word, normalized, frequency, source, user_frequency)"
                      " VALUES('বাংলা', 'bang', 10, 'system', 3);",
                      nullptr,
                      nullptr,

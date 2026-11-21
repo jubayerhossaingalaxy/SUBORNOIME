@@ -13,9 +13,11 @@ produces ঊ.
 
 ## CapsLock semantics
 
-CapsLock follows the KLC CAPLOK/SGCAPS column. Keys marked as CapsLock-sensitive use the
-alternate Shift output when CapsLock is active; keys without that flag do not. Holding
-Shift and CapsLock together returns the base output for CapsLock-sensitive keys.
+The KLC CAP column is a bit field. Suborno preserves CAPLOK (0x01) and CAPLOKALTGR (0x04)
+separately. Values 1 and 5 enable ordinary CapsLock-to-Shift behavior; value 4 applies only
+with AltGr and must not change output when CapsLock is pressed alone. Holding Shift and
+CapsLock together returns the base output for CAPLOK keys. AltGr and CAPLOKALTGR output
+states are not implemented yet, so this is not complete KLC state parity.
 
 ## Physical-key policy
 
@@ -28,7 +30,7 @@ uses literal visible output for those layers; full dead-key composition is not c
 
 ## Test coverage
 
-Unit tests cover base/Shift pairs, ordinary CAPLOK behavior, CAPLOKALTGR non-effect
-without AltGr, literal vowel-sign concatenation, punctuation/currency, scan-code
-precedence, unmapped numpad keys, and grapheme-safe backspace. AltGr/dead-key
-compatibility remains incomplete.
+Unit tests cover base/Shift pairs, ordinary CAPLOK behavior, CAPLOKALTGR non-effect without
+AltGr, literal vowel-sign concatenation, punctuation/currency, scan-code precedence,
+unmapped numpad keys, and grapheme-safe backspace. AltGr/dead-key compatibility remains
+incomplete.

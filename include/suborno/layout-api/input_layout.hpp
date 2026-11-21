@@ -32,7 +32,7 @@ class InputLayout {
 };
 
 // Stateless layouts rebuild their output from the complete key sequence.
-// This keeps fixed and compositional layouts independent of the phonetic parser.
+// Stateful compositional layouts may implement their own InputSession.
 class StatelessInputLayout : public InputLayout {
   public:
     std::unique_ptr<InputSession> create_session(

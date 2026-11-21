@@ -35,6 +35,7 @@ class PhoneticInputSession final : public layout::InputSession {
     layout::InputStatus backspace() override;
     layout::CommitResult commit() override;
     layout::CommitResult commit_candidate(std::size_t index) override;
+    void set_learning_enabled(bool enabled) noexcept override;
     bool select_candidate(std::size_t index) override;
     bool select_next_candidate() override;
     bool select_previous_candidate() noexcept override;

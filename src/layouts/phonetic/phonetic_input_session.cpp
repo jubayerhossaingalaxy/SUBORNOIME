@@ -99,6 +99,10 @@ CommitResult PhoneticInputSession::commit() {
     };
 }
 
+void PhoneticInputSession::set_learning_enabled(bool enabled) noexcept {
+    options_.learning_enabled = enabled;
+}
+
 CommitResult PhoneticInputSession::commit_candidate(std::size_t index) {
     if (raw_input_.empty()) {
         return {

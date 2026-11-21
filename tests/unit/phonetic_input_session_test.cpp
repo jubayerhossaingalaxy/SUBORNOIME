@@ -1,10 +1,34 @@
 #include "suborno/layouts/phonetic/phonetic_input_session.hpp"
 
+#include <filesystem>
 #include <gtest/gtest.h>
+
+#include "suborno/dictionary/dictionary.hpp"
+#include "suborno/layouts/phonetic/suborno_phonetic_layout.hpp"
 #include <string>
 
 using suborno::layouts::InputStatus;
 using suborno::layouts::PhoneticInputSession;
+
+TEST(PhoneticInputSessionTest, DisablingLearningDuringCompositionPreventsDictionaryWrites) {
+    const std::filesystem::path db_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_learning_opt_out.sqlite";
+    std::filesystem::remove(db_path);
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path.string());
+        suborno::layouts::SubornoPhoneticLayout layout;
+        PhoneticInputSession session(layout, dictionary, {.learning_enabled = true});
+        ASSERT_EQ(session.append_utf8("ami"), InputStatus::updated);
+
+        session.set_learning_enabled(false);
+        EXPECT_EQ(session.commit().text_utf8, "আমি");
+        EXPECT_EQ(dictionary.get_user_frequency("আমি"), 0);
+        EXPECT_TRUE(dictionary.list_user_words().empty());
+    }
+
+    std::filesystem::remove(db_path);
+}
 
 TEST(PhoneticInputSessionTest, AppendsValidInputAndCommitsPrimaryOutput) {
     PhoneticInputSession session;

@@ -73,6 +73,9 @@ class InputSession {
     virtual InputStatus backspace() = 0;
     virtual CommitResult commit() = 0;
     virtual CommitResult commit_candidate(std::size_t index) = 0;
+    virtual void set_learning_enabled(bool enabled) noexcept {
+        static_cast<void>(enabled);
+    }
     virtual bool select_candidate(std::size_t index) = 0;
     virtual bool select_next_candidate() = 0;
     virtual bool select_previous_candidate() noexcept = 0;

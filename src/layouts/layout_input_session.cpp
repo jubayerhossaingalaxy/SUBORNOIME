@@ -92,6 +92,10 @@ suborno::layout::CommitResult LayoutInputSession::commit() {
     };
 }
 
+void LayoutInputSession::set_learning_enabled(bool enabled) noexcept {
+    options_.learning_enabled = enabled;
+}
+
 suborno::layout::CommitResult LayoutInputSession::commit_candidate(std::size_t index) {
     if (raw_input_.empty()) {
         return {

@@ -876,6 +876,9 @@ STDMETHODIMP SubornoTextService::OnSetFocus(BOOL foreground) {
     try {
         const std::string active_layout_id(m_engine->active_layout_id());
         for (auto& [context, state] : m_contexts) {
+            if (state.session != nullptr) {
+                state.session->set_learning_enabled(m_engine->settings().learning_enabled);
+            }
             const auto current = state.session == nullptr ? layout::CompositionSnapshot{}
                                                           : state.session->snapshot();
             if (state.session == nullptr || current.raw_input_utf8.empty()) {

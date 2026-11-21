@@ -2,6 +2,8 @@
 #define NOMINMAX
 #endif
 
+#include "suborno/platform/windows/tsf/text_service.hpp"
+
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -12,8 +14,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include "suborno/platform/windows/tsf/text_service.hpp"
 
 #include "../com/module_lifetime.hpp"
 #include "suborno/core/engine.hpp"
@@ -238,11 +238,12 @@ class InputScopeQueryEditSession final : public ITfEditSession {
 
         TF_SELECTION selection{};
         ULONG fetched = 0;
-        result = context_->GetSelection(edit_cookie,
-                                         TF_DEFAULT_SELECTION,
-                                         1,
-                                         &selection,
-                                         &fetched);
+        result = context_->GetSelection(
+            edit_cookie,
+            TF_DEFAULT_SELECTION,
+            1,
+            &selection,
+            &fetched);
         if (result != S_OK || fetched != 1 || selection.range == nullptr) {
             if (selection.range != nullptr) {
                 selection.range->Release();
@@ -266,7 +267,7 @@ class InputScopeQueryEditSession final : public ITfEditSession {
 
         wil::com_ptr<ITfInputScope> input_scope;
         result = value.punkVal->QueryInterface(IID_PPV_ARGS(input_scope.put()));
-        if (FAILED(result)) {
+        if (result != S_OK) {
             ::VariantClear(&value);
             return result;
         }
@@ -274,12 +275,12 @@ class InputScopeQueryEditSession final : public ITfEditSession {
         InputScope* scopes = nullptr;
         UINT count = 0;
         result = input_scope->GetInputScopes(&scopes, &count);
-        if (FAILED(result)) {
+        if (result != S_OK) {
             ::CoTaskMemFree(scopes);
             ::VariantClear(&value);
             return result;
         }
-        if (count == 0) {
+        if (count == 0 || scopes == nullptr) {
             ::CoTaskMemFree(scopes);
             ::VariantClear(&value);
             return S_FALSE;
@@ -601,16 +602,13 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
             bool sensitive = false;
             const HRESULT scope_result =
                 query_sensitive_input_scope(pContext, m_clientId, sensitive);
-            if (scope_result != S_OK) {
+            if (!may_capture_text_from_input_scope(scope_result, sensitive)) {
                 state.input_scope_checked = false;
-                state.sensitive_input_scope = false;
+                state.sensitive_input_scope = scope_result == S_OK && sensitive;
                 return S_OK;
             }
             state.input_scope_checked = true;
-            state.sensitive_input_scope = sensitive;
-            if (sensitive) {
-                return S_OK;
-            }
+            state.sensitive_input_scope = false;
         }
         *pbEaten = should_eat;
         return S_OK;
@@ -794,13 +792,13 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             bool sensitive = false;
             const HRESULT scope_result =
                 query_sensitive_input_scope(pContext, m_clientId, sensitive);
-            if (scope_result != S_OK) {
+            if (!may_capture_text_from_input_scope(scope_result, sensitive)) {
                 state.input_scope_checked = false;
-                state.sensitive_input_scope = false;
+                state.sensitive_input_scope = scope_result == S_OK && sensitive;
                 return S_OK;
             }
             state.input_scope_checked = true;
-            state.sensitive_input_scope = sensitive;
+            state.sensitive_input_scope = false;
         }
         if (state.sensitive_input_scope) {
             return S_OK;

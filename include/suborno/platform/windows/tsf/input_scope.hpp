@@ -23,6 +23,11 @@ constexpr bool is_sensitive_input_scope_type(InputScope scope) noexcept {
     }
 }
 
+constexpr bool may_capture_text_from_input_scope(HRESULT query_result,
+                                                    bool sensitive) noexcept {
+    return query_result == S_OK && !sensitive;
+}
+
 HRESULT query_sensitive_input_scope(ITfContext* context,
                                     TfClientId client_id,
                                     bool& sensitive) noexcept;

@@ -14,14 +14,14 @@ verified.
 | Suborno Phonetic | Existing implementation | Phonetic regression corpus |
 | Platform-neutral physical key events | Initial implementation, CI pending | key_event_test.cpp and generic session tests |
 | Borno Phonetic Regular Mode | Initial implementation, CI pending | borno_phonetic_layout_test.cpp |
-| Avro Phonetic profile | Initial implementation, CI pending | avro_phonetic_layout_test.cpp |
+| Avro Phonetic profile | Documented conjunct input corpus (299 variants), strict non-conjunct separation and initial vowel-context rules implemented; CI and provenance review pending; not full parity | avro_phonetic_layout_test.cpp, including the 299-vector conjunct corpus |
 | Borno Phonetic LM Mode | Planned | Context corpus and ranking evaluation |
 | Avro autocorrect and full context rules | Planned | Official-behavior regression corpus |
 | Khipro Classic compositional subset | Initial implementation, CI pending; not full parity | Khipro composition, slicer, forced-vowel and separator vectors |
 | National physical layout | Not implemented; current module is only a Roman-token prototype. BDS 1738:2018 licensing review required before reproducing the official chart | Written permission / licensing clearance plus an independently authored and tested physical-key matrix |
 | Probhat fixed keymap | KLC Base/Shift/AltGr/Shift+AltGr/Caps scan-code layers implemented; OEM_102 and numpad decimal virtual-key paths recognized; unsupported layer combinations pass through; dead-key composition incomplete; CI pending | Physical scan-code, CAPLOK/CAPLOKALTGR, OEM_102, numpad decimal, literal vowel-sign, punctuation and unmapped AltGr tests |
 | Phonetic literal escaping | Partial | Single-EGC escape tests |
-| Automatic vowel forming | Planned | Avro compatibility vectors |
+| Automatic vowel forming | Partial: documented contextual `a` after vowels/signs and `o` after a vowel implemented; full rule behavior pending | Avro vowel-context corpus |
 | Old-style/automatic reph | Planned | Reph composition corpus |
 | ANSI/Bijoy encoding | Planned | Converter and legacy-app tests |
 
@@ -91,5 +91,6 @@ verified.
 - Windows-specific features require hosted MSVC build plus interactive verification.
 - Language layouts require a maintained mapping corpus.
 - External dictionaries and language models require provenance and license review.
-- No third-party source, mapping table, dictionary, test, UI asset, or documentation
-  may be copied into the MIT project.
+- No third-party source code, parser, dictionary, model, UI asset or documentation
+  may be copied into the MIT project. Behavioral mapping data must have traceable
+  provenance and compatible licensing or written permission before distribution.

@@ -10,9 +10,15 @@ are represented by `suborno_layout_api`, `suborno_dictionary`, and
 ## Windows-only code
 
 The Windows shared-library target is added only when `WIN32` is true and must
-use MSVC toolset v143. It may depend on WIL and Windows system APIs. The current
-target is a DLL/TSF build boundary and does not implement COM registration or
-a functioning TSF text service.
+use MSVC toolset v143. It may depend on WIL and Windows system APIs. The target
+contains the COM class factory, in-process server registration, TSF language
+profile registration, per-context composition sessions, keyboard event
+handling, and TSF edit-session text insertion.
+
+The Windows desktop executable owns the notification-area shell, layout
+selection, startup preference, and Windows input settings integration.
+Candidate-window UIElement, Topbar, theme rendering, on-screen keyboard, and
+the full settings surface remain planned work.
 
 ## Verification
 

@@ -313,10 +313,7 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
         const auto found = m_contexts.find(pContext);
         const bool composing = found != m_contexts.end() && found->second.session != nullptr
                                && !found->second.session->snapshot().raw_input_utf8.empty();
-        const auto key_event = key_event_from_virtual_key(wParam);
-        const bool printable =
-            key_event.has_value() && suborno::layout::key_event_to_ascii(*key_event).has_value();
-        *pbEaten = printable || composing;
+        *pbEaten = (wParam >= 'A' && wParam <= 'Z') || composing;
         return S_OK;
     } catch (const std::bad_alloc&) {
         return E_OUTOFMEMORY;
@@ -386,19 +383,18 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         }
         if (composing && wParam >= '1' && wParam <= '9') {
             const std::size_t candidate_index = static_cast<std::size_t>(wParam - '1');
-            if (candidate_index >= snapshot.candidates.size()) {
-                return S_OK;
+            if (candidate_index < snapshot.candidates.size()) {
+                const auto committed = state.session->commit_candidate(candidate_index);
+                const std::wstring text = utf8_to_utf16(committed.text_utf8);
+                if (!committed.text_utf8.empty() && text.empty()) {
+                    return E_INVALIDARG;
+                }
+                const HRESULT hr = _FinishComposition(pContext, state, text);
+                if (SUCCEEDED(hr)) {
+                    *pbEaten = TRUE;
+                }
+                return hr;
             }
-            const auto committed = state.session->commit_candidate(candidate_index);
-            const std::wstring text = utf8_to_utf16(committed.text_utf8);
-            if (!committed.text_utf8.empty() && text.empty()) {
-                return E_INVALIDARG;
-            }
-            const HRESULT hr = _FinishComposition(pContext, state, text);
-            if (SUCCEEDED(hr)) {
-                *pbEaten = TRUE;
-            }
-            return hr;
         }
         if (composing && wParam == VK_SPACE) {
             const auto committed = state.session->commit();
@@ -418,7 +414,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         const auto key_event = key_event_from_virtual_key(wParam);
         const bool starts_phonetic_input = wParam >= 'A' && wParam <= 'Z';
         if (key_event.has_value() && (composing || starts_phonetic_input)) {
-            const layouts::InputStatus input_status = state.session->append_key(*key_event);
+            const layout::InputStatus input_status = state.session->append_key(*key_event);
             if (input_status == layout::InputStatus::invalid_utf8
                 || input_status == layout::InputStatus::input_limit
                 || input_status == layout::InputStatus::empty) {

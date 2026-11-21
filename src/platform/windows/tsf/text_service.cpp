@@ -167,7 +167,7 @@ bool logical_text_from_keyboard_layout(UINT virtual_key,
 }
 
 std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(
-    WPARAM virtual_key, LPARAM lparam, bool ignore_caps_lock) {
+    WPARAM virtual_key, LPARAM lparam, bool ignore_caps_lock, bool capture_logical_text) {
     const auto physical_key = physical_key_from_virtual_key(virtual_key);
     if (!physical_key.has_value()) {
         return std::nullopt;
@@ -184,8 +184,8 @@ std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(
         .previous_key_state = message_data.previous_key_state,
         .key_down = message_data.key_down,
     };
-    if (event.key_down && !event.modifiers.control && !event.modifiers.alt
-        && !event.modifiers.windows) {
+    if (capture_logical_text && event.key_down && !event.modifiers.control
+        && !event.modifiers.alt && !event.modifiers.windows) {
         event.logical_text_available = logical_text_from_keyboard_layout(
             static_cast<UINT>(virtual_key),
             message_data.scan_code,
@@ -417,7 +417,10 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                                && !found->second.session->snapshot().raw_input_utf8.empty();
         const auto& input_settings = m_engine->settings().input;
         auto key_event = key_event_from_virtual_key(
-            wParam, lParam, input_settings.ignore_caps_lock_state_in_bangla);
+            wParam,
+            lParam,
+            input_settings.ignore_caps_lock_state_in_bangla,
+            m_engine->active_layout_kind() != layout::LayoutKind::fixed);
         apply_input_settings(key_event, m_engine->settings());
         const bool printable =
             key_event.has_value()
@@ -542,7 +545,10 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
 
         const auto& input_settings = m_engine->settings().input;
         auto key_event = key_event_from_virtual_key(
-            wParam, lParam, input_settings.ignore_caps_lock_state_in_bangla);
+            wParam,
+            lParam,
+            input_settings.ignore_caps_lock_state_in_bangla,
+            m_engine->active_layout_kind() != layout::LayoutKind::fixed);
         apply_input_settings(key_event, m_engine->settings());
         const bool starts_phonetic_input =
             key_event.has_value() && !key_event->logical_text_utf8.empty()

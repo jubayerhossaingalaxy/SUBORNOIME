@@ -80,6 +80,31 @@ TEST(LayoutInputSessionTest, RejectsInvalidUtf8WithoutMutatingTheSession) {
     EXPECT_TRUE(session.snapshot().raw_input_utf8.empty());
 }
 
+TEST(LayoutInputSessionTest, AcceptsPhysicalKeysThroughTheSharedSessionContract) {
+    TestStatelessLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    EXPECT_EQ(session->append_key(
+                  {suborno::layout::PhysicalKey::letter_a, {.shift = true}}),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->append_key(
+                  {suborno::layout::PhysicalKey::semicolon, {.shift = true}}),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().raw_input_utf8, "A:");
+}
+
+TEST(LayoutInputSessionTest, DoesNotTurnShortcutChordsIntoCompositionText) {
+    TestStatelessLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    EXPECT_EQ(session->append_key(
+                  {suborno::layout::PhysicalKey::letter_a, {.control = true}}),
+              suborno::layout::InputStatus::empty);
+    EXPECT_TRUE(session->snapshot().raw_input_utf8.empty());
+}
+
 TEST(LayoutInputSessionTest, EnforcesTheSharedInputLimit) {
     TestStatelessLayout layout;
     auto session = layout.create_session(nullptr, {});

@@ -62,6 +62,7 @@ suborno::layout::KeyModifiers current_key_modifiers() noexcept {
         .num_lock = (::GetKeyState(VK_NUMLOCK) & 0x0001) != 0,
         .control = (::GetKeyState(VK_CONTROL) & 0x8000) != 0,
         .alt = (::GetKeyState(VK_MENU) & 0x8000) != 0,
+        .alt_graph = (::GetKeyState(VK_RMENU) & 0x8000) != 0,
         .windows = (::GetKeyState(VK_LWIN) & 0x8000) != 0 || (::GetKeyState(VK_RWIN) & 0x8000) != 0,
     };
 }
@@ -216,9 +217,11 @@ void apply_input_settings(std::optional<suborno::layout::KeyEvent>& event,
     }
 }
 
-bool has_text_modifier_chord() noexcept {
+bool has_text_modifier_chord(bool allow_alt_graph) noexcept {
     const auto modifiers = current_key_modifiers();
-    return modifiers.control || modifiers.alt || modifiers.windows;
+    return modifiers.windows
+           || ((modifiers.control || modifiers.alt)
+               && !(allow_alt_graph && modifiers.alt_graph));
 }
 
 std::optional<std::size_t> candidate_index_from_virtual_key(WPARAM virtual_key) noexcept {
@@ -226,7 +229,11 @@ std::optional<std::size_t> candidate_index_from_virtual_key(WPARAM virtual_key) 
     if (!physical_key.has_value()) {
         return std::nullopt;
     }
-    const suborno::layout::KeyEvent key_event{*physical_key, current_key_modifiers()};
+    const auto modifiers = current_key_modifiers();
+    if (modifiers.alt_graph) {
+        return std::nullopt;
+    }
+    const suborno::layout::KeyEvent key_event{*physical_key, modifiers};
     const auto character = suborno::layout::key_event_to_ascii(key_event);
     if (!character.has_value() || *character < '1' || *character > '9') {
         return std::nullopt;
@@ -430,7 +437,9 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
     if (pContext == nullptr || m_engine == nullptr || is_modifier_key(wParam)) {
         return S_OK;
     }
-    if (has_text_modifier_chord()) {
+    const bool allow_alt_graph =
+        m_engine->active_layout_kind() == suborno::layout::LayoutKind::fixed;
+    if (has_text_modifier_chord(allow_alt_graph)) {
         return S_OK;
     }
 
@@ -494,7 +503,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
     if (pContext == nullptr || m_engine == nullptr) {
         return E_INVALIDARG;
     }
-    if (is_modifier_key(wParam) || has_text_modifier_chord()) {
+    const bool allow_alt_graph =
+        m_engine->active_layout_kind() == suborno::layout::LayoutKind::fixed;
+    if (is_modifier_key(wParam) || has_text_modifier_chord(allow_alt_graph)) {
         return S_OK;
     }
 

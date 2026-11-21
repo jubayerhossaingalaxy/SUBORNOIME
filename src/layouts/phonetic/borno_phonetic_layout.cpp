@@ -45,7 +45,7 @@ constexpr std::array kBornoTokens{
     PhoneticTokenDefinition{"c", PhoneticTokenKind::consonant, "চ", {}},
     PhoneticTokenDefinition{"j", PhoneticTokenKind::consonant, "জ", {}},
     PhoneticTokenDefinition{"T", PhoneticTokenKind::consonant, "ট", {}, false},
-    PhoneticTokenDefinition{"D", PhoneticTokenKind::consonant, "ড", {}, false},
+    PhoneticTokenDefinition{"D", PhoneticTokenKind::consonant, "ড", {}},
     PhoneticTokenDefinition{"N", PhoneticTokenKind::consonant, "ণ", {}, false},
     PhoneticTokenDefinition{"t", PhoneticTokenKind::consonant, "ত", {}},
     PhoneticTokenDefinition{"d", PhoneticTokenKind::consonant, "দ", {}},

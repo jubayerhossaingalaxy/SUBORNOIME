@@ -193,3 +193,41 @@ TEST(PersonalDictionaryTest, EscapesSqlWildcardsInNormalizedPrefixSearch) {
 
     std::remove(db_path.c_str());
 }
+
+
+TEST(PersonalDictionaryTest, RecordsNewWordsAsLearnedPersonalEntries) {
+    const std::string db_path = temporary_database_path("suborno_personal_learned_word_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.record_commit("নিজস্বশব্দ", "nijoshsho");
+
+    EXPECT_EQ(dictionary.get_user_frequency("নিজস্বশব্দ"), 1);
+    EXPECT_EQ(dictionary.list_user_words(), std::vector<std::string>{"নিজস্বশব্দ"});
+
+    dictionary.record_commit("নিজস্বশব্দ", "nijoshsho");
+    EXPECT_EQ(dictionary.get_user_frequency("নিজস্বশব্দ"), 2);
+
+    std::remove(db_path.c_str());
+}
+
+TEST(PersonalDictionaryTest, LearnedFrequencyChangesDictionaryRanking) {
+    const std::string db_path = temporary_database_path("suborno_personal_learned_rank_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("আগেরশব্দ", "shared", 5);
+    dictionary.add_entry("শেখাশব্দ", "shared", 1);
+
+    ASSERT_EQ(dictionary.find_matches("shared").front(), "আগেরশব্দ");
+    for (int count = 0; count < 5; ++count) {
+        dictionary.record_commit("শেখাশব্দ", "shared");
+    }
+
+    const auto matches = dictionary.find_matches("shared");
+    ASSERT_EQ(matches.size(), 2U);
+    EXPECT_EQ(matches.front(), "শেখাশব্দ");
+    EXPECT_EQ(dictionary.get_user_frequency("শেখাশব্দ"), 5);
+
+    std::remove(db_path.c_str());
+}

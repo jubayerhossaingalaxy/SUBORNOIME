@@ -252,14 +252,15 @@ void Dictionary::add_entry(const std::string& word, const std::string& normalize
 }
 
 void Dictionary::record_commit(const std::string& word, const std::string& normalized) {
-    const char* compatible_statement =
-        "INSERT INTO dictionary_entries(word, normalized, frequency, source) "
-        "VALUES(?, ?, 1, 'system') "
+    const char* statement =
+        "INSERT INTO dictionary_entries("
+        "word, normalized, frequency, source, user_frequency) "
+        "VALUES(?, ?, 1, 'user', 1) "
         "ON CONFLICT(word) DO UPDATE SET "
-        "user_frequency=dictionary_entries.user_frequency+1,"
+        "user_frequency=MIN(dictionary_entries.user_frequency+1, 2147483647),"
         "normalized=excluded.normalized";
     sqlite3_stmt* stmt = nullptr;
-    const int prepare_rc = sqlite3_prepare_v2(impl_->db, compatible_statement, -1, &stmt, nullptr);
+    const int prepare_rc = sqlite3_prepare_v2(impl_->db, statement, -1, &stmt, nullptr);
     if (prepare_rc != SQLITE_OK) {
         throw DictionaryError(
             DictionaryErrorCategory::prepare, prepare_rc, sqlite3_errmsg(impl_->db));
@@ -458,7 +459,7 @@ void Dictionary::add_user_word(const std::string& word, const std::string& norma
         "word, normalized, frequency, source, user_frequency, user_pinned) "
         "VALUES(?, ?, 1, 'user', 1, 1) "
         "ON CONFLICT(word) DO UPDATE SET "
-        "user_frequency=dictionary_entries.user_frequency+1,"
+        "user_frequency=MIN(dictionary_entries.user_frequency+1, 2147483647),"
         "user_pinned=1,"
         "normalized=excluded.normalized";
     sqlite3_stmt* stmt = nullptr;

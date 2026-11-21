@@ -381,6 +381,35 @@ TEST(EngineTest, EngineConfigPersistsSettingsAndOwnsDictionary) {
     std::filesystem::remove(dictionary_path);
 }
 
+TEST(EngineTest, PreservesLastKnownGoodSettingsWhenReloadFileIsInvalid) {
+    const std::filesystem::path settings_path =
+        std::filesystem::temp_directory_path() / "suborno_engine_invalid_reload_test.conf";
+    std::filesystem::remove(settings_path);
+
+    suborno::core::EngineConfig config;
+    config.settings_path = settings_path;
+    {
+        suborno::core::Engine engine(config);
+        suborno::settings::EngineSettings external = engine.settings();
+        external.active_layout_id = "khipro";
+        external.candidate_limit = 7;
+        ASSERT_EQ(engine.save_settings(external), suborno::settings::SettingsStatus::ok);
+
+        std::ofstream invalid_settings(settings_path, std::ios::trunc);
+        ASSERT_TRUE(invalid_settings.is_open());
+        invalid_settings << "not-a-settings-line\\n";
+        invalid_settings.close();
+        ASSERT_TRUE(invalid_settings.good());
+
+        const auto reloaded = engine.reload_settings();
+        EXPECT_EQ(reloaded.status, suborno::settings::SettingsStatus::invalid_format);
+        EXPECT_EQ(engine.active_layout_id(), "khipro");
+        EXPECT_EQ(engine.settings().candidate_limit, 7U);
+    }
+
+    std::filesystem::remove(settings_path);
+}
+
 TEST(EngineTest, ReloadsSettingsChangedByTheDesktopSettingsApplication) {
     const std::filesystem::path settings_path =
         std::filesystem::temp_directory_path() / "suborno_engine_reload_settings_test.conf";

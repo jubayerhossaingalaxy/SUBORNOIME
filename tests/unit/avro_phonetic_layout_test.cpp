@@ -19,7 +19,7 @@ TEST(AvroPhoneticLayoutTest, ConvertsIndependentAndDependentVowels) {
     EXPECT_EQ(layout.transliterate("kee"), "কী");
     EXPECT_EQ(layout.transliterate("rri"), "ঋ");
     EXPECT_EQ(layout.transliterate("krri"), "কৃ");
-    EXPECT_EQ(layout.transliterate("samia"), "সামিয়া");
+    EXPECT_EQ(layout.transliterate("samia"), "সামি\u09AF\u09BCা");
     EXPECT_EQ(layout.transliterate("oi"), "অই");
     EXPECT_EQ(layout.transliterate("ao"), "আও");
     EXPECT_EQ(layout.transliterate("OI"), "ঐ");
@@ -34,11 +34,11 @@ TEST(AvroPhoneticLayoutTest, PreservesCaseSensitiveConsonantTokens) {
     EXPECT_EQ(layout.transliterate("chh"), "ছ");
     EXPECT_EQ(layout.transliterate("j"), "জ");
     EXPECT_EQ(layout.transliterate("J"), "জ");
-    EXPECT_EQ(layout.transliterate("y"), "ইয়");
-    EXPECT_EQ(layout.transliterate("yahoo"), "ইয়াহু");
-    EXPECT_EQ(layout.transliterate("Y"), "য়");
+    EXPECT_EQ(layout.transliterate("y"), "ই\u09AF\u09BC");
+    EXPECT_EQ(layout.transliterate("yahoo"), "ই\u09AF\u09BCাহু");
+    EXPECT_EQ(layout.transliterate("Y"), "\u09AF\u09BC");
     EXPECT_EQ(layout.transliterate("Z"), "য");
-    EXPECT_EQ(layout.transliterate("kY"), "কয়");
+    EXPECT_EQ(layout.transliterate("kY"), "ক\u09AF\u09BC");
     EXPECT_EQ(layout.transliterate("kZ"), "ক্য");
     EXPECT_EQ(layout.transliterate("t"), "ত");
     EXPECT_EQ(layout.transliterate("T"), "ট");
@@ -72,7 +72,7 @@ TEST(AvroPhoneticLayoutTest, SupportsRephPhalaAndSpecialSigns) {
     const suborno::layouts::AvroPhoneticLayout layout;
 
     EXPECT_EQ(layout.transliterate("orrko"), "অর্ক");
-    EXPECT_EQ(layout.transliterate("y"), "ইয়");
+    EXPECT_EQ(layout.transliterate("y"), "ই\u09AF\u09BC");
     EXPECT_EQ(layout.transliterate("by"), "\u09AC\u09CD\u09AF");
     EXPECT_EQ(layout.transliterate("kr"), "ক্র");
     EXPECT_EQ(layout.transliterate("km"), "কম");

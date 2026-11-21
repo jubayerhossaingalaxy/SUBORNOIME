@@ -579,14 +579,14 @@ class Application final {
                                                    26,
                                                    kSelectCandidateKeysCheck);
         learning_check_ = add_control(0,
-                                      L"BUTTON",
-                                      L"Learn committed words on this device (opt-in)",
-                                      BS_AUTOCHECKBOX,
-                                      24,
-                                      308,
-                                      500,
-                                      26,
-                                      kLearningEnabledCheck);
+                                     L"BUTTON",
+                                     L"Learn committed words on this device (opt-in)",
+                                     BS_AUTOCHECKBOX,
+                                     24,
+                                     308,
+                                     500,
+                                     26,
+                                     kLearningEnabledCheck);
         if (show_candidate_window_check_ == nullptr || map_numpad_check_ == nullptr
             || ignore_caps_lock_check_ == nullptr || select_candidate_keys_check_ == nullptr
             || learning_check_ == nullptr) {

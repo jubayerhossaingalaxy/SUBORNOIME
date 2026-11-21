@@ -2,8 +2,6 @@
 #define NOMINMAX
 #endif
 
-#include "suborno/platform/windows/tsf/text_service.hpp"
-
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -14,6 +12,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include "suborno/platform/windows/tsf/text_service.hpp"
 
 #include "../com/module_lifetime.hpp"
 #include "suborno/core/engine.hpp"
@@ -238,8 +238,11 @@ class InputScopeQueryEditSession final : public ITfEditSession {
 
         TF_SELECTION selection{};
         ULONG fetched = 0;
-        result = context_->GetSelection(
-            edit_cookie, TF_DEFAULT_SELECTION, 1, &selection, &fetched);
+        result = context_->GetSelection(edit_cookie,
+                                         TF_DEFAULT_SELECTION,
+                                         1,
+                                         &selection,
+                                         &fetched);
         if (FAILED(result) || fetched != 1 || selection.range == nullptr) {
             if (selection.range != nullptr) {
                 selection.range->Release();

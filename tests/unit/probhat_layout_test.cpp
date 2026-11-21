@@ -6,9 +6,10 @@ namespace {
 
 suborno::layout::KeyEvent event(std::uint16_t scan_code,
                                 bool shift = false,
-                                bool caps_lock = false) {
+                                bool caps_lock = false,
+                                bool alt_graph = false) {
     return {
-        .modifiers = {.shift = shift, .caps_lock = caps_lock},
+        .modifiers = {.shift = shift, .caps_lock = caps_lock, .alt_graph = alt_graph},
         .scan_code = scan_code,
         .key_down = true,
     };
@@ -81,6 +82,61 @@ TEST(ProbhatLayoutTest, AppliesCapsLockOnlyToKeysMarkedInTheKlc) {
     session->reset();
     EXPECT_EQ(session->append_key(event(0x33, true, false)), suborno::layout::InputStatus::updated);
     EXPECT_EQ(session->snapshot().preedit_utf8, "ৃ");
+}
+
+TEST(ProbhatLayoutTest, MapsAltGrAndShiftAltGrLayersFromTheKlc) {
+    const suborno::layouts::ProbhatLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    EXPECT_EQ(session->append_key(event(0x02, false, false, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "¡");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x02, true, false, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "¹");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x10, false, false, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ä");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x10, true, false, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "Ä");
+}
+
+TEST(ProbhatLayoutTest, AppliesCapsLockAltGrFlagOnlyWithinTheAltGrLayers) {
+    const suborno::layouts::ProbhatLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    EXPECT_EQ(session->append_key(event(0x33, false, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, ",");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x33, false, true, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "Ç");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x33, true, true, true)),
+              suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ç");
+}
+
+TEST(ProbhatLayoutTest, DoesNotConsumeUnmappedAltGrLayers) {
+    const suborno::layouts::ProbhatLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    EXPECT_EQ(session->append_key(event(0x21, false, false, true)),
+              suborno::layout::InputStatus::empty);
+    EXPECT_TRUE(session->snapshot().preedit_utf8.empty());
 }
 
 TEST(ProbhatLayoutTest, UsesPhysicalScanCodeInsteadOfTheActiveLogicalCharacter) {

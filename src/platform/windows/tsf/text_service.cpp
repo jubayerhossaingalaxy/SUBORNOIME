@@ -126,6 +126,18 @@ bool has_text_modifier_chord() noexcept {
     return modifiers.control || modifiers.alt || modifiers.windows;
 }
 
+std::optional<std::size_t> candidate_index_from_virtual_key(WPARAM virtual_key) noexcept {
+    const auto key_event = key_event_from_virtual_key(virtual_key);
+    if (!key_event.has_value()) {
+        return std::nullopt;
+    }
+    const auto character = suborno::layout::key_event_to_ascii(*key_event);
+    if (!character.has_value() || *character < '1' || *character > '9') {
+        return std::nullopt;
+    }
+    return static_cast<std::size_t>(*character - '1');
+}
+
 }  // namespace
 
 SubornoTextService::SubornoTextService() {
@@ -313,7 +325,10 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
         const auto found = m_contexts.find(pContext);
         const bool composing = found != m_contexts.end() && found->second.session != nullptr
                                && !found->second.session->snapshot().raw_input_utf8.empty();
-        *pbEaten = (wParam >= 'A' && wParam <= 'Z') || composing;
+        const auto key_event = key_event_from_virtual_key(wParam);
+        const bool printable =
+            key_event.has_value() && suborno::layout::key_event_to_ascii(*key_event).has_value();
+        *pbEaten = (composing || printable) && (composing || wParam != VK_SPACE);
         return S_OK;
     } catch (const std::bad_alloc&) {
         return E_OUTOFMEMORY;
@@ -360,6 +375,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
 
         const auto snapshot = state.session->snapshot();
         const bool composing = !snapshot.raw_input_utf8.empty();
+        if (!composing && wParam == VK_SPACE) {
+            return S_OK;
+        }
 
         if (composing && wParam == VK_BACK) {
             state.session->backspace();
@@ -381,10 +399,10 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
             return hr;
         }
-        if (composing && wParam >= '1' && wParam <= '9') {
-            const std::size_t candidate_index = static_cast<std::size_t>(wParam - '1');
-            if (candidate_index < snapshot.candidates.size()) {
-                const auto committed = state.session->commit_candidate(candidate_index);
+        if (composing) {
+            const auto candidate_index = candidate_index_from_virtual_key(wParam);
+            if (candidate_index.has_value() && *candidate_index < snapshot.candidates.size()) {
+                const auto committed = state.session->commit_candidate(*candidate_index);
                 const std::wstring text = utf8_to_utf16(committed.text_utf8);
                 if (!committed.text_utf8.empty() && text.empty()) {
                     return E_INVALIDARG;
@@ -412,8 +430,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         }
 
         const auto key_event = key_event_from_virtual_key(wParam);
-        const bool starts_phonetic_input = wParam >= 'A' && wParam <= 'Z';
-        if (key_event.has_value() && (composing || starts_phonetic_input)) {
+        if (key_event.has_value()) {
             const layout::InputStatus input_status = state.session->append_key(*key_event);
             if (input_status == layout::InputStatus::invalid_utf8
                 || input_status == layout::InputStatus::input_limit

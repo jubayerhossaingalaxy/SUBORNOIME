@@ -57,9 +57,10 @@ struct LayoutOption {
     const wchar_t* name;
 };
 
-constexpr std::array<LayoutOption, 4> kLayouts{{
+constexpr std::array<LayoutOption, 5> kLayouts{{
     {"suborno-phonetic", L"Suborno Phonetic"},
     {"borno-phonetic", L"Borno Phonetic"},
+    {"avro-phonetic", L"Avro Phonetic"},
     {"probhat", L"Probhat"},
     {"national", L"National"},
 }};
@@ -581,7 +582,8 @@ class Application final {
     void refresh_status() {
         const std::string_view active_layout = engine_->settings().active_layout_id;
         const bool phonetic = active_layout == "suborno-phonetic"
-                              || active_layout == "borno-phonetic";
+                              || active_layout == "borno-phonetic"
+                              || active_layout == "avro-phonetic";
         ::SetWindowTextW(
             help_label_,
             phonetic

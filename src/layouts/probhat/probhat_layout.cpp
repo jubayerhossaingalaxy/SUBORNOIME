@@ -16,67 +16,67 @@ namespace suborno::layouts {
 namespace {
 
 struct ProbhatKeyMapping {
-    std::uint8_t scan_code;
+    std::uint32_t scan_code;
     std::string_view unshifted;
     std::string_view shifted;
-    std::string_view unshifted_dependent{};
-    std::string_view shifted_dependent{};
+    bool caps_lock_toggles_shift;
 };
 
-// Independently authored mapping from the published Probhat key chart.
-// Scan codes use the IBM PC/AT set-1 positions exposed by Windows key events.
+// Base, Shift, and CapsLock layers follow the MIT-licensed Probhat KLC table.
 constexpr ProbhatKeyMapping kProbhatMappings[] = {
-    {0x02, "১", "!"},
-    {0x03, "২", "@"},
-    {0x04, "৩", "#"},
-    {0x05, "৪", "৳"},
-    {0x06, "৫", "%"},
-    {0x07, "৬", "^"},
-    {0x08, "৭", "ঞ"},
-    {0x09, "৮", "ৎ"},
-    {0x0A, "৯", "("},
-    {0x0B, "০", ")"},
-    {0x0C, "-", "_"},
-    {0x0D, "=", "+"},
-    {0x10, "দ", "ধ", {}, {}},
-    {0x11, "উ", "ঊ", "ূ", "ূ"},
-    {0x12, "ই", "ঈ", "ী", "ী"},
-    {0x13, "র", "ড়", {}, {}},
-    {0x14, "ট", "ঠ", {}, {}},
-    {0x15, "এ", "ঐ", "ে", "ৈ"},
-    {0x16, "উ", "উ", "ু", "ু"},
-    {0x17, "ই", "ই", "ি", "ি"},
-    {0x18, "ও", "ঔ", "ো", "ৌ"},
-    {0x19, "প", "ফ", {}, {}},
-    {0x1A, "এ", "ঐ", "ে", "ৈ"},
-    {0x1B, "ও", "ঔ", "ো", "ৌ"},
-    {0x1E, "আ", "অ", "া", "অ"},
-    {0x1F, "স", "ষ"},
-    {0x20, "ড", "ঢ"},
-    {0x21, "ত", "থ"},
-    {0x22, "গ", "ঘ"},
-    {0x23, "হ", "ঃ"},
-    {0x24, "জ", "ঝ"},
-    {0x25, "ক", "খ"},
-    {0x26, "ল", "ং"},
-    {0x27, ";", ":"},
-    {0x28, "'", R"(")"},
-    {0x29, "\u200D", "~"},
-    {0x2B, "\\", "|"},
-    {0x2C, "য়", "য"},
-    {0x2D, "শ", "ঢ়"},
-    {0x2E, "চ", "ছ"},
-    {0x2F, "আ", "ঋ"},
-    {0x30, "ব", "ভ"},
-    {0x31, "ন", "ণ"},
-    {0x32, "ম", "ঙ"},
-    {0x33, ",", "ৃ"},
-    {0x34, "।", "ঁ"},
-    {0x35, "্", "?"},
-    {0x39, " ", " "},
+    {0x02, "১", "!", false},
+    {0x03, "২", "@", false},
+    {0x04, "৩", "#", false},
+    {0x05, "৪", "৳", false},
+    {0x06, "৫", "%", false},
+    {0x07, "৬", "^", false},
+    {0x08, "৭", "ঞ", false},
+    {0x09, "৮", "ৎ", false},
+    {0x0A, "৯", "(", false},
+    {0x0B, "০", ")", false},
+    {0x0C, "-", "_", false},
+    {0x0D, "=", "+", false},
+    {0x10, "দ", "ধ", true},
+    {0x11, "ূ", "ঊ", true},
+    {0x12, "ী", "ঈ", true},
+    {0x13, "র", "ড়", true},
+    {0x14, "ট", "ঠ", true},
+    {0x15, "এ", "ঐ", true},
+    {0x16, "ু", "উ", true},
+    {0x17, "ি", "ই", true},
+    {0x18, "ও", "ঔ", true},
+    {0x19, "প", "ফ", true},
+    {0x1A, "ে", "ৈ", false},
+    {0x1B, "ো", "ৌ", false},
+    {0x1E, "া", "অ", true},
+    {0x1F, "স", "ষ", true},
+    {0x20, "ড", "ঢ", true},
+    {0x21, "ত", "থ", true},
+    {0x22, "গ", "ঘ", true},
+    {0x23, "হ", "ঃ", true},
+    {0x24, "জ", "ঝ", true},
+    {0x25, "ক", "খ", true},
+    {0x26, "ল", "ং", true},
+    {0x27, ";", ":", false},
+    {0x28, "'", "\"", false},
+    {0x29, "\x60", "~", false},
+    {0x2B, "\\", "|", false},
+    {0x2C, "য়", "য", true},
+    {0x2D, "শ", "ঢ়", true},
+    {0x2E, "চ", "ছ", true},
+    {0x2F, "আ", "ঋ", true},
+    {0x30, "ব", "ভ", true},
+    {0x31, "ন", "ণ", true},
+    {0x32, "ম", "ঙ", true},
+    {0x33, ",", "ৃ", true},
+    {0x34, "।", "ঁ", false},
+    {0x35, "্", "?", false},
+    {0x39, " ", " ", false},
+    {0x53, ".", ".", false},
+    {0x56, "\\", "|", false},
 };
 
-const ProbhatKeyMapping* find_mapping(std::uint8_t scan_code) noexcept {
+const ProbhatKeyMapping* find_mapping(std::uint32_t scan_code) noexcept {
     for (const ProbhatKeyMapping& mapping : kProbhatMappings) {
         if (mapping.scan_code == scan_code) {
             return &mapping;
@@ -111,153 +111,44 @@ bool ascii_key_to_event(char value, layout::KeyEvent& event) noexcept {
         return true;
     }
 
-    switch (static_cast<unsigned char>(value)) {
-    case 45:
-        event.scan_code = 0x0C;
-        return true;  // -
-    case 95:
-        event.scan_code = 0x0C;
-        event.modifiers.shift = true;
-        return true;  // _
-    case 61:
-        event.scan_code = 0x0D;
-        return true;  // =
-    case 43:
-        event.scan_code = 0x0D;
-        event.modifiers.shift = true;
-        return true;  // +
-    case 91:
-        event.scan_code = 0x1A;
-        return true;  // [
-    case 123:
-        event.scan_code = 0x1A;
-        event.modifiers.shift = true;
-        return true;  // {
-    case 93:
-        event.scan_code = 0x1B;
-        return true;  // ]
-    case 125:
-        event.scan_code = 0x1B;
-        event.modifiers.shift = true;
-        return true;  // }
-    case 59:
-        event.scan_code = 0x27;
-        return true;  // ;
-    case 58:
-        event.scan_code = 0x27;
-        event.modifiers.shift = true;
-        return true;  // :
-    case 39:
-        event.scan_code = 0x28;
-        return true;  // '
-    case 34:
-        event.scan_code = 0x28;
-        event.modifiers.shift = true;
-        return true;  // "
-    case 96:
-        event.scan_code = 0x29;
-        return true;  // grave
-    case 126:
-        event.scan_code = 0x29;
-        event.modifiers.shift = true;
-        return true;  // ~
-    case 92:
-        event.scan_code = 0x2B;
-        return true;  // backslash
-    case 124:
-        event.scan_code = 0x2B;
-        event.modifiers.shift = true;
-        return true;  // |
-    case 44:
-        event.scan_code = 0x33;
-        return true;  // ,
-    case 60:
-        event.scan_code = 0x33;
-        event.modifiers.shift = true;
-        return true;  // <
-    case 46:
-        event.scan_code = 0x34;
-        return true;  // .
-    case 62:
-        event.scan_code = 0x34;
-        event.modifiers.shift = true;
-        return true;  // >
-    case 47:
-        event.scan_code = 0x35;
-        return true;  // /
-    case 63:
-        event.scan_code = 0x35;
-        event.modifiers.shift = true;
-        return true;  // ?
-    case 32:
-        event.scan_code = 0x39;
-        return true;  // space
-    default:
-        return false;
+    struct PunctuationKey {
+        char unshifted;
+        char shifted;
+        std::uint8_t scan_code;
+    };
+    constexpr PunctuationKey kPunctuation[]{
+        {'!', '1', 0x02}, {'@', '2', 0x03}, {'#', '3', 0x04}, {'$', '4', 0x05},
+        {'%', '5', 0x06}, {'^', '6', 0x07}, {'&', '7', 0x08}, {'*', '8', 0x09},
+        {'(', '9', 0x0A}, {')', '0', 0x0B}, {'-', '_', 0x0C}, {'=', '+', 0x0D},
+        {'[', '{', 0x1A}, {']', '}', 0x1B}, {';', ':', 0x27}, {'\'', '"', 0x28},
+        {'\x60', '~', 0x29}, {'\\', '|', 0x2B}, {',', '<', 0x33}, {'.', '>', 0x34},
+        {'/', '?', 0x35}, {' ', ' ', 0x39},
+    };
+    for (const PunctuationKey& key : kPunctuation) {
+        if (value == key.unshifted || value == key.shifted) {
+            event.scan_code = key.scan_code;
+            event.modifiers.shift = value == key.shifted;
+            return true;
+        }
     }
+    return false;
 }
 
-bool ends_with_bengali_consonant(std::string_view text) {
-    const auto graphemes = suborno::unicode::split_graphemes(std::string(text));
-    if (graphemes.empty()) {
-        return false;
-    }
-
-    const std::string& last_grapheme = graphemes.back();
-    if (last_grapheme.size() < 3) {
-        return false;
-    }
-    const auto* bytes = reinterpret_cast<const unsigned char*>(last_grapheme.data());
-    std::size_t start = last_grapheme.size() - 1;
-    while (start > 0 && (bytes[start] & 0xC0U) == 0x80U) {
-        --start;
-    }
-    const unsigned char lead = bytes[start];
-    char32_t code_point = 0;
-    if (lead < 0x80) {
-        code_point = lead;
-    } else if ((lead & 0xE0U) == 0xC0U && last_grapheme.size() - start >= 2) {
-        code_point = static_cast<char32_t>(((lead & 0x1FU) << 6U) | (bytes[start + 1] & 0x3FU));
-    } else if ((lead & 0xF0U) == 0xE0U && last_grapheme.size() - start >= 3) {
-        code_point =
-            static_cast<char32_t>(((lead & 0x0FU) << 12U) | ((bytes[start + 1] & 0x3FU) << 6U)
-                                  | (bytes[start + 2] & 0x3FU));
-    } else {
-        return false;
-    }
-    return code_point >= 0x0995 && code_point <= 0x09B9;
-}
-
-std::string output_for_event(const layout::KeyEvent& event, bool after_consonant) {
+std::string output_for_event(const layout::KeyEvent& event) {
     if (!event.key_down || event.modifiers.control || event.modifiers.alt
         || event.modifiers.windows) {
         return {};
     }
 
-    const auto physical_key = static_cast<std::uint8_t>(event.key);
-    const auto first_numpad = static_cast<std::uint8_t>(layout::PhysicalKey::numpad_0);
-    const auto last_numpad = static_cast<std::uint8_t>(layout::PhysicalKey::numpad_9);
-    if (physical_key >= first_numpad && physical_key <= last_numpad) {
-        if (!event.modifiers.num_lock) {
-            return {};
-        }
-        constexpr std::string_view kBengaliDigits[] = {
-            "০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"};
-        return std::string(kBengaliDigits[physical_key - first_numpad]);
-    }
-
-    if (event.scan_code > std::numeric_limits<std::uint8_t>::max()) {
-        return {};
-    }
-    const ProbhatKeyMapping* mapping = find_mapping(static_cast<std::uint8_t>(event.scan_code));
+    const ProbhatKeyMapping* mapping = find_mapping(event.scan_code);
     if (mapping == nullptr) {
         return {};
     }
-    if (after_consonant && !mapping->unshifted_dependent.empty()) {
-        return std::string(event.modifiers.shift ? mapping->shifted_dependent
-                                                 : mapping->unshifted_dependent);
-    }
-    return std::string(event.modifiers.shift ? mapping->shifted : mapping->unshifted);
+
+    const bool shift_active =
+        event.modifiers.shift
+        != (mapping->caps_lock_toggles_shift && event.modifiers.caps_lock);
+    return std::string(shift_active ? mapping->shifted : mapping->unshifted);
 }
 
 std::string transliterate_probhat(std::string_view input) {
@@ -270,7 +161,7 @@ std::string transliterate_probhat(std::string_view input) {
     for (const char value : input) {
         layout::KeyEvent event;
         if (ascii_key_to_event(value, event)) {
-            output.append(output_for_event(event, ends_with_bengali_consonant(output)));
+            output.append(output_for_event(event));
         } else {
             output.push_back(value);
         }
@@ -291,7 +182,7 @@ class ProbhatInputSession final : public layout::InputSession {
         for (const char value : input) {
             layout::KeyEvent event;
             if (ascii_key_to_event(value, event)) {
-                updated.append(output_for_event(event, ends_with_bengali_consonant(updated)));
+                updated.append(output_for_event(event));
             } else {
                 updated.push_back(value);
             }
@@ -311,7 +202,7 @@ class ProbhatInputSession final : public layout::InputSession {
 
         std::string updated = composition_;
         for (std::size_t index = 0; index < repeat_count; ++index) {
-            updated.append(output_for_event(event, ends_with_bengali_consonant(updated)));
+            updated.append(output_for_event(event));
         }
         return append_output(updated);
     }

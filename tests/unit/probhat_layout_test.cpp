@@ -4,9 +4,11 @@
 
 namespace {
 
-suborno::layout::KeyEvent event(std::uint8_t scan_code, bool shift = false) {
+suborno::layout::KeyEvent event(std::uint32_t scan_code,
+                                bool shift = false,
+                                bool caps_lock = false) {
     return {
-        .modifiers = {.shift = shift},
+        .modifiers = {.shift = shift, .caps_lock = caps_lock},
         .scan_code = scan_code,
         .key_down = true,
     };
@@ -19,14 +21,14 @@ TEST(ProbhatLayoutTest, IsARealFixedPhysicalKeyboardLayout) {
     EXPECT_EQ(layout.kind(), suborno::layout::LayoutKind::fixed);
 }
 
-TEST(ProbhatLayoutTest, MapsPhysicalLetterKeysAndShiftLayer) {
+TEST(ProbhatLayoutTest, MapsPhysicalKeyPositionsAndShiftLayer) {
     const suborno::layouts::ProbhatLayout layout;
 
     EXPECT_EQ(layout.transliterate("k"), "ক");
     EXPECT_EQ(layout.transliterate("K"), "খ");
     EXPECT_EQ(layout.transliterate("f"), "ত");
     EXPECT_EQ(layout.transliterate("F"), "থ");
-    EXPECT_EQ(layout.transliterate("a"), "আ");
+    EXPECT_EQ(layout.transliterate("a"), "া");
     EXPECT_EQ(layout.transliterate("A"), "অ");
     EXPECT_EQ(layout.transliterate("q"), "দ");
     EXPECT_EQ(layout.transliterate("Q"), "ধ");
@@ -34,28 +36,45 @@ TEST(ProbhatLayoutTest, MapsPhysicalLetterKeysAndShiftLayer) {
     EXPECT_EQ(layout.transliterate("Z"), "য");
     EXPECT_EQ(layout.transliterate("y"), "এ");
     EXPECT_EQ(layout.transliterate("Y"), "ঐ");
+    EXPECT_EQ(layout.transliterate("c"), "চ");
+    EXPECT_EQ(layout.transliterate("C"), "ছ");
+    EXPECT_EQ(layout.transliterate("w"), "ূ");
+    EXPECT_EQ(layout.transliterate("W"), "ঊ");
+    EXPECT_EQ(layout.transliterate("u"), "ু");
+    EXPECT_EQ(layout.transliterate("U"), "উ");
+    EXPECT_EQ(layout.transliterate("e"), "ী");
+    EXPECT_EQ(layout.transliterate("E"), "ঈ");
+    EXPECT_EQ(layout.transliterate("["), "ে");
+    EXPECT_EQ(layout.transliterate("{"), "ৈ");
+    EXPECT_EQ(layout.transliterate("]"), "ো");
+    EXPECT_EQ(layout.transliterate("}"), "ৌ");
+}
+
+TEST(ProbhatLayoutTest, ConcatenatesLiteralFixedKeyOutputsWithoutPhoneticRewriting) {
+    const suborno::layouts::ProbhatLayout layout;
+
     EXPECT_EQ(layout.transliterate("ka"), "কা");
     EXPECT_EQ(layout.transliterate("ki"), "কি");
     EXPECT_EQ(layout.transliterate("ke"), "কে");
     EXPECT_EQ(layout.transliterate("ko"), "কো");
+    EXPECT_EQ(layout.transliterate("wa"), "ূা");
 }
 
-TEST(ProbhatLayoutTest, MapsApostropheAndShiftedQuoteFromTheSamePhysicalKey) {
+TEST(ProbhatLayoutTest, AppliesCapsLockOnlyToKeysMarkedInTheKlc) {
     const suborno::layouts::ProbhatLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
 
-    EXPECT_EQ(layout.transliterate("'"), "'");
-    EXPECT_EQ(layout.transliterate("\""), "\"");
-}
+    EXPECT_EQ(session->append_key(event(0x25, false, true)), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "খ");
 
-TEST(ProbhatLayoutTest, MapsDigitsSignsAndPunctuation) {
-    const suborno::layouts::ProbhatLayout layout;
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x02, false, true)), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "১");
 
-    EXPECT_EQ(layout.transliterate("1234567890"), "১২৩৪৫৬৭৮৯০");
-    EXPECT_EQ(layout.transliterate("4"), "৪");
-    EXPECT_EQ(layout.transliterate("7"), "৭");
-    EXPECT_EQ(layout.transliterate("."), "।");
-    EXPECT_EQ(layout.transliterate("/"), "্");
-    EXPECT_EQ(layout.transliterate(","), ",");
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x33, false, true)), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ৃ");
 }
 
 TEST(ProbhatLayoutTest, UsesPhysicalScanCodeInsteadOfTheActiveLogicalCharacter) {
@@ -73,7 +92,7 @@ TEST(ProbhatLayoutTest, UsesPhysicalScanCodeInsteadOfTheActiveLogicalCharacter) 
     EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
 }
 
-TEST(ProbhatLayoutTest, AppliesShiftLayerFromThePhysicalKeyEvent) {
+TEST(ProbhatLayoutTest, AppliesShiftLayerFromPhysicalKeyEvents) {
     const suborno::layouts::ProbhatLayout layout;
     auto session = layout.create_session(nullptr, {});
 
@@ -82,30 +101,27 @@ TEST(ProbhatLayoutTest, AppliesShiftLayerFromThePhysicalKeyEvent) {
     EXPECT_EQ(session->snapshot().preedit_utf8, "খ");
 }
 
-TEST(ProbhatLayoutTest, AppendsDependentVowelsAcrossSessionKeyEvents) {
+TEST(ProbhatLayoutTest, PassesThroughUnmappedNumpadDigits) {
     const suborno::layouts::ProbhatLayout layout;
     auto session = layout.create_session(nullptr, {});
-
     ASSERT_NE(session, nullptr);
-    EXPECT_EQ(session->append_utf8("k"), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
-    EXPECT_EQ(session->append_utf8("a"), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session->snapshot().preedit_utf8, "কা");
-    EXPECT_EQ(session->append_utf8("i"), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session->snapshot().preedit_utf8, "কাই");
+
+    EXPECT_EQ(session->append_key(event(0x50)), suborno::layout::InputStatus::empty);
+    EXPECT_TRUE(session->snapshot().preedit_utf8.empty());
 }
 
-TEST(ProbhatLayoutTest, MapsNumpadDigitsWhenNumLockIsEnabled) {
+TEST(ProbhatLayoutTest, MapsDigitsSignsAndPunctuation) {
     const suborno::layouts::ProbhatLayout layout;
-    auto session = layout.create_session(nullptr, {});
 
-    ASSERT_NE(session, nullptr);
-    suborno::layout::KeyEvent numpad_event{
-        .key = suborno::layout::PhysicalKey::numpad_2,
-        .modifiers = {.num_lock = true},
-    };
-    EXPECT_EQ(session->append_key(numpad_event), suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session->snapshot().preedit_utf8, "২");
+    EXPECT_EQ(layout.transliterate("1234567890"), "১২৩৪৫৬৭৮৯০");
+    EXPECT_EQ(layout.transliterate("4"), "৪");
+    EXPECT_EQ(layout.transliterate("$"), "৳");
+    EXPECT_EQ(layout.transliterate("."), "।");
+    EXPECT_EQ(layout.transliterate(">"), "ঁ");
+    EXPECT_EQ(layout.transliterate("/"), "্");
+    EXPECT_EQ(layout.transliterate(","), ",");
+    EXPECT_EQ(layout.transliterate("<"), "ৃ");
+    EXPECT_EQ(layout.transliterate("\\\\"), "\\\\");
 }
 
 TEST(ProbhatLayoutTest, BackspaceRemovesOneBengaliGrapheme) {

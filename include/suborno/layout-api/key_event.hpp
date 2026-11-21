@@ -75,6 +75,7 @@ struct KeyModifiers {
     bool num_lock = false;
     bool control = false;
     bool alt = false;
+    bool alt_graph = false;
     bool windows = false;
 };
 
@@ -132,7 +133,8 @@ struct KeyEvent {
 }
 
 [[nodiscard]] inline std::optional<char> key_event_to_ascii(const KeyEvent& event) noexcept {
-    if (event.modifiers.control || event.modifiers.alt || event.modifiers.windows) {
+    if (event.modifiers.windows
+        || ((event.modifiers.control || event.modifiers.alt) && !event.modifiers.alt_graph)) {
         return std::nullopt;
     }
 

@@ -17,16 +17,19 @@ automated verification.
 - `suborno_layout_api` defines generic input layouts, key events, candidates,
   and host-neutral input sessions. The phonetic parser remains a specialized
   implementation of that contract.
-- `suborno_layout_sessions` provides the stateless layout session factory and
-  shared dictionary-backed candidate plumbing.
-- `suborno_unicode` carries ICU link requirements; `suborno_persistence`
-  carries SQLite requirements. `suborno_layout_api` and
-  `suborno_dictionary` mark intended module boundaries but implement no
-  product feature.
+- `suborno_layout_sessions` provides the stateless layout-session factory;
+  shared candidate generation merges layout and dictionary results.
+- `suborno_unicode` carries ICU link requirements. `suborno_dictionary`
+  owns SQLite queries and user-word storage. `suborno_persistence` provides
+  atomic file replacement and does not require SQLite.
+- `suborno_settings` serializes and validates versioned settings through the
+  persistence module.
 - `src/platform/windows/` is excluded from non-Windows configurations.
   `suborno_windows_tsf` is a native COM in-process server and TSF text service.
   It advises keyboard/thread-manager sinks, manages per-context composition,
-  and uses TSF edit sessions for composition updates and commits.
+  uses TSF edit sessions for composition updates and commits, and exposes the
+  initial native candidate-list UIElement/popup. Its live host-app behavior
+  remains outside automated acceptance.
 - WIL is only found and linked for the Windows target. Ubuntu portable targets
   cannot include Windows SDK, COM, TSF, or WIL headers.
 - Windows production configurations fail unless CMake selects MSVC toolset
@@ -42,8 +45,10 @@ Android adapters are outside the current target.
 suborno_core
   ├── suborno_unicode ── ICU4C
   ├── suborno_layout_api
-  ├── suborno_dictionary
-  └── suborno_persistence ── SQLite
+  ├── suborno_dictionary ── SQLite
+  ├── suborno_layout_sessions
+  ├── suborno_settings
+  └── suborno_persistence (atomic file I/O)
 
 suborno_windows_tsf (Windows only, shared library)
   ├── suborno_core

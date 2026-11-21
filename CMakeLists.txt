@@ -32,6 +32,8 @@ target_link_libraries(suborno_layout_registry PUBLIC suborno_layout_api suborno_
 
 add_library(suborno_phonetic STATIC
     src/layouts/phonetic/suborno_phonetic_layout.cpp
+    src/layouts/phonetic/borno_phonetic_layout.cpp
+    src/layouts/phonetic/rule_based_phonetic_layout.cpp
     src/layouts/phonetic/phonetic_input_session.cpp
     src/layouts/phonetic/phonetic_parser.cpp
     src/layouts/phonetic/phonetic_tokenizer.cpp
@@ -272,6 +274,7 @@ if(BUILD_TESTING)
         tests/unit/phonetic_parser_test.cpp
         tests/unit/phonetic_input_session_test.cpp
         tests/unit/layout_input_session_test.cpp
+        tests/unit/borno_phonetic_layout_test.cpp
         tests/unit/phonetic_candidate_test.cpp
         tests/unit/phonetic_tokenizer_test.cpp
         tests/unit/unicode_test.cpp

@@ -5,12 +5,14 @@
 #include "suborno/platform/windows/tsf/text_service.hpp"
 
 #include <array>
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <new>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "../com/module_lifetime.hpp"
 #include "suborno/core/engine.hpp"
@@ -532,18 +534,30 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         }
         if (composing && (wParam == VK_PRIOR || wParam == VK_NEXT)) {
             const auto current = state.session->snapshot();
-            if (!current.candidates.empty()) {
-                constexpr std::size_t kCandidatePageSize = 8;
-                const std::size_t selected = current.selected_candidate_index;
-                const std::size_t last = current.candidates.size() - 1;
-                const std::size_t next =
-                    wParam == VK_NEXT
-                        ? std::min(last, selected + kCandidatePageSize)
-                        : (selected > kCandidatePageSize ? selected - kCandidatePageSize : 0);
-                if (next != selected && state.session->select_candidate(next)) {
-                    const auto updated = state.session->snapshot();
-                    _UpdateCandidateUI(pContext, state, updated);
-                    *pbEaten = TRUE;
+            if (!current.candidates.empty() && state.candidate_ui_element != nullptr) {
+                UINT page_count = 0;
+                UINT current_page = 0;
+                HRESULT page_result =
+                    state.candidate_ui_element->GetPageIndex(nullptr, 0, &page_count);
+                if (SUCCEEDED(page_result) && page_count > 0
+                    && SUCCEEDED(state.candidate_ui_element->GetCurrentPage(&current_page))) {
+                    std::vector<UINT> page_starts(page_count);
+                    page_result = state.candidate_ui_element->GetPageIndex(
+                        page_starts.data(), page_count, &page_count);
+                    if (SUCCEEDED(page_result)) {
+                        const bool has_adjacent_page =
+                            wParam == VK_NEXT ? current_page + 1 < page_count : current_page > 0;
+                        if (has_adjacent_page) {
+                            const UINT destination_page =
+                                wParam == VK_NEXT ? current_page + 1 : current_page - 1;
+                            const std::size_t destination = page_starts[destination_page];
+                            if (state.session->select_candidate(destination)) {
+                                const auto updated = state.session->snapshot();
+                                _UpdateCandidateUI(pContext, state, updated);
+                                *pbEaten = TRUE;
+                            }
+                        }
+                    }
                 }
             }
             return S_OK;

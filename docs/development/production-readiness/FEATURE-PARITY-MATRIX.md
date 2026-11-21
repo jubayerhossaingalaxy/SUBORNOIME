@@ -54,7 +54,7 @@ verified.
 | Feature | Status | Acceptance evidence |
 |---|---|---|
 | Windows COM/TSF service | Implementation present; validation ongoing | MSVC build and live typing |
-| Password/PIN/private InputScope pass-through | Best-effort TSF InputScope guard implemented; host-app contract still required | InputScope unit tests plus live password/PIN controls; host app must disable TSF in password fields |
+| Password/PIN/private InputScope pass-through | Conservative TSF InputScope guard implemented; re-reads scope for every key and passes through unsupported/failed queries | InputScope unit tests plus live password/PIN controls; host app must disable TSF in password fields |
 | Native Language Bar / Win+Space | Registration path present; live validation pending | Windows interactive test |
 | Per-context composition | Implemented foundation | TSF contract and host-app tests |
 | Candidate UIElement | COM/UIElement contracts and basic lifecycle implemented; host-driven rendering and interactive activation remain unverified | Count/string/selection/GUID/page-index contract tests; elevated TSF registration and live-app tests pending |

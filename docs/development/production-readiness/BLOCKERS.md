@@ -31,9 +31,9 @@
 6. **Dictionary and language quality:** Full dictionary corpus provenance,
    license clearance, ranking evaluation, spell-correction integration and
    next-word prediction remain outstanding. Personal learning now defaults OFF,
-   migrates older settings to OFF, and has a desktop opt-in; password/PIN/private
-   InputScope pass-through is implemented but still requires interactive host-app
-   verification.
+   migrates older settings to OFF, and has a desktop opt-in; password/PIN/private InputScope pass-through now re-reads the active scope on
+   every candidate key and rejects unknown/failed scope queries; it still requires
+   interactive host-app verification.
 7. **Windows TSF:** Hosted MSVC CI is necessary but not sufficient. Interactive
    activation, composition, candidate UI, keyboard navigation, InputScope
    pass-through and compatibility must be tested in Notepad, Office, browsers and

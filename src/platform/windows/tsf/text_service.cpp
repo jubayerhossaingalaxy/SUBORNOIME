@@ -232,8 +232,8 @@ class InputScopeQueryEditSession final : public ITfEditSession {
     STDMETHOD(DoEditSession)(TfEditCookie edit_cookie) override {
         wil::com_ptr<ITfReadOnlyProperty> property;
         HRESULT result = context_->GetAppProperty(GUID_PROP_INPUTSCOPE, property.put());
-        if (FAILED(result)) {
-            return S_OK;
+        if (result != S_OK) {
+            return result;
         }
 
         TF_SELECTION selection{};
@@ -243,11 +243,11 @@ class InputScopeQueryEditSession final : public ITfEditSession {
                                          1,
                                          &selection,
                                          &fetched);
-        if (FAILED(result) || fetched != 1 || selection.range == nullptr) {
+        if (result != S_OK || fetched != 1 || selection.range == nullptr) {
             if (selection.range != nullptr) {
                 selection.range->Release();
             }
-            return S_OK;
+            return result == S_OK ? S_FALSE : result;
         }
 
         wil::com_ptr<ITfRange> range;
@@ -255,24 +255,42 @@ class InputScopeQueryEditSession final : public ITfEditSession {
         VARIANT value;
         ::VariantInit(&value);
         result = property->GetValue(edit_cookie, range.get(), &value);
-        if (result == S_OK && value.vt == VT_UNKNOWN && value.punkVal != nullptr) {
-            wil::com_ptr<ITfInputScope> input_scope;
-            result = value.punkVal->QueryInterface(IID_PPV_ARGS(input_scope.put()));
-            if (SUCCEEDED(result)) {
-                InputScope* scopes = nullptr;
-                UINT count = 0;
-                result = input_scope->GetInputScopes(&scopes, &count);
-                if (SUCCEEDED(result)) {
-                    for (UINT index = 0; index < count; ++index) {
-                        if (is_sensitive_input_scope_type(scopes[index])) {
-                            sensitive_ = true;
-                            break;
-                        }
-                    }
-                }
-                ::CoTaskMemFree(scopes);
+        if (result != S_OK) {
+            ::VariantClear(&value);
+            return result;
+        }
+        if (value.vt != VT_UNKNOWN || value.punkVal == nullptr) {
+            ::VariantClear(&value);
+            return E_UNEXPECTED;
+        }
+
+        wil::com_ptr<ITfInputScope> input_scope;
+        result = value.punkVal->QueryInterface(IID_PPV_ARGS(input_scope.put()));
+        if (FAILED(result)) {
+            ::VariantClear(&value);
+            return result;
+        }
+
+        InputScope* scopes = nullptr;
+        UINT count = 0;
+        result = input_scope->GetInputScopes(&scopes, &count);
+        if (FAILED(result)) {
+            ::CoTaskMemFree(scopes);
+            ::VariantClear(&value);
+            return result;
+        }
+        if (count == 0) {
+            ::CoTaskMemFree(scopes);
+            ::VariantClear(&value);
+            return S_FALSE;
+        }
+        for (UINT index = 0; index < count; ++index) {
+            if (is_sensitive_input_scope_type(scopes[index])) {
+                sensitive_ = true;
+                break;
             }
         }
+        ::CoTaskMemFree(scopes);
         ::VariantClear(&value);
         return S_OK;
     }
@@ -306,10 +324,10 @@ HRESULT query_sensitive_input_scope(ITfContext* context,
     const bool detected_sensitive_scope = session->sensitive();
     session->Release();
 
-    if (FAILED(request_result)) {
+    if (request_result != S_OK) {
         return request_result;
     }
-    if (FAILED(session_result)) {
+    if (session_result != S_OK) {
         return session_result;
     }
 
@@ -580,19 +598,17 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                 state_it->second.context = pContext;
             }
             ContextState& state = state_it->second;
-            if (!state.input_scope_checked || state.sensitive_input_scope) {
-                bool sensitive = false;
-                const HRESULT scope_result =
-                    query_sensitive_input_scope(pContext, m_clientId, sensitive);
-                if (FAILED(scope_result)) {
-                    state.input_scope_checked = false;
-                    state.sensitive_input_scope = false;
-                    return S_OK;
-                }
-                state.input_scope_checked = true;
-                state.sensitive_input_scope = sensitive;
+            bool sensitive = false;
+            const HRESULT scope_result =
+                query_sensitive_input_scope(pContext, m_clientId, sensitive);
+            if (scope_result != S_OK) {
+                state.input_scope_checked = false;
+                state.sensitive_input_scope = false;
+                return S_OK;
             }
-            if (state.sensitive_input_scope) {
+            state.input_scope_checked = true;
+            state.sensitive_input_scope = sensitive;
+            if (sensitive) {
                 return S_OK;
             }
         }

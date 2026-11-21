@@ -65,3 +65,13 @@ TEST(KeyEventTest, DecodesFirstKeyDownMessage) {
     EXPECT_FALSE(decoded.previous_key_state);
     EXPECT_TRUE(decoded.key_down);
 }
+
+
+TEST(KeyEventTest, DistinguishesUnavailableLogicalTextFromAnEmptyTranslation) {
+    suborno::layout::KeyEvent event{
+        .key = PhysicalKey::letter_a,
+        .logical_text_available = true,
+    };
+    EXPECT_TRUE(event.logical_text_available);
+    EXPECT_TRUE(event.logical_text_utf8.empty());
+}

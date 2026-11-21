@@ -159,3 +159,18 @@ TEST(LayoutInputSessionTest, UsesLogicalUnicodeTextFromActiveKeyboardLayout) {
     EXPECT_EQ(session->snapshot().raw_input_utf8, "ক");
     EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
 }
+
+
+TEST(LayoutInputSessionTest, DoesNotUseUsFallbackWhenLayoutTranslationReturnsNoText) {
+    TestStatelessLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    suborno::layout::KeyEvent event{
+        .key = suborno::layout::PhysicalKey::letter_a,
+        .logical_text_available = true,
+    };
+
+    EXPECT_EQ(session->append_key(event), suborno::layout::InputStatus::empty);
+    EXPECT_TRUE(session->snapshot().raw_input_utf8.empty());
+}

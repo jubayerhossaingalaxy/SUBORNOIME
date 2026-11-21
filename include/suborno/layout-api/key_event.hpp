@@ -105,6 +105,7 @@ struct KeyEvent {
     std::uint16_t repeat_count = 1;
     bool previous_key_state = false;
     bool key_down = true;
+    bool logical_text_available = false;
     std::string logical_text_utf8;
 };
 

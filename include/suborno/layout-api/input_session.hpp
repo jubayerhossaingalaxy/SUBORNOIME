@@ -54,6 +54,10 @@ class InputSession {
             || !event.key_down) {
             return InputStatus::empty;
         }
+        if (event.logical_text_available) {
+            return event.logical_text_utf8.empty() ? InputStatus::empty
+                                                   : append_utf8(event.logical_text_utf8);
+        }
         if (!event.logical_text_utf8.empty()) {
             return append_utf8(event.logical_text_utf8);
         }

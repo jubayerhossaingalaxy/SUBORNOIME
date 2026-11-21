@@ -252,9 +252,10 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
         append_edit(std::move(candidate));
     }
 
-    // Insertions are searched before substitutions so missing letters remain reachable.
+    // Interleave insertions and substitutions by position so both typo types
+    // remain reachable within the first bounded dictionary lookup pass.
     for (std::size_t i = 0;
-         i <= graphemes.size() && edits.size() < kMaximumGeneratedEdits;
+         i < graphemes.size() && edits.size() < kMaximumGeneratedEdits;
          ++i) {
         for (const auto& replacement : replacements) {
             if (edits.size() >= kMaximumGeneratedEdits) {
@@ -267,17 +268,9 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
                 }
                 candidate += graphemes[j];
             }
-            if (i == graphemes.size()) {
-                candidate += replacement;
-            }
             append_edit(std::move(candidate));
         }
-    }
 
-    // Replacements use the input script's alphabet.
-    for (std::size_t i = 0;
-         i < graphemes.size() && edits.size() < kMaximumGeneratedEdits;
-         ++i) {
         for (const auto& replacement : replacements) {
             if (edits.size() >= kMaximumGeneratedEdits) {
                 break;
@@ -290,6 +283,18 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
         }
     }
 
+    // Insertions at the end of the word.
+    for (const auto& replacement : replacements) {
+        if (edits.size() >= kMaximumGeneratedEdits) {
+            break;
+        }
+        std::string candidate;
+        for (const auto& grapheme : graphemes) {
+            candidate += grapheme;
+        }
+        candidate += replacement;
+        append_edit(std::move(candidate));
+    }
 
     return edits;
 }

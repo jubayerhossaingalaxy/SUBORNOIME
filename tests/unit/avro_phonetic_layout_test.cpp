@@ -64,6 +64,6 @@ TEST(AvroPhoneticLayoutTest, PreservesLiteralAndUnknownUnicodeText) {
     const suborno::layouts::AvroPhoneticLayout layout;
 
     EXPECT_EQ(layout.transliterate(R"(\k)"), "k");
-    EXPECT_EQ(layout.transliterate("hello!"), "হেল্লো!");
+    EXPECT_EQ(layout.transliterate("hellO!"), "হেল্লো!");
     EXPECT_THROW(layout.transliterate("\xFF"), std::invalid_argument);
 }

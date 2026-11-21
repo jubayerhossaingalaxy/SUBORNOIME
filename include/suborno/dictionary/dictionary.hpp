@@ -46,7 +46,7 @@ class Dictionary {
     std::vector<std::string> find_matches(const std::string& normalized,
                                           std::size_t limit = 16) const;
     std::vector<std::string> find_prefix_matches(const std::string& normalized_prefix,
-                                                  std::size_t limit = 10) const;
+                                                 std::size_t limit = 10) const;
     std::vector<std::string> words_for_prefix(const std::string& prefix) const;
     void initialize_schema();
 

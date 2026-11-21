@@ -536,12 +536,9 @@ TEST(EngineTest, PhoneticSessionStoresCanonicalWordAndTypedAliasSeparately) {
 
         const auto committed = session->commit();
         EXPECT_EQ(committed.text_utf8, "আমি");
-        EXPECT_EQ(engine.dictionary()->find_matches("আমি"),
-                  std::vector<std::string>{"আমি"});
-        EXPECT_EQ(engine.dictionary()->find_matches("ami"),
-                  std::vector<std::string>{"আমি"});
-        EXPECT_EQ(engine.dictionary()->find_prefix_matches("am"),
-                  std::vector<std::string>{"আমি"});
+        EXPECT_EQ(engine.dictionary()->find_matches("আমি"), std::vector<std::string>{"আমি"});
+        EXPECT_EQ(engine.dictionary()->find_matches("ami"), std::vector<std::string>{"আমি"});
+        EXPECT_EQ(engine.dictionary()->find_prefix_matches("am"), std::vector<std::string>{"আমি"});
     }
 
     std::filesystem::remove(dictionary_path);

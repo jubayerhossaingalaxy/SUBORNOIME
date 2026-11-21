@@ -50,8 +50,7 @@ void execute_two_text_statement(sqlite3* database,
     const int step_rc = sqlite3_step(statement);
     sqlite3_finalize(statement);
     if (step_rc != SQLITE_DONE) {
-        throw DictionaryError(
-            DictionaryErrorCategory::step, step_rc, sqlite3_errmsg(database));
+        throw DictionaryError(DictionaryErrorCategory::step, step_rc, sqlite3_errmsg(database));
     }
 }
 
@@ -290,13 +289,12 @@ void Dictionary::initialize_schema() {
     }
 
     char* version_three_error = nullptr;
-    const int version_three_rc = sqlite3_exec(
-        impl_->db,
-        "UPDATE dictionary_metadata SET value='3' "
-        "WHERE key='schema_version' AND value='2';",
-        nullptr,
-        nullptr,
-        &version_three_error);
+    const int version_three_rc = sqlite3_exec(impl_->db,
+                                              "UPDATE dictionary_metadata SET value='3' "
+                                              "WHERE key='schema_version' AND value='2';",
+                                              nullptr,
+                                              nullptr,
+                                              &version_three_error);
     if (version_three_rc != SQLITE_OK) {
         const std::string message =
             version_three_error == nullptr ? "unknown SQLite error" : version_three_error;
@@ -342,8 +340,7 @@ void Dictionary::add_entry(const std::string& word, const std::string& normalize
     }
 }
 
-void Dictionary::record_commit(const std::string& word,
-                             const std::string& normalized) {
+void Dictionary::record_commit(const std::string& word, const std::string& normalized) {
     record_commit(word, normalized, normalized);
 }
 
@@ -491,8 +488,8 @@ std::vector<std::string> Dictionary::find_matches(const std::string& normalized,
     return results;
 }
 
-std::vector<std::string> Dictionary::find_prefix_matches(
-    const std::string& normalized_prefix, std::size_t limit) const {
+std::vector<std::string> Dictionary::find_prefix_matches(const std::string& normalized_prefix,
+                                                         std::size_t limit) const {
     if (normalized_prefix.empty() || limit == 0) {
         return {};
     }
@@ -693,8 +690,7 @@ std::vector<std::string> Dictionary::list_user_words() const {
 }
 
 int Dictionary::get_user_frequency(const std::string& word) const {
-    const std::string query =
-        "SELECT user_frequency FROM dictionary_entries WHERE word = ?";
+    const std::string query = "SELECT user_frequency FROM dictionary_entries WHERE word = ?";
     sqlite3_stmt* stmt = nullptr;
     const int prepare_rc = sqlite3_prepare_v2(impl_->db, query.c_str(), -1, &stmt, nullptr);
     if (prepare_rc != SQLITE_OK) {

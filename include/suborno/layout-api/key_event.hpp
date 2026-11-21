@@ -120,12 +120,10 @@ struct KeyEvent {
         return false;
     }
 
-    const auto numpad_value = static_cast<std::uint8_t>(event.key)
-                              - static_cast<std::uint8_t>(PhysicalKey::numpad_0);
+    const auto numpad_value =
+        static_cast<std::uint8_t>(event.key) - static_cast<std::uint8_t>(PhysicalKey::numpad_0);
     event.key = static_cast<PhysicalKey>(static_cast<std::uint8_t>('0') + numpad_value);
-    event.scan_code = numpad_value == 0U
-                          ? 0x0BU
-                          : static_cast<std::uint16_t>(0x01U + numpad_value);
+    event.scan_code = numpad_value == 0U ? 0x0BU : static_cast<std::uint16_t>(0x01U + numpad_value);
     event.modifiers.shift = false;
     event.modifiers.caps_lock = false;
     event.logical_text_available = false;

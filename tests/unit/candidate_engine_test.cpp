@@ -85,7 +85,6 @@ TEST(CandidateEngineTest, AppliesTheCandidateLimitAndSkipsDuplicateLayoutOutput)
     std::remove(db_path.c_str());
 }
 
-
 TEST(CandidateEngineTest, IncludesNormalizedPrefixPredictionsBelowExactMatches) {
     const std::string db_path =
         temporary_database_path("suborno_candidate_engine_prefix_test.sqlite");

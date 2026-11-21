@@ -62,31 +62,30 @@ std::vector<suborno::layout::Candidate> CandidateEngine::make_candidates(
             append_dictionary_matches(input_text, 0.9, "input dictionary match");
         }
 
-        const auto append_prefix_matches = [&](const std::string& query,
-                                                double score,
-                                                const char* rationale) {
-            if (result.size() >= candidate_limit) {
-                return;
-            }
-            const std::size_t remaining = candidate_limit - result.size();
-            const auto matches = dictionary_->find_prefix_matches(query, remaining);
-            for (const std::string& word : matches) {
+        const auto append_prefix_matches =
+            [&](const std::string& query, double score, const char* rationale) {
                 if (result.size() >= candidate_limit) {
-                    break;
+                    return;
                 }
-                const std::string normalized_word = suborno::unicode::normalize_nfc(word);
-                if (seen.insert(normalized_word).second) {
-                    result.push_back({
-                        .text = word,
-                        .normalized_text = normalized_word,
-                        .stable_id = "dictionary-prefix:" + normalized_word,
-                        .source = suborno::layout::CandidateSource::system_dictionary,
-                        .score = score,
-                        .rationale = rationale,
-                    });
+                const std::size_t remaining = candidate_limit - result.size();
+                const auto matches = dictionary_->find_prefix_matches(query, remaining);
+                for (const std::string& word : matches) {
+                    if (result.size() >= candidate_limit) {
+                        break;
+                    }
+                    const std::string normalized_word = suborno::unicode::normalize_nfc(word);
+                    if (seen.insert(normalized_word).second) {
+                        result.push_back({
+                            .text = word,
+                            .normalized_text = normalized_word,
+                            .stable_id = "dictionary-prefix:" + normalized_word,
+                            .source = suborno::layout::CandidateSource::system_dictionary,
+                            .score = score,
+                            .rationale = rationale,
+                        });
+                    }
                 }
-            }
-        };
+            };
 
         append_prefix_matches(input_text, 0.75, "normalized input prefix match");
         if (normalized_input != input_text) {

@@ -154,7 +154,6 @@ TEST(PersonalDictionaryTest, ClearingUserEntriesUnpinsSystemWordsAndDeletesUserO
     std::remove(db_path.c_str());
 }
 
-
 TEST(PersonalDictionaryTest, FindsCandidatesByNormalizedPhoneticPrefix) {
     const std::string db_path =
         temporary_database_path("suborno_dictionary_normalized_prefix_test.sqlite");
@@ -193,7 +192,6 @@ TEST(PersonalDictionaryTest, EscapesSqlWildcardsInNormalizedPrefixSearch) {
 
     std::remove(db_path.c_str());
 }
-
 
 TEST(PersonalDictionaryTest, RecordsNewWordsAsLearnedPersonalEntries) {
     const std::string db_path =

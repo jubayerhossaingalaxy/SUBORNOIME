@@ -19,11 +19,10 @@ constexpr std::size_t kDefaultCandidatesPerPage = 8;
 
 HINSTANCE candidate_window_module_instance() noexcept {
     HMODULE module = nullptr;
-    constexpr DWORD kModuleFlags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
-                                   | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
-    if (::GetModuleHandleExW(kModuleFlags,
-                             reinterpret_cast<LPCWSTR>(&CandidateListUIElement::window_proc),
-                             &module)
+    constexpr DWORD kModuleFlags =
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+    if (::GetModuleHandleExW(
+            kModuleFlags, reinterpret_cast<LPCWSTR>(&CandidateListUIElement::window_proc), &module)
         == FALSE) {
         return nullptr;
     }

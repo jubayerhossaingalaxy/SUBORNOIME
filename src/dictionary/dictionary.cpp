@@ -22,8 +22,9 @@ std::string read_dictionary_metadata(sqlite3* database, const char* key) {
     const int prepare_result = sqlite3_prepare_v2(
         database, "SELECT value FROM dictionary_metadata WHERE key = ?", -1, &statement, nullptr);
     if (prepare_result != SQLITE_OK) {
-        throw DictionaryError(DictionaryErrorCategory::prepare,
-                              prepare_result,
+        throw DictionaryError(
+            DictionaryErrorCategory::prepare,
+            prepare_result,
                               sqlite3_errmsg(database));
     }
 
@@ -43,8 +44,9 @@ std::string read_dictionary_metadata(sqlite3* database, const char* key) {
         }
     } else if (step_result != SQLITE_DONE) {
         sqlite3_finalize(statement);
-        throw DictionaryError(DictionaryErrorCategory::step,
-                              step_result,
+        throw DictionaryError(
+            DictionaryErrorCategory::step,
+            step_result,
                               sqlite3_errmsg(database));
     }
 

@@ -2,14 +2,15 @@
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
-
-#include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
 #include <iterator>
 #include <msctf.h>
+#include <oleauto.h>
 #include <string>
 #include <vector>
 #include <wil/com.h>
 #include <wil/resource.h>
+
+#include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
 
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/platform/windows/app_paths.hpp"

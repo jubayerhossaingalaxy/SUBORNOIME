@@ -645,25 +645,22 @@ STDMETHODIMP SubornoTextService::OnSetFocus(BOOL foreground) {
         return S_OK;
     }
 
-    const std::string previous_layout(m_engine->active_layout_id());
     const suborno::settings::SettingsLoadResult loaded = m_engine->reload_settings();
     if (loaded.status != suborno::settings::SettingsStatus::ok) {
         return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
     }
 
-    if (previous_layout != m_engine->active_layout_id()) {
-        try {
-            for (auto& [context, state] : m_contexts) {
-                static_cast<void>(context);
-                if (state.session == nullptr || state.session->snapshot().raw_input_utf8.empty()) {
-                    state.session = m_engine->create_session();
-                }
+    try {
+        for (auto& [context, state] : m_contexts) {
+            static_cast<void>(context);
+            if (state.session == nullptr || state.session->snapshot().raw_input_utf8.empty()) {
+                state.session = m_engine->create_session();
             }
-        } catch (const std::bad_alloc&) {
-            return E_OUTOFMEMORY;
-        } catch (...) {
-            return E_FAIL;
         }
+    } catch (const std::bad_alloc&) {
+        return E_OUTOFMEMORY;
+    } catch (...) {
+        return E_FAIL;
     }
     return S_OK;
 }
@@ -705,7 +702,7 @@ STDMETHODIMP SubornoTextService::OnPopContext(ITfContext* pContext) {
     if (found == m_contexts.end()) {
         return S_OK;
     }
-    HRESULT result = S_OK;
+    HRESULT result = _EndCandidateUI(found->second);
     try {
         if (found->second.session != nullptr && found->second.composition != nullptr) {
             const auto committed = found->second.session->commit();

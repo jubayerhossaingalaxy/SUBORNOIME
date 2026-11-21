@@ -343,6 +343,7 @@ if(BUILD_TESTING)
             tests/windows/windows_build_smoke_test.cpp
             src/platform/windows/app_paths.cpp
             src/platform/windows/tsf/guids.cpp
+            src/platform/windows/tsf/candidate_list_ui_element.cpp
         )
         target_link_libraries(suborno_windows_tests PRIVATE
             suborno_core
@@ -350,6 +351,8 @@ if(BUILD_TESTING)
             GTest::gtest_main
             WIL::WIL
             Ole32.lib
+            OleAut32.lib
+            User32.lib
             Shell32.lib
             Uuid.lib
         )

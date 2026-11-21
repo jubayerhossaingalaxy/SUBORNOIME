@@ -74,6 +74,26 @@ TEST(PersonalDictionaryTest, RejectsNewerSchemaWithoutMutatingTheDatabase) {
     std::remove(db_path.c_str());
 }
 
+TEST(PersonalDictionaryTest, OpensDatabaseAtUnicodeFilesystemPath) {
+    const std::filesystem::path database_path =
+        std::filesystem::temp_directory_path() / std::filesystem::u8path(u8"সুবর্ণ_dictionary.sqlite");
+    std::error_code remove_error;
+    std::filesystem::remove(database_path, remove_error);
+
+    const std::u8string utf8_path = database_path.u8string();
+    const std::string database_path_utf8(
+        reinterpret_cast<const char*>(utf8_path.data()), utf8_path.size());
+
+    {
+        suborno::dictionary::Dictionary dictionary(database_path_utf8);
+        dictionary.add_entry("বাংলা", "bangla", 1);
+        EXPECT_EQ(dictionary.find_matches("bangla"), std::vector<std::string>{"বাংলা"});
+    }
+
+    EXPECT_TRUE(std::filesystem::exists(database_path));
+    std::filesystem::remove(database_path, remove_error);
+}
+
 TEST(PersonalDictionaryTest, AddAndListUserWords) {
     const std::string db_path = temporary_database_path("suborno_personal_add_test.sqlite");
     std::remove(db_path.c_str());

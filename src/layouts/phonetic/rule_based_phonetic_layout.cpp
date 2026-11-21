@@ -114,6 +114,11 @@ void append_token(const PhoneticTokenDefinition& token,
         state = CompositionState::after_vowel;
         nukta_eligible = false;
         return;
+    case PhoneticTokenKind::halant_prefix:
+        output.append(token.output);
+        state = CompositionState::explicit_halant;
+        nukta_eligible = false;
+        return;
     }
 }
 
@@ -146,8 +151,10 @@ void append_escaped_grapheme(std::string_view input,
 }  // namespace
 
 RuleBasedPhoneticLayout::RuleBasedPhoneticLayout(
-    std::span<const PhoneticTokenDefinition> tokens)
-    : tokens_(tokens) {
+    std::span<const PhoneticTokenDefinition> tokens,
+    bool accent_key_enabled)
+    : tokens_(tokens),
+      accent_key_enabled_(accent_key_enabled) {
     if (tokens_.empty()) {
         throw std::invalid_argument("A phonetic layout must define at least one token");
     }
@@ -174,10 +181,21 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
     std::size_t offset = 0;
     CompositionState state = CompositionState::boundary;
     bool nukta_eligible = false;
+    bool force_independent_vowel = false;
 
     while (offset < input.size()) {
         if (input[offset] == '\\') {
             append_escaped_grapheme(input, offset, output, state, nukta_eligible);
+            force_independent_vowel = false;
+            continue;
+        }
+
+        if (accent_key_enabled_ && input[offset] == '`') {
+            if (state == CompositionState::consonant_run) {
+                state = CompositionState::boundary;
+            }
+            force_independent_vowel = true;
+            ++offset;
             continue;
         }
 
@@ -201,6 +219,7 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
                 nukta_eligible = false;
             }
             offset += control->input.size();
+            force_independent_vowel = false;
             continue;
         }
 
@@ -210,21 +229,36 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
             output.append(kBanglaDigits[byte - static_cast<unsigned char>('0')]);
             state = CompositionState::boundary;
             nukta_eligible = false;
+            force_independent_vowel = false;
             ++offset;
             continue;
         }
 
         const TokenMatch match = match_token(tokens_, input, offset);
         if (match.definition != nullptr) {
-            if (state == CompositionState::explicit_halant
-                && match.definition->kind == PhoneticTokenKind::consonant) {
+            bool consumed_accent = false;
+            if (match.definition->kind == PhoneticTokenKind::vowel && accent_key_enabled_
+                && offset + match.length < input.size()
+                && input[offset + match.length] == '`') {
+                output.append(match.definition->dependent_output);
+                state = CompositionState::after_vowel;
+                nukta_eligible = false;
+                consumed_accent = true;
+            } else if (match.definition->kind == PhoneticTokenKind::vowel
+                       && force_independent_vowel) {
+                output.append(match.definition->output);
+                state = CompositionState::after_vowel;
+                nukta_eligible = false;
+            } else if (state == CompositionState::explicit_halant
+                       && match.definition->kind == PhoneticTokenKind::consonant) {
                 output.append(match.definition->output);
                 state = CompositionState::consonant_run;
                 nukta_eligible = match.definition->nukta_eligible;
             } else {
                 append_token(*match.definition, output, state, nukta_eligible);
             }
-            offset += match.length;
+            force_independent_vowel = false;
+            offset += match.length + (consumed_accent ? 1U : 0U);
             continue;
         }
 
@@ -233,6 +267,7 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
         offset += length;
         state = CompositionState::boundary;
         nukta_eligible = false;
+        force_independent_vowel = false;
     }
 
     return suborno::unicode::normalize_nfc(output);

@@ -437,8 +437,7 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
     if (pContext == nullptr || m_engine == nullptr || is_modifier_key(wParam)) {
         return S_OK;
     }
-    const bool allow_alt_graph =
-        m_engine->active_layout_kind() == suborno::layout::LayoutKind::fixed;
+    const bool allow_alt_graph = m_engine->active_layout_id() == "probhat";
     if (has_text_modifier_chord(allow_alt_graph)) {
         return S_OK;
     }
@@ -503,8 +502,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
     if (pContext == nullptr || m_engine == nullptr) {
         return E_INVALIDARG;
     }
-    const bool allow_alt_graph =
-        m_engine->active_layout_kind() == suborno::layout::LayoutKind::fixed;
+    const bool allow_alt_graph = m_engine->active_layout_id() == "probhat";
     if (is_modifier_key(wParam) || has_text_modifier_chord(allow_alt_graph)) {
         return S_OK;
     }

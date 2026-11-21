@@ -66,16 +66,6 @@ jobs:
         shell: pwsh
         run: ./scripts/audit-windows-dependencies.ps1
 
-      - name: Install Inno Setup
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $innoSetupUrl = "https://github.com/jrsoftware/issrc/releases/download/is-6_3_3/innosetup-6.3.3.exe"
-          $innoSetupInstaller = Join-Path $env:TEMP 'inno-setup.exe'
-          Invoke-WebRequest -Uri $innoSetupUrl -OutFile $innoSetupInstaller
-          $proc = Start-Process -FilePath $innoSetupInstaller -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' -Wait -PassThru
-          if ($proc.ExitCode -ne 0) { throw "Inno Setup installation failed with exit code $($proc.ExitCode)." }
-
       - name: Build installer
         shell: pwsh
         run: |

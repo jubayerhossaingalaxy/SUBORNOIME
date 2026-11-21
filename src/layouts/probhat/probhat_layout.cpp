@@ -285,28 +285,4 @@ std::unique_ptr<layout::InputSession> ProbhatLayout::create_session(
     return std::make_unique<ProbhatInputSession>();
 }
 
-std::string ProbhatLayout::transliterate(const std::string& input) const {
-    return transliterate_probhat(input);
-}
-
-std::vector<layout::Candidate> ProbhatLayout::generate_candidates(const std::string& input) const {
-    const std::string output = transliterate_probhat(input);
-    if (output.empty()) {
-        return {};
-    }
-    return {{
-        .text = output,
-        .normalized_text = output,
-        .stable_id = "layout:probhat:" + output,
-        .source = layout::CandidateSource::layout,
-        .score = 1.0,
-        .rationale = "Probhat physical-key output",
-    }};
-}
-
-std::unique_ptr<layout::InputSession> ProbhatLayout::create_session(
-    dictionary::Dictionary*, layout::InputSessionOptions) const {
-    return std::make_unique<ProbhatInputSession>();
-}
-
 }  // namespace suborno::layouts

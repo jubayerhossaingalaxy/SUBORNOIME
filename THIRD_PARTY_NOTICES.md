@@ -24,6 +24,22 @@ tools rather than application runtime dependencies. The repository's
 third-party GitHub Actions are pinned to immutable commit SHAs; Dependabot
 checks for updates.
 
+## Avro phonetic behavioral reference (not a runtime dependency)
+
+The Avro compatibility behavior specification at
+`docs/specifications/avro-phonetic-behavior.md` records the public typing guide
+consulted when authoring independent input/output regression vectors and the
+corresponding token parser. The repository does not import the guide's parser
+implementation, application source, dictionary, language model, binaries or
+assets.
+
+Reference: https://avro.aminul.dev/guide.html
+
+The guide's licensing terms have not been established in this repository. This
+attribution records provenance; it is not a license grant or permission to
+redistribute the referenced mapping data. The Avro compatibility data must
+receive a provenance/licensing review before the MIT project is distributed.
+
 ## Probhat keymap reference
 
 The Probhat fixed physical-key output table is independently implemented from the MIT-licensed

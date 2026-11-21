@@ -379,7 +379,7 @@ void Dictionary::initialize_schema() {
 }
 
 std::size_t Dictionary::import_word_lists_if_needed(const WordListPaths& word_list_paths,
-                                                     std::string_view corpus_version) {
+                                                    std::string_view corpus_version) {
     if (word_list_paths.empty() || corpus_version.empty() || corpus_version.size() > 128
         || corpus_version.find_first_of("\r\n") != std::string_view::npos) {
         throw DictionaryError(

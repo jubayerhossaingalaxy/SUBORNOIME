@@ -239,10 +239,10 @@ class InputScopeQueryEditSession final : public ITfEditSession {
         TF_SELECTION selection{};
         ULONG fetched = 0;
         result = context_->GetSelection(edit_cookie,
-                                         TF_DEFAULT_SELECTION,
-                                         1,
-                                         &selection,
-                                         &fetched);
+                                        TF_DEFAULT_SELECTION,
+                                        1,
+                                        &selection,
+                                        &fetched);
         if (result != S_OK || fetched != 1 || selection.range == nullptr) {
             if (selection.range != nullptr) {
                 selection.range->Release();

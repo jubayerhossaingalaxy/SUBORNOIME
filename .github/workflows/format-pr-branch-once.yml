@@ -8,10 +8,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: one-time-format-{{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   format:
     runs-on: ubuntu-24.04
@@ -31,12 +27,12 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -d '' sources < <(
-            find include src tests benchmarks -type f \\
-              \\( -name '*.h' -o -name '*.hpp' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' \\
+            find include src tests benchmarks -type f \
+              \( -name '*.h' -o -name '*.hpp' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' \) \
               -print0
           )
-          if (("${#sources[@]}")) == 0; then
-            printf 'ERROR: no C++ source files found.\\n' >&2
+          if ((${#sources[@]} == 0)); then
+            printf 'ERROR: no C++ source files found.\n' >&2
             exit 1
           fi
           clang-format-23 -i "${sources[@]}"

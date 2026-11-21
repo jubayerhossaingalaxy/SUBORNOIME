@@ -150,6 +150,23 @@ TEST(ProbhatLayoutTest, AppliesBothCapsLockFlagsToTheAltGrShiftLayer) {
     EXPECT_EQ(session->snapshot().preedit_utf8, "ä");
 }
 
+TEST(ProbhatLayoutTest, MapsOem102AndNumpadDecimalScanCodes) {
+    const suborno::layouts::ProbhatLayout layout;
+    auto session = layout.create_session(nullptr, {});
+    ASSERT_NE(session, nullptr);
+
+    EXPECT_EQ(session->append_key(event(0x53)), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, ".");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x56)), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "\\");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x56, true)), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "|");
+}
+
 TEST(ProbhatLayoutTest, DoesNotConsumeUnmappedAltGrLayers) {
     const suborno::layouts::ProbhatLayout layout;
     auto session = layout.create_session(nullptr, {});

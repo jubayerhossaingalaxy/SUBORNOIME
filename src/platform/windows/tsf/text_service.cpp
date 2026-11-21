@@ -115,10 +115,14 @@ std::optional<suborno::layout::PhysicalKey> physical_key_from_virtual_key(
 
 bool logical_text_from_keyboard_layout(UINT virtual_key,
                                            UINT scan_code,
+                                           bool ignore_caps_lock,
                                            std::string& output) {
     std::array<BYTE, 256> keyboard_state{};
     if (::GetKeyboardState(keyboard_state.data()) == FALSE) {
         return false;
+    }
+    if (ignore_caps_lock) {
+        keyboard_state[VK_CAPITAL] = static_cast<BYTE>(keyboard_state[VK_CAPITAL] & 0xFEU);
     }
 
     std::array<wchar_t, 8> translated{};
@@ -162,8 +166,8 @@ bool logical_text_from_keyboard_layout(UINT virtual_key,
     return true;
 }
 
-std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(WPARAM virtual_key,
-                                                                    LPARAM lparam) {
+std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(
+    WPARAM virtual_key, LPARAM lparam, bool ignore_caps_lock) {
     const auto physical_key = physical_key_from_virtual_key(virtual_key);
     if (!physical_key.has_value()) {
         return std::nullopt;
@@ -183,7 +187,10 @@ std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(WPARAM virtu
     if (event.key_down && !event.modifiers.control && !event.modifiers.alt
         && !event.modifiers.windows) {
         event.logical_text_available = logical_text_from_keyboard_layout(
-            static_cast<UINT>(virtual_key), message_data.scan_code, event.logical_text_utf8);
+            static_cast<UINT>(virtual_key),
+            message_data.scan_code,
+            ignore_caps_lock,
+            event.logical_text_utf8);
     }
     return event;
 }
@@ -408,7 +415,9 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
         const auto found = m_contexts.find(pContext);
         const bool composing = found != m_contexts.end() && found->second.session != nullptr
                                && !found->second.session->snapshot().raw_input_utf8.empty();
-        auto key_event = key_event_from_virtual_key(wParam, lParam);
+        const auto& input_settings = m_engine->settings().input;
+        auto key_event = key_event_from_virtual_key(
+            wParam, lParam, input_settings.ignore_caps_lock_state_in_bangla);
         apply_input_settings(key_event, m_engine->settings());
         const bool printable =
             key_event.has_value()
@@ -531,7 +540,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             return hr;
         }
 
-        auto key_event = key_event_from_virtual_key(wParam, lParam);
+        const auto& input_settings = m_engine->settings().input;
+        auto key_event = key_event_from_virtual_key(
+            wParam, lParam, input_settings.ignore_caps_lock_state_in_bangla);
         apply_input_settings(key_event, m_engine->settings());
         const bool starts_phonetic_input =
             key_event.has_value() && !key_event->logical_text_utf8.empty()

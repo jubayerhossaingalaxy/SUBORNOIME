@@ -2,14 +2,23 @@
 
 ## Current status
 
-The repository contains a portable Bangla phonetic engine, layout registry,
-composition sessions, settings persistence, SQLite dictionary/candidate
-integration, and a native Windows COM/TSF text service. Interactive desktop
-typing and clean-machine installation remain outside automated verification.
+The repository contains a portable C++20 engine, a generic InputLayout and
+InputSession contract, Suborno and initial Borno phonetic profiles, Probhat and
+National layout implementations, versioned settings persistence, SQLite
+dictionary/candidate integration, and a native Windows COM/TSF text service.
+The generic session contract separates phonetic parsing from stateless layout
+sessions; stateful compositional layouts can provide their own session.
+Interactive desktop typing and clean-machine installation remain outside
+automated verification.
 
 ## Platform boundaries
 
 - `suborno_core` is a portable C++20 static library.
+- `suborno_layout_api` defines generic input layouts, key events, candidates,
+  and host-neutral input sessions. The phonetic parser remains a specialized
+  implementation of that contract.
+- `suborno_layout_sessions` provides the stateless layout session factory and
+  shared dictionary-backed candidate plumbing.
 - `suborno_unicode` carries ICU link requirements; `suborno_persistence`
   carries SQLite requirements. `suborno_layout_api` and
   `suborno_dictionary` mark intended module boundaries but implement no

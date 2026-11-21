@@ -247,10 +247,9 @@ TEST(EngineTest, DictionaryRejectsInvalidSchemaVersion) {
         SQLITE_OK);
     sqlite3_close(db);
 
-    {
-        suborno::dictionary::Dictionary dictionary(db_path);
-        EXPECT_THROW(dictionary.schema_version(), suborno::dictionary::DictionaryError);
-    }
+    EXPECT_THROW(
+        suborno::dictionary::Dictionary dictionary(db_path),
+        suborno::dictionary::DictionaryError);
     std::remove(db_path.c_str());
 }
 

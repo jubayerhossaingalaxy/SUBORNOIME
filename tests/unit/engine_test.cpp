@@ -518,6 +518,36 @@ TEST(EngineTest, SessionCandidatesIncludePhoneticDictionaryMatches) {
     std::filesystem::remove(dictionary_path);
 }
 
+TEST(EngineTest, PhoneticSessionLearnsTypedInputAsSearchableDictionaryAlias) {
+    const std::filesystem::path dictionary_path =
+        std::filesystem::temp_directory_path() / "suborno_phonetic_session_alias_learning.sqlite";
+    std::filesystem::remove(dictionary_path);
+
+    suborno::core::EngineConfig config;
+    config.dictionary_path = dictionary_path;
+    {
+        suborno::core::Engine engine(config);
+        ASSERT_NE(engine.dictionary(), nullptr);
+        engine.dictionary()->add_entry("আমি", "আমি", 10);
+
+        ASSERT_TRUE(engine.set_active_layout("suborno-phonetic"));
+        auto session = engine.create_session();
+        ASSERT_NE(session, nullptr);
+        ASSERT_EQ(session->append_utf8("ami"), suborno::layout::InputStatus::updated);
+
+        const auto committed = session->commit();
+        EXPECT_EQ(committed.text_utf8, "আমি");
+        EXPECT_EQ(engine.dictionary()->find_matches("আমি"),
+                  std::vector<std::string>{"আমি"});
+        EXPECT_EQ(engine.dictionary()->find_matches("ami"),
+                  std::vector<std::string>{"আমি"});
+        EXPECT_EQ(engine.dictionary()->find_prefix_matches("am"),
+                  std::vector<std::string>{"আমি"});
+    }
+
+    std::filesystem::remove(dictionary_path);
+}
+
 TEST(EngineTest, CommitUsesSelectedCandidate) {
     MultiCandidateLayout layout;
     suborno::layouts::PhoneticInputSession session(

@@ -81,7 +81,7 @@ suborno::layout::CommitResult LayoutInputSession::commit() {
     const std::string committed =
         suborno::unicode::normalize_nfc(input_layout_->transliterate(raw_input_));
     if (dictionary_ != nullptr && options_.learning_enabled && !committed.empty()) {
-        dictionary_->record_commit(committed, committed);
+        dictionary_->record_commit(committed, raw_input_);
     }
 
     raw_input_.clear();
@@ -111,8 +111,7 @@ suborno::layout::CommitResult LayoutInputSession::commit_candidate(std::size_t i
     const auto& candidate = candidates[index];
     const std::string committed = candidate.text;
     if (dictionary_ != nullptr && options_.learning_enabled && !committed.empty()) {
-        dictionary_->record_commit(
-            committed, candidate.normalized_text.empty() ? committed : candidate.normalized_text);
+        dictionary_->record_commit(committed, raw_input_);
     }
 
     raw_input_.clear();

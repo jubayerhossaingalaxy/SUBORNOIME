@@ -57,10 +57,11 @@ struct LayoutOption {
     const wchar_t* name;
 };
 
-constexpr std::array<LayoutOption, 5> kLayouts{{
+constexpr std::array<LayoutOption, 6> kLayouts{{
     {"suborno-phonetic", L"Suborno Phonetic"},
     {"borno-phonetic", L"Borno Phonetic"},
     {"avro-phonetic", L"Avro Phonetic"},
+    {"khipro", L"Khipro Classic"},
     {"probhat", L"Probhat"},
     {"national", L"National"},
 }};

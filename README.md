@@ -55,7 +55,7 @@ The application is named **Suborno**. The repository and technical project ident
     </td>
     <td width="50%">
       <h3>🗺️ Multiple keyboard layouts</h3>
-      <p>Separate layout implementations for Phonetic, Probhat, and National input.</p>
+      <p>Independent Phonetic profiles, Khipro compositional input, and developing Probhat/National layout modules.</p>
     </td>
   </tr>
   <tr>

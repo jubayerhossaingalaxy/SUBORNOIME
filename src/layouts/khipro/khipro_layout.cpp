@@ -20,7 +20,6 @@ enum class MappingKind {
     consonant,
     vowel,
     sign,
-    literal,
 };
 
 struct Mapping {
@@ -44,7 +43,7 @@ constexpr Mapping kMappings[] = {
     {"rf", "ড়", {}, {}, MappingKind::consonant},
     {"kh", "খ", {}, {}, MappingKind::consonant},
     {"gh", "ঘ", {}, {}, MappingKind::consonant},
-    {"ng", "ঙ", {}, {}, MappingKind::consonant},
+    {"ng", "ং", {}, {}, MappingKind::sign},
     {"ch", "ছ", {}, {}, MappingKind::consonant},
     {"jh", "ঝ", {}, {}, MappingKind::consonant},
     {"th", "থ", {}, {}, MappingKind::consonant},
@@ -145,13 +144,19 @@ std::string transliterate_khipro(std::string_view input) {
         if (input[offset] == '/') {
             if (previous_was_vowel) {
                 output.append("ঁ");
-            } else if (previous_was_consonant && last_joiner_offset != std::string::npos) {
+                previous_was_consonant = false;
+                previous_was_vowel = false;
+                last_joiner_offset = std::string::npos;
+            } else if (previous_was_consonant
+                       && last_joiner_offset != std::string::npos) {
                 output.erase(last_joiner_offset, std::string_view("্").size());
+                last_joiner_offset = std::string::npos;
+            } else {
+                previous_was_consonant = false;
+                previous_was_vowel = false;
+                last_joiner_offset = std::string::npos;
             }
             ++offset;
-            previous_was_consonant = false;
-            previous_was_vowel = false;
-            last_joiner_offset = std::string::npos;
             continue;
         }
 

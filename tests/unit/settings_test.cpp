@@ -218,3 +218,19 @@ TEST(SettingsTest, ReplacesExistingSettingsFile) {
     EXPECT_EQ(loaded.settings.candidate_limit, 32U);
     std::filesystem::remove(path);
 }
+
+
+TEST(SettingsTest, AcceptsTheKhiproCompositionalLayoutId) {
+    const std::filesystem::path path =
+        std::filesystem::temp_directory_path() / "suborno_settings_khipro_layout_test.conf";
+    std::filesystem::remove(path);
+
+    suborno::settings::EngineSettings settings;
+    settings.active_layout_id = "khipro";
+    const suborno::settings::SettingsStore store(path);
+
+    EXPECT_EQ(store.save(settings), suborno::settings::SettingsStatus::ok);
+    EXPECT_EQ(store.load().settings.active_layout_id, "khipro");
+
+    std::filesystem::remove(path);
+}

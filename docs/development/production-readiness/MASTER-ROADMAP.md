@@ -3,7 +3,7 @@
 ## Status
 
 - Product status: not production ready.
-- Current repository status: portable Bangla phonetic engine, Windows COM/TSF text service, and installer source.
+- Current repository status: portable Bangla phonetic engine, initial Khipro compositional subset, Windows COM/TSF text service, and installer source.
 - Windows TSF/COM status: implementation and contract tests are present; hosted MSVC validation and interactive typing verification are pending.
 
 ## Phases

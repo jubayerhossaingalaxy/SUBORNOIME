@@ -17,7 +17,7 @@ verified.
 | Avro Phonetic profile | Initial implementation, CI pending | avro_phonetic_layout_test.cpp |
 | Borno Phonetic LM Mode | Planned | Context corpus and ranking evaluation |
 | Avro autocorrect and full context rules | Planned | Official-behavior regression corpus |
-| Khipro compositional layout | Planned | Stateful composition transition corpus |
+| Khipro Classic compositional subset | Initial implementation, CI pending; not full parity | Khipro composition, slicer, forced-vowel and separator vectors |
 | National physical key layout | Not yet verified as fixed layout | Full physical-key matrix |
 | Probhat physical key layout | Not yet verified as fixed layout | Full physical-key matrix |
 | Phonetic literal escaping | Partial | Single-EGC escape tests |
@@ -32,7 +32,7 @@ verified.
 | Layout primary candidate | Implemented | Layout unit tests |
 | Dictionary candidate source | Implemented | Candidate and session tests |
 | Candidate-choice learning | Partial | Requires event/ranking model |
-| Personal dictionary | Existing foundation | Persistence tests |
+| Personal dictionary | Initial integration; system-word pinning and schema-v2 migration implemented, CI pending | Pin/unpin, clear, migration and ranking tests |
 | Spell correction | Separate module, not integrated | Engine integration tests |
 | Candidate popup | Planned | TSF UIElement and interactive tests |
 | Horizontal/vertical candidate window | Planned | DPI/positioning tests |
@@ -50,6 +50,7 @@ verified.
 | Topbar | Planned | Interactive UI tests |
 | System tray | Basic existing app support | Windows manual tests |
 | Versioned General/Interface/Topbar/Input settings storage | Implemented, CI pending | V1 migration, V2 round-trip and validation tests |
+| CapsLock, numpad and number-key preferences | Initial TSF runtime integration, CI pending | Keyboard-state translation and key-routing tests |
 | Start with Windows preference persistence | Initial integration, CI pending | Registry rollback and settings tests |
 | Remember last input layout | Implemented in engine startup, CI pending | Engine preference tests |
 | Settings UI | Basic existing app support; full sections planned | Save/reload and UI tests |

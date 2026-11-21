@@ -612,11 +612,16 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                 state_it->second.context = pContext;
             }
             ContextState& state = state_it->second;
+            if (composing) {
+                // OnKeyDown revalidates the scope immediately before processing this key.
+                *pbEaten = should_eat;
+                return S_OK;
+            }
             bool sensitive = false;
             const HRESULT scope_result =
                 query_sensitive_input_scope(pContext, m_clientId, sensitive);
             const InputScopeCaptureDecision capture_decision =
-                decide_input_scope_capture(scope_result, sensitive, composing);
+                decide_input_scope_capture(scope_result, sensitive, false);
             if (capture_decision != InputScopeCaptureDecision::allow_capture) {
                 state.input_scope_checked = false;
                 state.input_scope_blocks_capture = true;
@@ -698,7 +703,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
 
         const auto snapshot = state.session->snapshot();
         const bool composing = !snapshot.raw_input_utf8.empty();
-        const auto may_commit_active_composition = [&]() {
+        const auto active_composition_scope_is_safe = [&]() {
             bool sensitive = false;
             const HRESULT scope_result =
                 query_sensitive_input_scope(pContext, m_clientId, sensitive);
@@ -719,6 +724,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
             return result;
         };
+        if (composing && !active_composition_scope_is_safe()) {
+            return cancel_unsafe_composition();
+        }
         if (!composing && wParam == VK_SPACE) {
             return S_OK;
         }
@@ -792,9 +800,6 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                     ? candidate_index_from_virtual_key(wParam)
                     : std::nullopt;
             if (candidate_index.has_value() && *candidate_index < snapshot.candidates.size()) {
-                if (!may_commit_active_composition()) {
-                    return cancel_unsafe_composition();
-                }
                 const auto committed = state.session->commit_candidate(*candidate_index);
                 const std::wstring text = utf8_to_utf16(committed.text_utf8);
                 if (!committed.text_utf8.empty() && text.empty()) {
@@ -808,9 +813,6 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
         }
         if (composing && wParam == VK_SPACE) {
-            if (!may_commit_active_composition()) {
-                return cancel_unsafe_composition();
-            }
             const auto committed = state.session->commit();
             const std::wstring text = utf8_to_utf16(committed.text_utf8);
             if (!committed.text_utf8.empty() && text.empty()) {
@@ -847,8 +849,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         const bool should_append_key = key_event.has_value()
                                        && (composing || fixed_or_compositional
                                            || starts_phonetic_input || starts_numpad_input);
-        if (should_append_key && !composing
-            && (!state.input_scope_checked || state.input_scope_blocks_capture)) {
+        if (should_append_key && !composing) {
             bool sensitive = false;
             const HRESULT scope_result =
                 query_sensitive_input_scope(pContext, m_clientId, sensitive);
@@ -867,9 +868,6 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                 || input_status == layout::InputStatus::empty) {
                 if (!composing) {
                     return S_OK;
-                }
-                if (!may_commit_active_composition()) {
-                    return cancel_unsafe_composition();
                 }
                 const auto committed = state.session->commit();
                 const std::wstring text = utf8_to_utf16(committed.text_utf8);
@@ -894,10 +892,6 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         if (!composing) {
             return S_OK;
         }
-        if (!may_commit_active_composition()) {
-            return cancel_unsafe_composition();
-        }
-
         const auto committed = state.session->commit();
         const std::wstring text = utf8_to_utf16(committed.text_utf8);
         if (!committed.text_utf8.empty() && text.empty()) {

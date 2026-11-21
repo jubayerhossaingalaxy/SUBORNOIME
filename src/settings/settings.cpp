@@ -474,8 +474,8 @@ SettingsStatus SettingsStore::save(const EngineSettings& settings) const {
            << '\n'
            << "follow_mouse_pointer_if_caret_tracking_fails="
            << (settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails
-                       ? "true"
-                       : "false")
+                   ? "true"
+                   : "false")
            << '\n'
            << "idle_dimming_enabled=" << (settings.topbar.idle_dimming_enabled ? "true" : "false")
            << '\n'

@@ -424,15 +424,18 @@ TEST(PersonalDictionaryTest, ImportsBundledBengaliWordlistExactlyOnce) {
     {
         suborno::dictionary::Dictionary dictionary(db_path);
         const auto start = std::chrono::steady_clock::now();
-        EXPECT_EQ(dictionary.import_word_lists_if_needed(word_lists, "sanjidh090-bn-wordlist-d3095ea-v1"), 454649U);
+        EXPECT_EQ(
+            dictionary.import_word_lists_if_needed(word_lists, "sanjidh090-bn-wordlist-d3095ea-v1"),
+            454649U);
         const auto elapsed = std::chrono::steady_clock::now() - start;
-        RecordProperty(
-            "bundled_wordlist_import_ms",
-            std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
+        RecordProperty("bundled_wordlist_import_ms",
+                       std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
 
         EXPECT_EQ(dictionary.find_matches("বাংলা"), std::vector<std::string>{"বাংলা"});
         EXPECT_EQ(dictionary.find_matches("বাংলাদেশ"), std::vector<std::string>{"বাংলাদেশ"});
-        EXPECT_EQ(dictionary.import_word_lists_if_needed(word_lists, "sanjidh090-bn-wordlist-d3095ea-v1"), 0U);
+        EXPECT_EQ(
+            dictionary.import_word_lists_if_needed(word_lists, "sanjidh090-bn-wordlist-d3095ea-v1"),
+            0U);
 
         dictionary.add_user_word("নিজস্ব", "nijoshsho");
         dictionary.clear_user_entries();

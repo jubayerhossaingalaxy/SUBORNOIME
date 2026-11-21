@@ -581,14 +581,14 @@ class Application final {
                                                    26,
                                                    kSelectCandidateKeysCheck);
         learning_check_ = add_control(0,
-                                     L"BUTTON",
-                                     L"Learn committed words on this device (opt-in)",
-                                     BS_AUTOCHECKBOX,
-                                     24,
-                                     308,
-                                     500,
-                                     26,
-                                     kLearningEnabledCheck);
+                                      L"BUTTON",
+                                      L"Learn committed words on this device (opt-in)",
+                                      BS_AUTOCHECKBOX,
+                                      24,
+                                      308,
+                                      500,
+                                      26,
+                                      kLearningEnabledCheck);
         if (show_candidate_window_check_ == nullptr || map_numpad_check_ == nullptr
             || ignore_caps_lock_check_ == nullptr || select_candidate_keys_check_ == nullptr
             || learning_check_ == nullptr) {
@@ -618,14 +618,14 @@ class Application final {
                                    32,
                                    kHideButton);
         clear_personal_data_button_ = add_control(0,
-                                                   L"BUTTON",
-                                                   L"Clear personal data",
-                                                   BS_PUSHBUTTON,
-                                                   392,
-                                                   414,
-                                                   180,
-                                                   32,
-                                                   kClearPersonalDataButton);
+                                                  L"BUTTON",
+                                                  L"Clear personal data",
+                                                  BS_PUSHBUTTON,
+                                                  392,
+                                                  414,
+                                                  180,
+                                                  32,
+                                                  kClearPersonalDataButton);
 
         add_control(0, L"STATIC", L"About Suborno", SS_LEFT, 24, 460, 520, 22, 0);
         add_control(0,

@@ -18,6 +18,7 @@
 #include "suborno/core/engine.hpp"
 #include "suborno/layout-api/key_event.hpp"
 #include "suborno/platform/windows/app_paths.hpp"
+#include "suborno/platform/windows/key_translation.hpp"
 #include "suborno/platform/windows/tsf/text_edit_session.hpp"
 
 namespace suborno::platform::windows {
@@ -65,55 +66,6 @@ suborno::layout::KeyModifiers current_key_modifiers() noexcept {
         .alt_graph = (::GetKeyState(VK_RMENU) & 0x8000) != 0,
         .windows = (::GetKeyState(VK_LWIN) & 0x8000) != 0 || (::GetKeyState(VK_RWIN) & 0x8000) != 0,
     };
-}
-
-std::optional<suborno::layout::PhysicalKey> physical_key_from_virtual_key(
-    WPARAM virtual_key) noexcept {
-    if (virtual_key >= 'A' && virtual_key <= 'Z') {
-        const auto key = static_cast<std::uint8_t>(
-            static_cast<std::uint8_t>(suborno::layout::PhysicalKey::letter_a)
-            + static_cast<std::uint8_t>(virtual_key - 'A'));
-        return static_cast<suborno::layout::PhysicalKey>(key);
-    }
-    if (virtual_key >= '0' && virtual_key <= '9') {
-        return static_cast<suborno::layout::PhysicalKey>(static_cast<std::uint8_t>(virtual_key));
-    }
-    if (virtual_key >= VK_NUMPAD0 && virtual_key <= VK_NUMPAD9) {
-        const auto key = static_cast<std::uint8_t>(
-            static_cast<std::uint8_t>(suborno::layout::PhysicalKey::numpad_0)
-            + static_cast<std::uint8_t>(virtual_key - VK_NUMPAD0));
-        return static_cast<suborno::layout::PhysicalKey>(key);
-    }
-
-    using suborno::layout::PhysicalKey;
-    switch (virtual_key) {
-    case VK_OEM_1:
-        return PhysicalKey::semicolon;
-    case VK_OEM_PLUS:
-        return PhysicalKey::equal;
-    case VK_OEM_COMMA:
-        return PhysicalKey::comma;
-    case VK_OEM_MINUS:
-        return PhysicalKey::minus;
-    case VK_OEM_PERIOD:
-        return PhysicalKey::period;
-    case VK_OEM_2:
-        return PhysicalKey::slash;
-    case VK_OEM_3:
-        return PhysicalKey::grave;
-    case VK_OEM_4:
-        return PhysicalKey::left_bracket;
-    case VK_OEM_5:
-        return PhysicalKey::backslash;
-    case VK_OEM_6:
-        return PhysicalKey::right_bracket;
-    case VK_OEM_7:
-        return PhysicalKey::apostrophe;
-    case VK_SPACE:
-        return PhysicalKey::space;
-    default:
-        return std::nullopt;
-    }
 }
 
 bool logical_text_from_keyboard_layout(UINT virtual_key,

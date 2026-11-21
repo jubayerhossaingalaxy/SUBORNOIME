@@ -238,8 +238,7 @@ class InputScopeQueryEditSession final : public ITfEditSession {
 
         TF_SELECTION selection{};
         ULONG fetched = 0;
-        result = context_->GetSelection(
-                                        edit_cookie,
+        result = context_->GetSelection(edit_cookie,
                                         TF_DEFAULT_SELECTION,
                                         1,
                                         &selection,
@@ -1158,8 +1157,10 @@ HRESULT SubornoTextService::_FinishComposition(ITfContext* context,
     const HRESULT ui_result = _EndCandidateUI(state);
     HRESULT finish_result = S_OK;
     if (state.composition != nullptr) {
-        finish_result = TextCompositionEditSession::Finish(
-            context, m_clientId, state.composition.get(), text);
+        finish_result = TextCompositionEditSession::Finish(context,
+                                                            m_clientId,
+                                                            state.composition.get(),
+                                                            text);
         if (SUCCEEDED(finish_result)) {
             state.composition.reset();
         }

@@ -21,7 +21,7 @@ std::string normalize_nfc(std::string_view text);
 std::string normalize_nfkc(const std::string& text);
 std::vector<BengaliCharacterInfo> supported_bengali_inventory();
 // Returns true for assigned Bengali-block characters in the supported Bangla inventory.
- // Reserved code points and the Assamese-specific U+09F0/U+09F1 letters are excluded.
+// Reserved code points and the Assamese-specific U+09F0/U+09F1 letters are excluded.
 bool is_bengali_codepoint(unsigned int code_point);
 std::vector<std::string> split_graphemes(const std::string& text);
 

@@ -34,6 +34,32 @@ class TestLayout final : public suborno::layout::PhoneticLayout {
     }
 };
 
+class TestStatelessLayout final : public suborno::layout::StatelessInputLayout {
+  public:
+    suborno::layout::LayoutKind kind() const noexcept override {
+        return suborno::layout::LayoutKind::fixed;
+    }
+
+    std::string transliterate(const std::string& input) const override {
+        std::string output;
+        for (const char character : input) {
+            output += character == 'a' ? "ক" : std::string(1, character);
+        }
+        return output;
+    }
+
+    std::vector<suborno::layout::Candidate> generate_candidates(
+        const std::string& input) const override {
+        const std::string output = transliterate(input);
+        return {{output,
+                 output,
+                 "layout:stateless:" + output,
+                 suborno::layout::CandidateSource::layout,
+                 1.0,
+                 "stateless test layout"}};
+    }
+};
+
 class MultiCandidateLayout final : public suborno::layout::PhoneticLayout {
   public:
     std::string transliterate(const std::string& input) const override {
@@ -115,6 +141,17 @@ TEST(EngineTest, RegistersAndSwitchesLayouts) {
     ASSERT_NE(session, nullptr);
     ASSERT_EQ(session->append_utf8("x"), suborno::layouts::InputStatus::updated);
     EXPECT_EQ(session->snapshot().preedit_utf8, "test:x");
+}
+
+TEST(EngineTest, CreatesSessionsThroughStatelessInputLayoutFactory) {
+    suborno::core::Engine engine;
+    ASSERT_TRUE(engine.register_layout("fixed-test", std::make_unique<TestStatelessLayout>()));
+    ASSERT_TRUE(engine.set_active_layout("fixed-test"));
+
+    auto session = engine.create_session();
+    ASSERT_NE(session, nullptr);
+    EXPECT_EQ(session->append_utf8("a"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
 }
 
 TEST(EngineTest, CandidateEngineAddsDictionaryExactMatches) {

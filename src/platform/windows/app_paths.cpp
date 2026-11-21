@@ -56,7 +56,7 @@ HRESULT get_folder_path(REFKNOWNFOLDERID folder_id,
     return S_OK;
 }
 
-HRESULT create_directory(const std::filesystem::path& directory) {
+HRESULT ensure_directory_exists(const std::filesystem::path& directory) {
     std::error_code error;
     std::filesystem::create_directories(directory, error);
     return error ? HRESULT_FROM_WIN32(static_cast<DWORD>(error.value())) : S_OK;
@@ -209,7 +209,7 @@ HRESULT get_user_data_directory(std::filesystem::path& directory) noexcept {
         return result;
     }
     try {
-        return create_directory(directory);
+        return ensure_directory_exists(directory);
     } catch (const std::bad_alloc&) {
         return E_OUTOFMEMORY;
     }
@@ -305,11 +305,11 @@ HRESULT get_shared_layouts_directory(std::filesystem::path& directory) noexcept 
 
 HRESULT prepare_user_data_directory(const std::filesystem::path& directory,
                                     const std::filesystem::path& legacy_directory) {
-    HRESULT result = create_directory(directory / L"dictionaries" / L"suborno_learnt_bn");
+    HRESULT result = ensure_directory_exists(directory / L"dictionaries" / L"suborno_learnt_bn");
     if (FAILED(result)) {
         return result;
     }
-    result = create_directory(directory / L"layouts");
+    result = ensure_directory_exists(directory / L"layouts");
     if (FAILED(result)) {
         return result;
     }

@@ -24,8 +24,7 @@ inline constexpr GUID kSubornoCandidateListUIElementGuid{
     {0x9a, 0x2d, 0x4a, 0x6b, 0x31, 0x9d, 0x2c, 0x11},
 };
 
-class CandidateListUIElement final : public ITfCandidateListUIElement,
-                                     public ITfCandidateListUIElementBehavior {
+class CandidateListUIElement final : public ITfCandidateListUIElementBehavior {
   public:
     using FinalizeCallback = std::function<HRESULT(UINT)>;
     using AbortCallback = std::function<HRESULT()>;

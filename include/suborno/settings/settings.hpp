@@ -70,7 +70,7 @@ struct EngineSettings {
     std::size_t candidate_limit = 16;
     bool learning_enabled = true;
     GeneralSettings general;
-    InterfaceSettings interface;
+    InterfaceSettings interface_settings;
     TopbarSettings topbar;
     InputSettings input;
 };

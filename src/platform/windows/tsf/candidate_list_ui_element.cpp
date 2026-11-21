@@ -40,7 +40,7 @@ ATOM register_candidate_window_class() {
         if (window_class.hInstance == nullptr) {
             return;
         }
-        window_class.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
+        window_class.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
         window_class.hbrBackground = ::GetSysColorBrush(COLOR_INFOBK);
         window_class.lpszClassName = kCandidateWindowClass;
         registered_class = ::RegisterClassExW(&window_class);

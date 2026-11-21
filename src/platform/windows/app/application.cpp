@@ -632,7 +632,7 @@ class Application final {
         const auto& input = settings.input;
         ::SendMessageW(show_candidate_window_check_,
                        BM_SETCHECK,
-                       settings.interface.show_candidate_window ? BST_CHECKED : BST_UNCHECKED,
+                       settings.interface_settings.show_candidate_window ? BST_CHECKED : BST_UNCHECKED,
                        0);
         ::SendMessageW(map_numpad_check_,
                        BM_SETCHECK,
@@ -650,7 +650,7 @@ class Application final {
 
     void save_input_settings() {
         auto settings = engine_->settings();
-        settings.interface.show_candidate_window =
+        settings.interface_settings.show_candidate_window =
             ::SendMessageW(show_candidate_window_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
         settings.input.map_numpad_to_bangla_numbers =
             ::SendMessageW(map_numpad_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;

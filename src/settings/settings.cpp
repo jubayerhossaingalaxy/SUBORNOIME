@@ -189,13 +189,13 @@ bool valid_switching_shortcut(const std::string& shortcut) {
 
 bool validate(const EngineSettings& settings) {
     return valid_layout_id(settings.active_layout_id) && settings.candidate_limit > 0
-           && settings.candidate_limit <= 100 && valid_theme_id(settings.interface.theme_id)
+           && settings.candidate_limit <= 100 && valid_theme_id(settings.interface_settings.theme_id)
            && settings.topbar.idle_opacity_percent <= 100 && settings.topbar.idle_time_seconds >= 1
            && settings.topbar.idle_time_seconds <= 3600
            && valid_switching_shortcut(settings.input.layout_switch_shortcut)
            && !start_mode_name(settings.general.start_mode).empty()
            && !switching_mode_name(settings.general.switching_mode).empty()
-           && !orientation_name(settings.interface.candidate_orientation).empty()
+           && !orientation_name(settings.interface_settings.candidate_orientation).empty()
            && !encoding_name(settings.input.preferred_encoding).empty();
 }
 
@@ -238,37 +238,37 @@ bool parse_settings_value(EngineSettings& settings,
         if (!valid_theme_id(value)) {
             return false;
         }
-        settings.interface.theme_id = value;
+        settings.interface_settings.theme_id = value;
     } else if (key == "show_candidate_window") {
-        if (!parse_bool(value, settings.interface.show_candidate_window)) {
+        if (!parse_bool(value, settings.interface_settings.show_candidate_window)) {
             return false;
         }
     } else if (key == "next_word_prediction_enabled") {
-        if (!parse_bool(value, settings.interface.next_word_prediction_enabled)) {
+        if (!parse_bool(value, settings.interface_settings.next_word_prediction_enabled)) {
             return false;
         }
     } else if (key == "candidate_orientation") {
-        if (!parse_orientation(value, settings.interface.candidate_orientation)) {
+        if (!parse_orientation(value, settings.interface_settings.candidate_orientation)) {
             return false;
         }
     } else if (key == "candidate_fixed_height") {
-        if (!parse_bool(value, settings.interface.candidate_fixed_height)) {
+        if (!parse_bool(value, settings.interface_settings.candidate_fixed_height)) {
             return false;
         }
     } else if (key == "use_os_default_bangla_font") {
-        if (!parse_bool(value, settings.interface.use_os_default_bangla_font)) {
+        if (!parse_bool(value, settings.interface_settings.use_os_default_bangla_font)) {
             return false;
         }
     } else if (key == "enable_sliding_effect") {
-        if (!parse_bool(value, settings.interface.enable_sliding_effect)) {
+        if (!parse_bool(value, settings.interface_settings.enable_sliding_effect)) {
             return false;
         }
     } else if (key == "follow_caret") {
-        if (!parse_bool(value, settings.interface.follow_caret)) {
+        if (!parse_bool(value, settings.interface_settings.follow_caret)) {
             return false;
         }
     } else if (key == "follow_mouse_pointer_if_caret_tracking_fails") {
-        if (!parse_bool(value, settings.interface.follow_mouse_pointer_if_caret_tracking_fails)) {
+        if (!parse_bool(value, settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails)) {
             return false;
         }
     } else if (key == "idle_dimming_enabled") {
@@ -448,22 +448,22 @@ SettingsStatus SettingsStore::save(const EngineSettings& settings) const {
            << '\n'
            << "start_mode=" << start_mode_name(settings.general.start_mode) << '\n'
            << "switching_mode=" << switching_mode_name(settings.general.switching_mode) << '\n'
-           << "theme_id=" << settings.interface.theme_id << '\n'
+           << "theme_id=" << settings.interface_settings.theme_id << '\n'
            << "show_candidate_window="
-           << (settings.interface.show_candidate_window ? "true" : "false") << '\n'
+           << (settings.interface_settings.show_candidate_window ? "true" : "false") << '\n'
            << "next_word_prediction_enabled="
-           << (settings.interface.next_word_prediction_enabled ? "true" : "false") << '\n'
-           << "candidate_orientation=" << orientation_name(settings.interface.candidate_orientation)
+           << (settings.interface_settings.next_word_prediction_enabled ? "true" : "false") << '\n'
+           << "candidate_orientation=" << orientation_name(settings.interface_settings.candidate_orientation)
            << '\n'
            << "candidate_fixed_height="
-           << (settings.interface.candidate_fixed_height ? "true" : "false") << '\n'
+           << (settings.interface_settings.candidate_fixed_height ? "true" : "false") << '\n'
            << "use_os_default_bangla_font="
-           << (settings.interface.use_os_default_bangla_font ? "true" : "false") << '\n'
+           << (settings.interface_settings.use_os_default_bangla_font ? "true" : "false") << '\n'
            << "enable_sliding_effect="
-           << (settings.interface.enable_sliding_effect ? "true" : "false") << '\n'
-           << "follow_caret=" << (settings.interface.follow_caret ? "true" : "false") << '\n'
+           << (settings.interface_settings.enable_sliding_effect ? "true" : "false") << '\n'
+           << "follow_caret=" << (settings.interface_settings.follow_caret ? "true" : "false") << '\n'
            << "follow_mouse_pointer_if_caret_tracking_fails="
-           << (settings.interface.follow_mouse_pointer_if_caret_tracking_fails ? "true" : "false")
+           << (settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails ? "true" : "false")
            << '\n'
            << "idle_dimming_enabled=" << (settings.topbar.idle_dimming_enabled ? "true" : "false")
            << '\n'

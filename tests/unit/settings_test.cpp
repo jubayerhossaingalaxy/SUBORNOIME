@@ -19,15 +19,15 @@ TEST(SettingsTest, SavesAndLoadsVersionedSettings) {
     settings.general.start_with_windows = true;
     settings.general.start_mode = suborno::settings::StartMode::system_tray;
     settings.general.switching_mode = suborno::settings::SwitchingMode::global;
-    settings.interface.theme_id = "suborno-glass";
-    settings.interface.show_candidate_window = false;
-    settings.interface.next_word_prediction_enabled = true;
-    settings.interface.candidate_orientation = suborno::settings::CandidateOrientation::horizontal;
-    settings.interface.candidate_fixed_height = false;
-    settings.interface.use_os_default_bangla_font = false;
-    settings.interface.enable_sliding_effect = false;
-    settings.interface.follow_caret = false;
-    settings.interface.follow_mouse_pointer_if_caret_tracking_fails = false;
+    settings.interface_settings.theme_id = "suborno-glass";
+    settings.interface_settings.show_candidate_window = false;
+    settings.interface_settings.next_word_prediction_enabled = true;
+    settings.interface_settings.candidate_orientation = suborno::settings::CandidateOrientation::horizontal;
+    settings.interface_settings.candidate_fixed_height = false;
+    settings.interface_settings.use_os_default_bangla_font = false;
+    settings.interface_settings.enable_sliding_effect = false;
+    settings.interface_settings.follow_caret = false;
+    settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails = false;
     settings.topbar.idle_dimming_enabled = false;
     settings.topbar.idle_opacity_percent = 35;
     settings.topbar.idle_time_seconds = 45;
@@ -50,16 +50,16 @@ TEST(SettingsTest, SavesAndLoadsVersionedSettings) {
     EXPECT_TRUE(loaded.settings.general.start_with_windows);
     EXPECT_EQ(loaded.settings.general.start_mode, suborno::settings::StartMode::system_tray);
     EXPECT_EQ(loaded.settings.general.switching_mode, suborno::settings::SwitchingMode::global);
-    EXPECT_EQ(loaded.settings.interface.theme_id, "suborno-glass");
-    EXPECT_FALSE(loaded.settings.interface.show_candidate_window);
-    EXPECT_TRUE(loaded.settings.interface.next_word_prediction_enabled);
-    EXPECT_EQ(loaded.settings.interface.candidate_orientation,
+    EXPECT_EQ(loaded.settings.interface_settings.theme_id, "suborno-glass");
+    EXPECT_FALSE(loaded.settings.interface_settings.show_candidate_window);
+    EXPECT_TRUE(loaded.settings.interface_settings.next_word_prediction_enabled);
+    EXPECT_EQ(loaded.settings.interface_settings.candidate_orientation,
               suborno::settings::CandidateOrientation::horizontal);
-    EXPECT_FALSE(loaded.settings.interface.candidate_fixed_height);
-    EXPECT_FALSE(loaded.settings.interface.use_os_default_bangla_font);
-    EXPECT_FALSE(loaded.settings.interface.enable_sliding_effect);
-    EXPECT_FALSE(loaded.settings.interface.follow_caret);
-    EXPECT_FALSE(loaded.settings.interface.follow_mouse_pointer_if_caret_tracking_fails);
+    EXPECT_FALSE(loaded.settings.interface_settings.candidate_fixed_height);
+    EXPECT_FALSE(loaded.settings.interface_settings.use_os_default_bangla_font);
+    EXPECT_FALSE(loaded.settings.interface_settings.enable_sliding_effect);
+    EXPECT_FALSE(loaded.settings.interface_settings.follow_caret);
+    EXPECT_FALSE(loaded.settings.interface_settings.follow_mouse_pointer_if_caret_tracking_fails);
     EXPECT_FALSE(loaded.settings.topbar.idle_dimming_enabled);
     EXPECT_EQ(loaded.settings.topbar.idle_opacity_percent, 35U);
     EXPECT_EQ(loaded.settings.topbar.idle_time_seconds, 45U);
@@ -104,16 +104,19 @@ TEST(SettingsTest, MigratesLegacyVersionOneSettingsToCurrentDefaults) {
     EXPECT_EQ(loaded.settings.active_layout_id, "probhat");
     EXPECT_EQ(loaded.settings.candidate_limit, 12U);
     EXPECT_FALSE(loaded.settings.learning_enabled);
-    EXPECT_EQ(loaded.settings.interface.theme_id, "suborno-dark");
+    EXPECT_EQ(loaded.settings.interface_settings.theme_id, "suborno-dark");
     EXPECT_EQ(loaded.settings.topbar.idle_opacity_percent, 50U);
     EXPECT_EQ(loaded.settings.input.layout_switch_shortcut, "F10");
     EXPECT_EQ(loaded.settings.input.preferred_encoding, suborno::settings::TextEncoding::unicode);
 
     EXPECT_EQ(store.save(loaded.settings), suborno::settings::SettingsStatus::ok);
-    std::ifstream migrated(path);
-    std::string first_line;
-    ASSERT_TRUE(std::getline(migrated, first_line));
-    EXPECT_EQ(first_line, "version=2");
+    {
+        std::ifstream migrated(path);
+        ASSERT_TRUE(migrated.is_open());
+        std::string first_line;
+        ASSERT_TRUE(std::getline(migrated, first_line));
+        EXPECT_EQ(first_line, "version=2");
+    }
     std::filesystem::remove(path);
 }
 
@@ -134,7 +137,7 @@ TEST(SettingsTest, RejectsInvalidDesktopRangesShortcutsAndDuplicateKeys) {
     EXPECT_EQ(suborno::settings::SettingsStore(path).save(invalid),
               suborno::settings::SettingsStatus::invalid_format);
     invalid = {};
-    invalid.interface.theme_id = "theme=invalid";
+    invalid.interface_settings.theme_id = "theme=invalid";
     EXPECT_EQ(suborno::settings::SettingsStore(path).save(invalid),
               suborno::settings::SettingsStatus::invalid_format);
 

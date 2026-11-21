@@ -137,7 +137,8 @@ std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(WPARAM virtu
         .modifiers = current_key_modifiers(),
         .scan_code = message_data.scan_code,
         .extended_key = message_data.extended_key,
-        .repeat_count = message_data.repeat_count == 0 ? 1 : message_data.repeat_count,
+        .repeat_count = static_cast<std::uint16_t>(
+            message_data.repeat_count == 0 ? 1 : message_data.repeat_count),
         .previous_key_state = message_data.previous_key_state,
         .key_down = message_data.key_down,
     };
@@ -787,7 +788,7 @@ STDMETHODIMP SubornoTextService::OnCompositionTerminated(TfEditCookie,
 HRESULT SubornoTextService::_UpdateCandidateUI(ITfContext* context,
                                                ContextState& state,
                                                const layout::CompositionSnapshot& snapshot) {
-    if (m_uiElementMgr == nullptr || !m_engine->settings().interface.show_candidate_window
+    if (m_uiElementMgr == nullptr || !m_engine->settings().interface_settings.show_candidate_window
         || snapshot.candidates.size() < 2) {
         return _EndCandidateUI(state);
     }

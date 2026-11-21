@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "suborno/layout-api/candidate.hpp"
+#include "suborno/layout-api/key_event.hpp"
 
 namespace suborno::layout {
 
@@ -44,6 +45,18 @@ class InputSession {
     virtual ~InputSession() = default;
 
     virtual InputStatus append_utf8(std::string_view input) = 0;
+
+    // The default maps a physical key event to its US-layout ASCII character.
+    // Fixed-layout sessions may override this to use the physical key directly.
+    virtual InputStatus append_key(const KeyEvent& event) {
+        const std::optional<char> character = key_event_to_ascii(event);
+        if (!character.has_value()) {
+            return InputStatus::empty;
+        }
+        const char value = *character;
+        return append_utf8(std::string_view(&value, 1));
+    }
+
     virtual InputStatus backspace() = 0;
     virtual CommitResult commit() = 0;
     virtual CommitResult commit_candidate(std::size_t index) = 0;

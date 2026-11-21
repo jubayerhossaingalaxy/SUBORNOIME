@@ -40,7 +40,11 @@ add_library(suborno_phonetic STATIC
 )
 target_include_directories(suborno_phonetic PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_include_directories(suborno_phonetic PRIVATE "${PROJECT_SOURCE_DIR}/src")
-target_link_libraries(suborno_phonetic PUBLIC suborno_layout_api suborno_unicode)
+target_link_libraries(suborno_phonetic PUBLIC
+    suborno_layout_api
+    suborno_unicode
+    suborno_layout_sessions
+)
 
 add_library(suborno_probhat STATIC
     src/layouts/probhat/probhat_layout.cpp

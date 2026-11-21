@@ -339,6 +339,18 @@ STDMETHODIMP SubornoTextService::Activate(ITfThreadMgr* pThreadMgr, TfClientId c
         m_clientId = TF_CLIENTID_NULL;
         return hr;
     }
+
+    hr = m_threadMgr->QueryInterface(IID_PPV_ARGS(m_uiElementMgr.put()));
+    if (FAILED(hr)) {
+        m_keystrokeMgr->UnadviseKeyEventSink(m_clientId);
+        source->UnadviseSink(m_threadMgrSinkCookie);
+        m_threadMgrSinkCookie = TF_INVALID_COOKIE;
+        m_keystrokeMgr.reset();
+        m_engine.reset();
+        m_threadMgr.reset();
+        m_clientId = TF_CLIENTID_NULL;
+        return hr;
+    }
     return S_OK;
 }
 
@@ -346,6 +358,10 @@ STDMETHODIMP SubornoTextService::Deactivate() {
     HRESULT first_error = S_OK;
     try {
         for (auto& [context, state] : m_contexts) {
+            const HRESULT ui_result = _EndCandidateUI(state);
+            if (FAILED(ui_result) && SUCCEEDED(first_error)) {
+                first_error = ui_result;
+            }
             if (state.session != nullptr && state.composition != nullptr) {
                 std::string text_utf8;
                 text_utf8 = state.session->commit().text_utf8;
@@ -371,6 +387,7 @@ STDMETHODIMP SubornoTextService::Deactivate() {
         }
     }
     m_keystrokeMgr.reset();
+    m_uiElementMgr.reset();
     if (m_threadMgr != nullptr && m_threadMgrSinkCookie != TF_INVALID_COOKIE) {
         wil::com_ptr<ITfSource> source;
         const HRESULT query_result = m_threadMgr->QueryInterface(IID_PPV_ARGS(source.put()));
@@ -497,6 +514,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                 updated.raw_input_utf8.empty()
                     ? _FinishComposition(pContext, state, {})
                     : _UpdateComposition(pContext, state, utf8_to_utf16(updated.preedit_utf8));
+            if (SUCCEEDED(hr) && !updated.raw_input_utf8.empty()) {
+                _UpdateCandidateUI(pContext, state, updated);
+            }
             if (SUCCEEDED(hr)) {
                 *pbEaten = TRUE;
             }
@@ -509,6 +529,16 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                 *pbEaten = TRUE;
             }
             return hr;
+        }
+        if (composing && (wParam == VK_UP || wParam == VK_DOWN)) {
+            const bool changed = wParam == VK_DOWN ? state.session->select_next_candidate()
+                                                   : state.session->select_previous_candidate();
+            if (changed) {
+                const auto updated = state.session->snapshot();
+                _UpdateCandidateUI(pContext, state, updated);
+                *pbEaten = TRUE;
+            }
+            return S_OK;
         }
         if (composing) {
             const auto candidate_index =
@@ -575,6 +605,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
             const HRESULT hr = _UpdateComposition(pContext, state, preedit);
             if (SUCCEEDED(hr)) {
+                _UpdateCandidateUI(pContext, state, updated);
                 *pbEaten = TRUE;
             }
             return hr;
@@ -702,6 +733,7 @@ STDMETHODIMP SubornoTextService::OnCompositionTerminated(TfEditCookie,
     for (auto& [context, state] : m_contexts) {
         static_cast<void>(context);
         if (state.composition.get() == composition) {
+            _EndCandidateUI(state);
             state.composition.reset();
             if (state.session != nullptr) {
                 state.session->reset();
@@ -710,6 +742,100 @@ STDMETHODIMP SubornoTextService::OnCompositionTerminated(TfEditCookie,
         }
     }
     return S_OK;
+}
+
+HRESULT SubornoTextService::_UpdateCandidateUI(
+    ITfContext* context, ContextState& state, const layout::CompositionSnapshot& snapshot) {
+    if (m_uiElementMgr == nullptr || !m_engine->settings().interface.show_candidate_window
+        || snapshot.candidates.size() < 2) {
+        return _EndCandidateUI(state);
+    }
+
+    if (state.candidate_ui_element == nullptr) {
+        auto* created = new (std::nothrow) CandidateListUIElement(
+            context,
+            snapshot.candidates,
+            snapshot.selected_candidate_index,
+            [this, context](UINT index) { return _FinalizeCandidate(context, index); },
+            [this, context]() { return _AbortCandidate(context); });
+        if (created == nullptr) {
+            return E_OUTOFMEMORY;
+        }
+
+        wil::com_ptr<CandidateListUIElement> element;
+        element.attach(created);
+        wil::com_ptr<ITfUIElement> ui_element;
+        HRESULT result = element->QueryInterface(IID_PPV_ARGS(ui_element.put()));
+        if (FAILED(result)) {
+            return result;
+        }
+
+        BOOL show = TRUE;
+        DWORD element_id = 0;
+        result = m_uiElementMgr->BeginUIElement(ui_element.get(), &show, &element_id);
+        if (FAILED(result)) {
+            return result;
+        }
+
+        state.candidate_ui_element = std::move(element);
+        state.candidate_ui_element_id = element_id;
+        state.candidate_ui_owned = show != FALSE;
+        if (state.candidate_ui_owned) {
+            result = state.candidate_ui_element->Show(TRUE);
+            if (FAILED(result)) {
+                _EndCandidateUI(state);
+                return result;
+            }
+        }
+        return S_OK;
+    }
+
+    state.candidate_ui_element->Update(snapshot.candidates, snapshot.selected_candidate_index);
+    return m_uiElementMgr->UpdateUIElement(state.candidate_ui_element_id);
+}
+
+HRESULT SubornoTextService::_EndCandidateUI(ContextState& state) {
+    HRESULT result = S_OK;
+    if (state.candidate_ui_element != nullptr && state.candidate_ui_owned) {
+        result = state.candidate_ui_element->Show(FALSE);
+    }
+    if (state.candidate_ui_element != nullptr && m_uiElementMgr != nullptr) {
+        const HRESULT end_result = m_uiElementMgr->EndUIElement(state.candidate_ui_element_id);
+        if (FAILED(end_result) && SUCCEEDED(result)) {
+            result = end_result;
+        }
+    }
+    state.candidate_ui_element.reset();
+    state.candidate_ui_element_id = 0;
+    state.candidate_ui_owned = false;
+    return result;
+}
+
+HRESULT SubornoTextService::_FinalizeCandidate(ITfContext* context, UINT index) {
+    const auto found = m_contexts.find(context);
+    if (found == m_contexts.end() || found->second.session == nullptr) {
+        return E_UNEXPECTED;
+    }
+
+    ContextState& state = found->second;
+    const layout::CommitResult committed = state.session->commit_candidate(index);
+    if (committed.status != layout::InputStatus::updated) {
+        return E_INVALIDARG;
+    }
+    const std::wstring text = utf8_to_utf16(committed.text_utf8);
+    if (!committed.text_utf8.empty() && text.empty()) {
+        return E_INVALIDARG;
+    }
+    return _FinishComposition(context, state, text);
+}
+
+HRESULT SubornoTextService::_AbortCandidate(ITfContext* context) {
+    const auto found = m_contexts.find(context);
+    if (found == m_contexts.end() || found->second.session == nullptr) {
+        return E_UNEXPECTED;
+    }
+    found->second.session->reset();
+    return _FinishComposition(context, found->second, {});
 }
 
 HRESULT SubornoTextService::_UpdateComposition(ITfContext* context,
@@ -725,6 +851,10 @@ HRESULT SubornoTextService::_UpdateComposition(ITfContext* context,
 HRESULT SubornoTextService::_FinishComposition(ITfContext* context,
                                                ContextState& state,
                                                const std::wstring& text) {
+    const HRESULT ui_result = _EndCandidateUI(state);
+    if (FAILED(ui_result)) {
+        return ui_result;
+    }
     HRESULT result = S_OK;
     if (state.composition != nullptr) {
         result =

@@ -67,7 +67,7 @@ constexpr std::array kBornoTokens{
     PhoneticTokenDefinition{"Y", PhoneticTokenKind::consonant, "য়", {}, false},
     PhoneticTokenDefinition{"X", PhoneticTokenKind::sign, "ৎ", {}},
     PhoneticTokenDefinition{"TH", PhoneticTokenKind::sign, "ৎ", {}},
-    PhoneticTokenDefinition{"t\`\`", PhoneticTokenKind::sign, "ৎ", {}},
+    PhoneticTokenDefinition{"t``", PhoneticTokenKind::sign, "ৎ", {}},
 };
 
 }  // namespace

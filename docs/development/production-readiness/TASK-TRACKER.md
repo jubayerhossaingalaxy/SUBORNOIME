@@ -21,3 +21,9 @@
 | P5-1 | Windows COM/TSF implementation | done | P1-1/P3-1 | COM server, TSF edit sessions, profile registration, and Windows contract tests added |
 | P5-2 | Hosted Windows build and installer validation | in progress | P5-1 | MSVC v143 Debug/Release and Inno Setup CI run pending |
 | P5-3 | Interactive Windows typing validation | blocked | P5-2 | Requires desktop Windows session |
+
+| LANG-2 | Probhat KLC Base/Shift/Caps physical mapping | implementation present; CI pending | layout-api physical scan-code events | KLC-derived mapping table, literal vowel tests, attribution and spec |
+| CAND-1 | Native TSF candidate UIElement / vertical popup | implementation and contract tests present; interactive acceptance pending | P5-1 | Windows count/string/selection/page/GUID tests; live TSF host validation remains |
+| CAND-2 | Commit-frequency personalization | implemented foundation; CI pending | P3-2 | Learned-word lifecycle and frequency-ranking regression tests |
+| TSF-1 | Refresh idle context session after settings layout change | implementation present; CI pending | P5-1/P6-1 | Session layout marker; preserve in-flight composition; recreate idle session |
+| P5-4 | Candidate popup DPI, accessibility and host navigation | not complete | CAND-1/P5-2 | Manual Windows host/app, DPI and keyboard test matrix |

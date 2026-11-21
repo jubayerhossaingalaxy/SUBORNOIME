@@ -19,7 +19,7 @@ verified.
 | Avro autocorrect and full context rules | Planned | Official-behavior regression corpus |
 | Khipro Classic compositional subset | Initial implementation, CI pending; not full parity | Khipro composition, slicer, forced-vowel and separator vectors |
 | National physical layout | Not implemented; current module is only a Roman-token prototype. BDS 1738:2018 licensing review required before reproducing the official chart | Written permission / licensing clearance plus an independently authored and tested physical-key matrix |
-| Probhat fixed keymap | Initial KLC-based scan-code/Base/Shift/Caps map; AltGr and dead-key states incomplete; CI pending | Scan-code, KLC CAP flags, literal vowel-sign and punctuation tests |
+| Probhat fixed keymap | KLC Base/Shift/Caps scan-code table implemented; AltGr and dead-key composition incomplete; CI pending | Physical scan-code, CAP flag, literal vowel-sign, punctuation and numpad pass-through tests |
 | Phonetic literal escaping | Partial | Single-EGC escape tests |
 | Automatic vowel forming | Planned | Avro compatibility vectors |
 | Old-style/automatic reph | Planned | Reph composition corpus |
@@ -31,11 +31,11 @@ verified.
 |---|---|---|
 | Layout primary candidate | Implemented | Layout unit tests |
 | Dictionary candidate source | Implemented | Candidate and session tests |
-| Candidate-choice learning | Partial | Requires event/ranking model |
+| Candidate-choice learning | Commit-frequency ranking is implemented for committed words/candidates; explicit choice-event analytics, negative feedback and decay are not implemented | Personal-dictionary commit lifecycle and ranking tests; language-quality evaluation pending |
 | Personal dictionary | Initial integration; system-word pinning and schema-v2 migration implemented, CI pending | Pin/unpin, clear, migration and ranking tests |
 | Spell correction | Separate module, not integrated | Engine integration tests |
-| Candidate popup | Planned | TSF UIElement and interactive tests |
-| Horizontal/vertical candidate window | Planned | DPI/positioning tests |
+| Candidate popup | Basic native vertical Win32 popup implemented through TSF UIElement; hosted MSVC CI and live host-app verification pending | TSF UIElement contract tests, caret anchoring and monitor-work-area placement; keyboard/DPI/manual acceptance pending |
+| Horizontal/vertical candidate window | Fixed vertical layout only; orientation setting and per-monitor DPI scaling are not implemented | Multi-monitor, DPI-change and orientation tests |
 | Next-word prediction | Planned | Context evaluation corpus |
 | Borno LM suggestions | Planned | Offline language-model evaluation |
 
@@ -46,7 +46,7 @@ verified.
 | Windows COM/TSF service | Implementation present; validation ongoing | MSVC build and live typing |
 | Native Language Bar / Win+Space | Registration path present; live validation pending | Windows interactive test |
 | Per-context composition | Implemented foundation | TSF contract and host-app tests |
-| Candidate UIElement | Planned | UIElement lifecycle tests |
+| Candidate UIElement | COM/UIElement contracts and basic lifecycle implemented; host-driven rendering and interactive activation remain unverified | Count/string/selection/GUID/page-index contract tests; elevated TSF registration and live-app tests pending |
 | Topbar | Planned | Interactive UI tests |
 | System tray | Basic existing app support | Windows manual tests |
 | Versioned General/Interface/Topbar/Input settings storage | Implemented, CI pending | V1 migration, V2 round-trip and validation tests |
@@ -57,7 +57,7 @@ verified.
 | Theme system | Planned | Theme resource tests |
 | On-Screen Keyboard | Planned | Layout-to-key action tests |
 | Per-application profiles | Planned | Multi-process/window tests |
-| DPI and multi-monitor support | Planned | Windows display matrix |
+| DPI and multi-monitor support | Basic monitor work-area-aware popup placement exists; per-monitor DPI scaling and WM_DPICHANGED handling remain pending | Windows display/DPI matrix |
 | Keyboard Layout Studio | Planned | Package validation/import/export tests |
 
 ## Packaging, services, and release

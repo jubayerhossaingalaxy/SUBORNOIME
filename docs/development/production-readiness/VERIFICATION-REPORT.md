@@ -35,3 +35,15 @@
 
 - Interactive TSF/COM registration and typing.
 - Clean-machine installer behavior and signing.
+
+
+
+## Latest PR head
+
+- PR head at report update: `403d275fc8399e5721fd3253f33fc22e17894e3a`.
+- New Probhat fixed-keymap, dictionary-learning, TSF session-refresh and
+  candidate-popup module-instance changes are included in the PR history.
+- Current CI run for the previous head must not be used as proof for this newer
+  source state. Re-run/pass evidence for this exact head is required.
+- Interactive Win+Space, Notepad/Office/browser host testing, per-monitor DPI
+  acceptance and installer signature remain outstanding.

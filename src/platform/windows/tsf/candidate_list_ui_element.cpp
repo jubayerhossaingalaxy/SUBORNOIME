@@ -204,7 +204,11 @@ STDMETHODIMP CandidateListUIElement::GetSelection(UINT* index) {
 }
 
 STDMETHODIMP CandidateListUIElement::GetString(UINT index, BSTR* text) {
-    if (text == nullptr || index >= candidates_.size()) {
+    if (text == nullptr) {
+        return E_INVALIDARG;
+    }
+    *text = nullptr;
+    if (index >= candidates_.size()) {
         return E_INVALIDARG;
     }
     const std::wstring& candidate = candidates_[index];

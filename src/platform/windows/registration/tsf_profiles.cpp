@@ -38,12 +38,6 @@ HRESULT create_category_manager(wil::com_ptr<ITfCategoryMgr>& categories) {
         CLSID_TF_CategoryMgr, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(categories.put()));
 }
 
-void preserve_first_error(HRESULT candidate, HRESULT& result) noexcept {
-    if (FAILED(candidate) && SUCCEEDED(result)) {
-        result = candidate;
-    }
-}
-
 }  // namespace
 
 HRESULT register_tsf_profile(REFCLSID class_id,
@@ -104,32 +98,43 @@ HRESULT register_tsf_profile(REFCLSID class_id,
     return result;
 }
 
-HRESULT unregister_tsf_profile(REFCLSID class_id, REFGUID profile_id, LANGID language_id) {
+HRESULT unregister_tsf_profile(REFCLSID class_id, REFGUID, LANGID) {
     ComApartment apartment;
     HRESULT result = apartment.initialize();
     if (FAILED(result)) {
         return result;
     }
 
-    wil::com_ptr<ITfCategoryMgr> categories;
-    HRESULT operation = create_category_manager(categories);
-    if (SUCCEEDED(operation)) {
-        operation = categories->UnregisterCategory(class_id, GUID_TFCAT_TIP_KEYBOARD, class_id);
-    }
-    preserve_first_error(operation, result);
-
     wil::com_ptr<ITfInputProcessorProfiles> profiles;
-    operation = create_profiles(profiles);
-    if (SUCCEEDED(operation)) {
-        operation = profiles->RemoveLanguageProfile(class_id, language_id, profile_id);
+    result = create_profiles(profiles);
+    if (FAILED(result)) {
+        return result;
     }
-    preserve_first_error(operation, result);
 
-    if (profiles != nullptr) {
-        operation = profiles->Unregister(class_id);
-        preserve_first_error(operation, result);
+    wil::com_ptr<IEnumGUID> registered_processors;
+    result = profiles->EnumInputProcessorInfo(registered_processors.put());
+    if (FAILED(result)) {
+        return result;
     }
-    return result;
+
+    for (;;) {
+        GUID registered_class{};
+        ULONG fetched = 0;
+        const HRESULT next_result = registered_processors->Next(1, &registered_class, &fetched);
+        if (FAILED(next_result)) {
+            return next_result;
+        }
+        if (fetched == 0) {
+            return S_OK;
+        }
+        if (::IsEqualCLSID(registered_class, class_id)) {
+            // Unregister removes the service's language profiles and categories as well.
+            return profiles->Unregister(class_id);
+        }
+        if (next_result == S_FALSE) {
+            return S_OK;
+        }
+    }
 }
 
 }  // namespace suborno::platform::windows::registration

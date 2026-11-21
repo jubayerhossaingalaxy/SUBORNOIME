@@ -31,7 +31,7 @@ TEST(AvroPhoneticLayoutTest, PreservesCaseSensitiveConsonantTokens) {
     EXPECT_EQ(layout.transliterate("J"), "জ");
     EXPECT_EQ(layout.transliterate("y"), "য়");
     EXPECT_EQ(layout.transliterate("Y"), "য়");
-    EXPECT_EQ(layout.transliterate("Z"), "্য");
+    EXPECT_EQ(layout.transliterate("Z"), "য");
     EXPECT_EQ(layout.transliterate("kY"), "কয়");
     EXPECT_EQ(layout.transliterate("kZ"), "ক্য");
     EXPECT_EQ(layout.transliterate("t"), "ত");

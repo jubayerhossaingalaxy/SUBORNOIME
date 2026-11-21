@@ -35,22 +35,22 @@ No Avro source code, mapping table, dictionary, test, or artwork is included.
 | o | অ / inherent অ | O | ও / ো |
 | OU | ঔ / ৌ | k, kh | ক, খ |
 | g, gh | গ, ঘ | Ng | ঙ |
-| c | চ | ch, chh | ছ | j, jh | জ, ঝ |
+| c | চ | ch, chh | ছ |
 | NG | ঞ | T, Th | ট, ঠ |
 | D, Dh | ড, ঢ | N | ণ |
 | t, th | ত, থ | d, dh | দ, ধ |
 | n | ন | p | প |
 | ph, f | ফ | b | ব |
 | bh, v | ভ | m | ম |
-| z | য | J, j | জ | r | র |
+| j, J | জ | jh | ঝ |
 | l | ল | sh, S | শ |
 | Sh | ষ | s | স |
 | h | হ | R, Rh | ড়, ঢ় |
-| y | য় at a boundary; য-ফলা after a consonant | Y | force য় independently |
+| z | য | y | য় at a boundary; য-ফলা after a consonant |
+| Y | force য় independently | Z | force য-ফলা after a consonant |
 | rr | reph prefix (র্) | ng | ং |
-| t plus two accent keys | ৎ | Z | force য-ফলা at any position |
-| ^ | ঁ | . | । |
-| $ | ৳ | | |
+| . | । | $ | ৳ |
+
 
 ## Accent-key model
 

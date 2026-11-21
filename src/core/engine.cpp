@@ -43,7 +43,7 @@ Engine::Engine(const EngineConfig& config)
 
 Engine::~Engine() = default;
 
-bool Engine::register_layout(std::string_view id, std::unique_ptr<layout::PhoneticLayout> layout) {
+bool Engine::register_layout(std::string_view id, std::unique_ptr<layout::InputLayout> layout) {
     return layouts_.register_layout(id, std::move(layout));
 }
 
@@ -59,18 +59,15 @@ const layout::LayoutMetadata* Engine::layout_metadata(std::string_view id) const
     return layouts_.find_metadata(id);
 }
 
-std::unique_ptr<layouts::PhoneticInputSession> Engine::create_session() {
-    const layout::PhoneticLayout* active_layout = layouts_.active();
+std::unique_ptr<layout::InputSession> Engine::create_session() {
+    const layout::InputLayout* active_layout = layouts_.active();
     if (active_layout == nullptr) {
         return nullptr;
     }
-    const layouts::InputSessionOptions options{current_settings_.candidate_limit,
-                                               current_settings_.learning_enabled};
-    if (dictionary_ != nullptr) {
-        return std::make_unique<layouts::PhoneticInputSession>(
-            *active_layout, *dictionary_, options);
-    }
-    return std::make_unique<layouts::PhoneticInputSession>(*active_layout, options);
+
+    const layout::InputSessionOptions options{current_settings_.candidate_limit,
+                                              current_settings_.learning_enabled};
+    return active_layout->create_session(dictionary_.get(), options);
 }
 
 settings::SettingsStatus Engine::save_settings(const settings::EngineSettings& settings) {

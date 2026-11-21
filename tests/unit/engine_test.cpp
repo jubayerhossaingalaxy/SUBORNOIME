@@ -397,7 +397,7 @@ TEST(EngineTest, PreservesLastKnownGoodSettingsWhenReloadFileIsInvalid) {
 
         std::ofstream invalid_settings(settings_path, std::ios::trunc);
         ASSERT_TRUE(invalid_settings.is_open());
-        invalid_settings << "not-a-settings-line\\n";
+        invalid_settings << "not-a-settings-line\n";
         invalid_settings.close();
         ASSERT_TRUE(invalid_settings.good());
 

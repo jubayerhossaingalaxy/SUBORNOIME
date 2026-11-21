@@ -36,7 +36,7 @@ struct CommitResult {
 
 struct InputSessionOptions {
     std::size_t candidate_limit = 16;
-    bool learning_enabled = true;
+    bool learning_enabled = false;
 };
 
 class InputSession {

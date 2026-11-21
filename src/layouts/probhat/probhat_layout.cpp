@@ -27,7 +27,7 @@ struct ProbhatKeyMapping {
     std::string_view shifted_altgr = {};
 };
 
-// Base, Shift, and CapsLock layers follow the MIT-licensed Probhat KLC table.
+// Base, Shift, AltGr, and CapsLock layers follow the MIT-licensed Probhat KLC table.
 constexpr ProbhatKeyMapping kProbhatMappings[] = {
     {0x02, "১", "!", 0x00, "¡", "¹"},  {0x03, "২", "@", 0x00, "²", ""},  {0x04, "৩", "#", 0x00, "³", ""},
     {0x05, "৪", "৳", 0x00, "¤", "£"},  {0x06, "৫", "%", 0x00, "€", ""},  {0x07, "৬", "^", 0x00, "¼", ""},

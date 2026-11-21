@@ -17,6 +17,19 @@ constexpr int kCandidateRowHeight = 26;
 constexpr int kCandidateWindowWidth = 340;
 constexpr std::size_t kDefaultCandidatesPerPage = 8;
 
+HINSTANCE candidate_window_module_instance() noexcept {
+    HMODULE module = nullptr;
+    constexpr DWORD kModuleFlags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+                                   | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
+    if (::GetModuleHandleExW(kModuleFlags,
+                             reinterpret_cast<LPCWSTR>(&CandidateListUIElement::window_proc),
+                             &module)
+        == FALSE) {
+        return nullptr;
+    }
+    return module;
+}
+
 ATOM register_candidate_window_class() {
     static std::once_flag registration;
     static ATOM registered_class = 0;
@@ -24,7 +37,10 @@ ATOM register_candidate_window_class() {
         WNDCLASSEXW window_class{};
         window_class.cbSize = sizeof(window_class);
         window_class.lpfnWndProc = &CandidateListUIElement::window_proc;
-        window_class.hInstance = ::GetModuleHandleW(nullptr);
+        window_class.hInstance = candidate_window_module_instance();
+        if (window_class.hInstance == nullptr) {
+            return;
+        }
         window_class.hCursor = ::LoadCursorW(nullptr, IDC_ARROW);
         window_class.hbrBackground = ::GetSysColorBrush(COLOR_INFOBK);
         window_class.lpszClassName = kCandidateWindowClass;
@@ -353,7 +369,7 @@ HRESULT CandidateListUIElement::show_native_window() {
                                 height,
                                 owner,
                                 nullptr,
-                                ::GetModuleHandleW(nullptr),
+                                candidate_window_module_instance(),
                                 this);
     if (window_ == nullptr) {
         return HRESULT_FROM_WIN32(::GetLastError());

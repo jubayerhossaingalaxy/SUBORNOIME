@@ -12,7 +12,7 @@ current-head CI evidence and the applicable real-world acceptance checks.
 |---|---|---|---|
 | 0 | Repository baseline, audit, scope, license and risk inventory | Partial | Complete source/build/security/license audit; reconcile all docs with the actual source and approved product scope |
 | 1 | Portable C++20 core, API contracts, module boundaries and registry | Implemented foundation; CI pending | Current-head GCC/Clang/MSVC builds, ABI/API review, lifecycle and concurrency tests |
-| 2 | Phonetic engine and Avro/Borno behavior | Partial | Golden corpora; Avro autocorrect/context parity; Borno LM/context parity; escaping, backspace and composition edge cases |
+| 2 | Phonetic engine and Avro/Borno behavior | Partial | Current-head CI and full acceptance; Avro autocorrect, complete automatic vowel/reph behavior, and licensing/provenance review; Borno LM/context parity; Khipro edge cases |
 | 3 | Independent keyboard layouts | Partial | Probhat dead-key behavior and full physical-position validation; National physical map remains blocked on licensing clearance; Khipro full parity. Probhat Base/Shift/AltGr/Shift+AltGr and CapsLock flags are implemented; CI pending |
 | 4 | Bengali Unicode and text composition | Partial | Current-head tests and full corpus acceptance; grapheme/ZWJ/ZWNJ boundary validation and composition edge cases remain. Unicode 18 assigned Bengali-block inventory and categories are implemented; Assamese-specific U+09F0/U+09F1 are excluded |
 | 5 | Dictionary, candidates and language intelligence | Partial | Current-head tests; dictionary corpus provenance/license; language-quality evaluation; spell integration; prediction and learning controls |
@@ -32,6 +32,10 @@ current-head CI evidence and the applicable real-world acceptance checks.
   coverage verifies that the active layout and settings remain intact.
 - Avro ya-phala composition now ends the dependent-consonant run correctly so
   the documented `bybohar` vector produces `ব্যবহার`; a regression test was added.
+- Avro now has strict unmatched-consonant separation, longest-match entries for
+  299 documented conjunct input variants, contextual `a`/`o` handling, word-initial
+  `y` behavior and backtick separation vectors; current-head CI and behavior-data
+  provenance/licensing review remain pending.
 - Probhat KLC Ctrl+Alt and Shift+Ctrl+Alt output layers now use the Windows Right-Alt
   state, and CAPLOKALTGR is applied only within those layers; regression tests added.
 - The Windows key-translation boundary now recognizes the KLC OEM_102 and numpad
@@ -50,7 +54,10 @@ current-head CI evidence and the applicable real-world acceptance checks.
 
 1. Latest-head CI has not yet produced a passing result.
 2. Minimal ICU data POC has not yet produced reproducible size and test evidence.
-3. Avro/Borno/Khipro phonetic parity is incomplete.
+3. Avro full phonetic parity remains incomplete despite the new conjunct corpus:
+   automatic vowel forming, old-style/automatic reph, autocorrect and the complete
+   behavior corpus still need acceptance. Borno LM/context and Khipro full parity
+   also remain incomplete; Avro behavioral-data provenance/licensing review is pending.
 4. Probhat dead-key behavior is incomplete; Base/Shift/AltGr/Shift+AltGr and CapsLock
    output layers have implementation and regression coverage, pending current-head CI.
 5. National physical keymap is blocked pending licensing clearance for BDS 1738:2018.

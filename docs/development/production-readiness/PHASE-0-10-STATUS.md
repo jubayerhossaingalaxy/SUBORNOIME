@@ -14,7 +14,7 @@ current-head CI evidence and the applicable real-world acceptance checks.
 | 1 | Portable C++20 core, API contracts, module boundaries and registry | Implemented foundation; CI pending | Current-head GCC/Clang/MSVC builds, ABI/API review, lifecycle and concurrency tests |
 | 2 | Phonetic engine and Avro/Borno behavior | Partial | Golden corpora; Avro autocorrect/context parity; Borno LM/context parity; escaping, backspace and composition edge cases |
 | 3 | Independent keyboard layouts | Partial | Probhat dead-key behavior and full physical-position validation; National physical map remains blocked on licensing clearance; Khipro full parity. Probhat Base/Shift/AltGr/Shift+AltGr and CapsLock flags are implemented; CI pending |
-| 4 | Bengali Unicode and text composition | Partial | Current-head Unicode tests; grapheme/ZWJ/ZWNJ and malformed UTF-8 coverage; full character inventory review; no Assamese-specific letters |
+| 4 | Bengali Unicode and text composition | Partial | Current-head tests and full corpus acceptance; grapheme/ZWJ/ZWNJ boundary validation and composition edge cases remain. Unicode 18 assigned Bengali-block inventory and categories are implemented; Assamese-specific U+09F0/U+09F1 are excluded |
 | 5 | Dictionary, candidates and language intelligence | Partial | Current-head tests; dictionary corpus provenance/license; language-quality evaluation; spell integration; prediction and learning controls |
 | 6 | Windows COM/TSF integration | Implementation present; CI and interactive acceptance pending | MSVC Release/Debug; TSF lifecycle, focus, edit-session and candidate behavior in Notepad, Office and browsers |
 | 7 | Native desktop UI, settings and persistence | Partial | Full settings UX, accessibility, DPI/multi-monitor behavior, layout controls and corruption recovery acceptance |
@@ -34,6 +34,8 @@ current-head CI evidence and the applicable real-world acceptance checks.
   the documented `bybohar` vector produces `ব্যবহার`; a regression test was added.
 - Probhat KLC Ctrl+Alt and Shift+Ctrl+Alt output layers now use the Windows Right-Alt
   state, and CAPLOKALTGR is applied only within those layers; regression tests added.
+- Unicode 18 assigned Bengali-block inventory and General_Category metadata were
+  expanded; reserved and Assamese-specific U+09F0/U+09F1 code points are excluded.
 - ICU i18n is explicitly linked because grapheme segmentation uses
   `icu::BreakIterator`; the minimal-data POC must retain the required character
   break rules and pass the full Unicode regression suite.

@@ -1,44 +1,12 @@
 #include "suborno/layouts/layout_input_session.hpp"
 
-#include <unordered_set>
 #include <utility>
 
+#include "suborno/candidates/candidate_engine.hpp"
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/unicode/bengali.hpp"
 
 namespace suborno::layouts {
-namespace {
-
-constexpr double kInputDictionaryScore = 0.9;
-
-void append_dictionary_matches(std::vector<suborno::layout::Candidate>& candidates,
-                               std::unordered_set<std::string>& seen,
-                               const suborno::dictionary::Dictionary& dictionary,
-                               const std::string& query,
-                               double score,
-                               const char* rationale,
-                               std::size_t candidate_limit) {
-    for (const std::string& word : dictionary.find_matches(query)) {
-        if (candidates.size() >= candidate_limit) {
-            break;
-        }
-
-        const std::string normalized_word = suborno::unicode::normalize_nfc(word);
-        if (seen.insert(normalized_word).second) {
-            candidates.push_back({
-                .text = word,
-                .normalized_text = normalized_word,
-                .stable_id = "system-dictionary:" + normalized_word,
-                .source = suborno::layout::CandidateSource::system_dictionary,
-                .score = score,
-                .rationale = rationale,
-            });
-        }
-    }
-}
-
-}  // namespace
-
 LayoutInputSession::LayoutInputSession(const suborno::layout::InputLayout& input_layout,
                                        suborno::layout::InputSessionOptions options)
     : input_layout_(&input_layout),
@@ -93,50 +61,8 @@ suborno::layout::InputStatus LayoutInputSession::backspace() {
 
 std::vector<suborno::layout::Candidate> LayoutInputSession::make_candidates(
     const std::string& input) const {
-    std::vector<suborno::layout::Candidate> candidates;
-    std::unordered_set<std::string> seen;
-
-    if (dictionary_ != nullptr && options_.candidate_limit > 0) {
-        const std::string normalized =
-            suborno::unicode::normalize_nfc(input_layout_->transliterate(input));
-        append_dictionary_matches(candidates,
-                                  seen,
-                                  *dictionary_,
-                                  normalized,
-                                  1.0,
-                                  "exact dictionary match",
-                                  options_.candidate_limit);
-        append_dictionary_matches(candidates,
-                                  seen,
-                                  *dictionary_,
-                                  input,
-                                  kInputDictionaryScore,
-                                  "input dictionary match",
-                                  options_.candidate_limit);
-    }
-
-    for (const auto& candidate : input_layout_->generate_candidates(input)) {
-        if (candidates.size() >= options_.candidate_limit) {
-            break;
-        }
-
-        const std::string normalized_text =
-            candidate.normalized_text.empty()
-                ? suborno::unicode::normalize_nfc(candidate.text)
-                : suborno::unicode::normalize_nfc(candidate.normalized_text);
-        if (seen.insert(normalized_text).second) {
-            suborno::layout::Candidate normalized_candidate = candidate;
-            normalized_candidate.normalized_text = normalized_text;
-            candidates.push_back(std::move(normalized_candidate));
-        }
-    }
-
-    for (std::size_t index = 0; index < candidates.size(); ++index) {
-        if (candidates[index].source == suborno::layout::CandidateSource::layout) {
-            candidates[index].score = 1.0 / static_cast<double>(index + 1);
-        }
-    }
-    return candidates;
+    const suborno::candidates::CandidateEngine candidate_engine(*input_layout_, dictionary_);
+    return candidate_engine.make_candidates(input, options_.candidate_limit);
 }
 
 suborno::layout::CommitResult LayoutInputSession::commit() {

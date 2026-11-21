@@ -12,6 +12,7 @@ namespace {
 enum class CompositionState {
     boundary,
     consonant_run,
+    after_dependent_consonant,
     after_vowel,
     explicit_halant,
 };
@@ -83,18 +84,22 @@ void append_consonant(const PhoneticTokenDefinition& token,
                       std::string& output,
                       CompositionState& state,
                       bool& nukta_eligible) {
+    bool used_dependent_form = false;
     if (token.force_dependent_form && state == CompositionState::consonant_run) {
         output.append(kVirama);
         output.append(token.dependent_output.empty() ? token.output : token.dependent_output);
+        used_dependent_form = true;
     } else if (token.force_independent_form) {
         output.append(token.output);
     } else if (state == CompositionState::consonant_run) {
         output.append(kVirama);
         output.append(token.dependent_output.empty() ? token.output : token.dependent_output);
+        used_dependent_form = !token.dependent_output.empty();
     } else {
         output.append(token.output);
     }
-    state = CompositionState::consonant_run;
+    state = used_dependent_form ? CompositionState::after_dependent_consonant
+                                : CompositionState::consonant_run;
     nukta_eligible = token.nukta_eligible;
 }
 
@@ -107,7 +112,8 @@ void append_token(const PhoneticTokenDefinition& token,
         append_consonant(token, output, state, nukta_eligible);
         return;
     case PhoneticTokenKind::vowel:
-        if (state == CompositionState::consonant_run) {
+        if (state == CompositionState::consonant_run
+            || state == CompositionState::after_dependent_consonant) {
             output.append(token.dependent_output);
         } else {
             output.append(token.output);

@@ -1,3 +1,4 @@
+#include <Windows.h>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
@@ -19,6 +20,21 @@ extern "C" HRESULT WINAPI DllRegisterServer();
 extern "C" HRESULT WINAPI DllUnregisterServer();
 
 namespace {
+
+bool is_process_elevated() noexcept {
+    HANDLE token = nullptr;
+    if (!::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &token)) {
+        return false;
+    }
+
+    TOKEN_ELEVATION elevation{};
+    DWORD returned_size = 0;
+    const BOOL queried = ::GetTokenInformation(
+        token, TokenElevation, &elevation, sizeof(elevation), &returned_size);
+    ::CloseHandle(token);
+    return queried != FALSE && returned_size == sizeof(elevation)
+           && elevation.TokenIsElevated != 0;
+}
 
 class ComApartment final {
   public:
@@ -188,6 +204,11 @@ TEST(WindowsTsfContractTest, RejectsUnknownClassesAndBalancesServerLocks) {
 }
 
 TEST(WindowsTsfContractTest, RegistersAndUnregistersTheLanguageProfile) {
+    if (!is_process_elevated()) {
+        GTEST_SKIP() << "This test performs real Windows COM/TSF registration. "
+                        "Run the test from an elevated terminal to exercise registration.";
+    }
+
     ComApartment apartment;
     ASSERT_TRUE(apartment.initialized());
 

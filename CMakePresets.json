@@ -145,13 +145,13 @@
       "name": "windows-msvc-release",
       "configurePreset": "windows-msvc",
       "configuration": "Release",
-      "jobs": 2
+      "jobs": 1
     },
     {
       "name": "windows-msvc-debug",
       "configurePreset": "windows-msvc",
       "configuration": "Debug",
-      "jobs": 2
+      "jobs": 1
     },
     {
       "name": "windows-msvc-minimal-icu-poc",

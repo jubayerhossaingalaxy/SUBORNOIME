@@ -710,8 +710,8 @@ class Application final {
             apply_selected_layout();
             return;
         }
-        if ((id == kShowCandidateWindowCheck || id == kMapNumpadCheck
-             || id == kIgnoreCapsLockCheck || id == kSelectCandidateKeysCheck)
+        if ((id == kShowCandidateWindowCheck || id == kMapNumpadCheck || id == kIgnoreCapsLockCheck
+             || id == kSelectCandidateKeysCheck)
             && notification == BN_CLICKED) {
             save_input_settings();
             return;

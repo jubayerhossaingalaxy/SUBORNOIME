@@ -1,9 +1,10 @@
+#include "suborno/candidates/candidate_engine.hpp"
+
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
 
-#include "suborno/candidates/candidate_engine.hpp"
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layout-api/input_layout.hpp"
 
@@ -23,7 +24,12 @@ class TestFixedLayout final : public suborno::layout::StatelessInputLayout {
         const std::string& input) const override {
         (void)input;
         return {
-            {"বাংলা", "বাংলা", "fixed:বাংলা", suborno::layout::CandidateSource::layout, 1.0, "fixed"},
+            {"বাংলা",
+             "বাংলা",
+             "fixed:বাংলা",
+             suborno::layout::CandidateSource::layout,
+             1.0,
+             "fixed"},
             {"বই", "বই", "fixed:বই", suborno::layout::CandidateSource::layout, 0.5, "fixed"},
         };
     }
@@ -36,7 +42,8 @@ std::string temporary_database_path(const char* filename) {
 }  // namespace
 
 TEST(CandidateEngineTest, SupportsFixedLayoutsAndMergesDictionaryCandidates) {
-    const std::string db_path = temporary_database_path("suborno_candidate_engine_fixed_test.sqlite");
+    const std::string db_path =
+        temporary_database_path("suborno_candidate_engine_fixed_test.sqlite");
     std::remove(db_path.c_str());
 
     suborno::dictionary::Dictionary dictionary(db_path);
@@ -59,7 +66,8 @@ TEST(CandidateEngineTest, SupportsFixedLayoutsAndMergesDictionaryCandidates) {
 }
 
 TEST(CandidateEngineTest, AppliesTheCandidateLimitAndSkipsDuplicateLayoutOutput) {
-    const std::string db_path = temporary_database_path("suborno_candidate_engine_limit_test.sqlite");
+    const std::string db_path =
+        temporary_database_path("suborno_candidate_engine_limit_test.sqlite");
     std::remove(db_path.c_str());
 
     suborno::dictionary::Dictionary dictionary(db_path);

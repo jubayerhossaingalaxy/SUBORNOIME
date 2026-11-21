@@ -1,3 +1,5 @@
+#include "suborno/spell/spell_checker.hpp"
+
 #include <algorithm>
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -5,7 +7,6 @@
 #include <string>
 
 #include "suborno/dictionary/dictionary.hpp"
-#include "suborno/spell/spell_checker.hpp"
 
 namespace {
 
@@ -125,7 +126,6 @@ TEST(SpellCheckerTest, GenerateEditsProducesVariants) {
 
     std::remove(db_path.c_str());
 }
-
 
 TEST(SpellCheckerTest, BoundsWorkForWordsBeyondTheSupportedLength) {
     const std::string db_path = temporary_database_path("suborno_spell_length_limit_test.sqlite");

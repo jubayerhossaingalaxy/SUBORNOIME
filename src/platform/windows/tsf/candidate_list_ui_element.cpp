@@ -1,12 +1,11 @@
 #include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
 
-#include <oleauto.h>
-
 #include <algorithm>
-#include <limits>
 #include <iterator>
+#include <limits>
 #include <mutex>
 #include <new>
+#include <oleauto.h>
 #include <string>
 #include <string_view>
 
@@ -66,14 +65,13 @@ CandidateListUIElement::~CandidateListUIElement() {
 }
 
 std::wstring CandidateListUIElement::to_wide(std::string_view utf8) {
-    if (utf8.empty()
-        || utf8.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+    if (utf8.empty() || utf8.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
         return {};
     }
 
     const int input_length = static_cast<int>(utf8.size());
-    const int required = ::MultiByteToWideChar(
-        CP_UTF8, MB_ERR_INVALID_CHARS, utf8.data(), input_length, nullptr, 0);
+    const int required =
+        ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8.data(), input_length, nullptr, 0);
     if (required <= 0) {
         return {};
     }
@@ -93,8 +91,7 @@ STDMETHODIMP CandidateListUIElement::QueryInterface(REFIID riid, void** object) 
     }
     *object = nullptr;
 
-    if (riid == IID_IUnknown || riid == IID_ITfUIElement
-        || riid == IID_ITfCandidateListUIElement) {
+    if (riid == IID_IUnknown || riid == IID_ITfUIElement || riid == IID_ITfCandidateListUIElement) {
         *object = static_cast<ITfCandidateListUIElement*>(this);
     } else if (riid == IID_ITfCandidateListUIElementBehavior) {
         *object = static_cast<ITfCandidateListUIElementBehavior*>(this);
@@ -265,8 +262,7 @@ STDMETHODIMP CandidateListUIElement::SetSelection(UINT index) {
 
 STDMETHODIMP CandidateListUIElement::Finalize() {
     AddRef();
-    const HRESULT result =
-        finalize_callback_ ? finalize_callback_(selected_index_) : E_NOTIMPL;
+    const HRESULT result = finalize_callback_ ? finalize_callback_(selected_index_) : E_NOTIMPL;
     if (SUCCEEDED(result)) {
         Show(FALSE);
     }
@@ -285,7 +281,7 @@ STDMETHODIMP CandidateListUIElement::Abort() {
 }
 
 void CandidateListUIElement::Update(const std::vector<layout::Candidate>& candidates,
-                                   std::size_t selected_index) {
+                                    std::size_t selected_index) {
     candidates_.clear();
     candidates_.reserve(candidates.size());
     for (const layout::Candidate& candidate : candidates) {
@@ -293,9 +289,8 @@ void CandidateListUIElement::Update(const std::vector<layout::Candidate>& candid
     }
 
     const UINT new_selection =
-        candidates_.empty()
-            ? 0U
-            : static_cast<UINT>(std::min(selected_index, candidates_.size() - 1));
+        candidates_.empty() ? 0U
+                            : static_cast<UINT>(std::min(selected_index, candidates_.size() - 1));
     updated_flags_ |= TF_CLUIE_COUNT | TF_CLUIE_STRING | TF_CLUIE_PAGEINDEX;
     const UINT previous_page = current_page_;
     reset_page_index();
@@ -391,8 +386,7 @@ void CandidateListUIElement::destroy_native_window() noexcept {
 
 void CandidateListUIElement::reset_page_index() {
     page_starts_.clear();
-    for (std::size_t start = 0; start < candidates_.size();
-         start += kDefaultCandidatesPerPage) {
+    for (std::size_t start = 0; start < candidates_.size(); start += kDefaultCandidatesPerPage) {
         page_starts_.push_back(static_cast<UINT>(start));
     }
     if (page_starts_.empty()) {
@@ -420,15 +414,14 @@ std::size_t CandidateListUIElement::current_page_end() const noexcept {
     if (page_starts_.empty()) {
         return 0;
     }
-    return current_page_ + 1 < page_starts_.size()
-               ? page_starts_[current_page_ + 1]
-               : candidates_.size();
+    return current_page_ + 1 < page_starts_.size() ? page_starts_[current_page_ + 1]
+                                                   : candidates_.size();
 }
 
 LRESULT CALLBACK CandidateListUIElement::window_proc(HWND window,
-                                                       UINT message,
-                                                       WPARAM w_param,
-                                                       LPARAM l_param) {
+                                                     UINT message,
+                                                     WPARAM w_param,
+                                                     LPARAM l_param) {
     auto* element =
         reinterpret_cast<CandidateListUIElement*>(::GetWindowLongPtrW(window, GWLP_USERDATA));
     if (message == WM_NCCREATE) {

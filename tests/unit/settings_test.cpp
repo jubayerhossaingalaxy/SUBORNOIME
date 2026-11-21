@@ -219,7 +219,6 @@ TEST(SettingsTest, ReplacesExistingSettingsFile) {
     std::filesystem::remove(path);
 }
 
-
 TEST(SettingsTest, AcceptsTheKhiproCompositionalLayoutId) {
     const std::filesystem::path path =
         std::filesystem::temp_directory_path() / "suborno_settings_khipro_layout_test.conf";

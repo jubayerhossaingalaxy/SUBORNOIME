@@ -191,8 +191,8 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
             continue;
         }
 
-        if (accent_key_enabled_ && offset + 1 < input.size()
-            && input[offset + 1] == '`' && (input[offset] == '.' || input[offset] == ':')) {
+        if (accent_key_enabled_ && offset + 1 < input.size() && input[offset + 1] == '`'
+            && (input[offset] == '.' || input[offset] == ':')) {
             output.push_back(input[offset]);
             state = CompositionState::boundary;
             nukta_eligible = false;

@@ -138,8 +138,7 @@ void Dictionary::initialize_schema() {
             && std::string(reinterpret_cast<const char*>(name)) == "user_frequency") {
             has_user_frequency = true;
         }
-        if (name != nullptr
-            && std::string(reinterpret_cast<const char*>(name)) == "user_pinned") {
+        if (name != nullptr && std::string(reinterpret_cast<const char*>(name)) == "user_pinned") {
             has_user_pinned = true;
         }
     }
@@ -201,16 +200,14 @@ void Dictionary::initialize_schema() {
     }
 
     char* version_error = nullptr;
-    const int version_update_rc = sqlite3_exec(
-        impl_->db,
-        "UPDATE dictionary_metadata SET value='2' "
-        "WHERE key='schema_version' AND value='1';",
-        nullptr,
-        nullptr,
-        &version_error);
+    const int version_update_rc = sqlite3_exec(impl_->db,
+                                               "UPDATE dictionary_metadata SET value='2' "
+                                               "WHERE key='schema_version' AND value='1';",
+                                               nullptr,
+                                               nullptr,
+                                               &version_error);
     if (version_update_rc != SQLITE_OK) {
-        std::string message =
-            version_error == nullptr ? "unknown SQLite error" : version_error;
+        std::string message = version_error == nullptr ? "unknown SQLite error" : version_error;
         sqlite3_free(version_error);
         throw DictionaryError(DictionaryErrorCategory::schema,
                               version_update_rc,
@@ -331,7 +328,7 @@ int Dictionary::schema_version() const {
 }
 
 std::vector<std::string> Dictionary::find_matches(const std::string& normalized,
-                                                     std::size_t limit) const {
+                                                  std::size_t limit) const {
     if (limit == 0) {
         return {};
     }
@@ -475,9 +472,8 @@ void Dictionary::remove_user_word(const std::string& word) {
             "UPDATE dictionary_entries SET user_pinned=0, user_frequency=0 "
             "WHERE word=? AND source='system';",
             "unpin");
-        execute_word_statement(
-            "DELETE FROM dictionary_entries WHERE word=? AND source='user';",
-            "delete");
+        execute_word_statement("DELETE FROM dictionary_entries WHERE word=? AND source='user';",
+                               "delete");
         char* commit_error = nullptr;
         const int commit_rc = sqlite3_exec(impl_->db, "COMMIT;", nullptr, nullptr, &commit_error);
         if (commit_rc != SQLITE_OK) {

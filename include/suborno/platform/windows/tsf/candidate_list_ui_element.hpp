@@ -5,14 +5,13 @@
 #endif
 
 #include <Windows.h>
-#include <msctf.h>
-#include <wil/com.h>
-
 #include <cstddef>
 #include <functional>
+#include <msctf.h>
 #include <string>
 #include <string_view>
 #include <vector>
+#include <wil/com.h>
 
 #include "suborno/layout-api/candidate.hpp"
 

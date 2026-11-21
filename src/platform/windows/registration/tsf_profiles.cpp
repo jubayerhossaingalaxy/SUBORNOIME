@@ -92,8 +92,8 @@ HRESULT register_tsf_profile(REFCLSID class_id,
         result = categories->RegisterCategory(class_id, GUID_TFCAT_TIP_KEYBOARD, class_id);
     }
     if (SUCCEEDED(result)) {
-        result = categories->RegisterCategory(
-            class_id, GUID_TFCAT_TIPCAP_UIELEMENTENABLED, class_id);
+        result =
+            categories->RegisterCategory(class_id, GUID_TFCAT_TIPCAP_UIELEMENTENABLED, class_id);
     }
     if (FAILED(result)) {
         profiles->RemoveLanguageProfile(class_id, language_id, profile_id);

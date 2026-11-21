@@ -1,8 +1,9 @@
-#include "suborno/dictionary/dictionary.hpp"
 #include "suborno/layouts/layout_input_session.hpp"
 
 #include <filesystem>
 #include <gtest/gtest.h>
+
+#include "suborno/dictionary/dictionary.hpp"
 
 namespace {
 
@@ -117,7 +118,6 @@ TEST(LayoutInputSessionTest, EnforcesTheSharedInputLimit) {
 
 }  // namespace
 
-
 TEST(LayoutInputSessionTest, SharedCandidateEngineAddsDictionaryMatchesForFixedLayouts) {
     const std::filesystem::path db_path =
         std::filesystem::temp_directory_path() / "suborno_layout_session_dictionary.sqlite";
@@ -137,13 +137,14 @@ TEST(LayoutInputSessionTest, SharedCandidateEngineAddsDictionaryMatchesForFixedL
         ASSERT_EQ(snapshot.candidates.size(), 2U);
         EXPECT_EQ(snapshot.candidates[0].text, "কখ");
         EXPECT_EQ(snapshot.candidates[1].text, "শব্দ");
-        EXPECT_EQ(snapshot.candidates[0].source, suborno::layout::CandidateSource::system_dictionary);
-        EXPECT_EQ(snapshot.candidates[1].source, suborno::layout::CandidateSource::system_dictionary);
+        EXPECT_EQ(snapshot.candidates[0].source,
+                  suborno::layout::CandidateSource::system_dictionary);
+        EXPECT_EQ(snapshot.candidates[1].source,
+                  suborno::layout::CandidateSource::system_dictionary);
     }
 
     std::filesystem::remove(db_path);
 }
-
 
 TEST(LayoutInputSessionTest, UsesLogicalUnicodeTextFromActiveKeyboardLayout) {
     TestStatelessLayout layout;
@@ -159,7 +160,6 @@ TEST(LayoutInputSessionTest, UsesLogicalUnicodeTextFromActiveKeyboardLayout) {
     EXPECT_EQ(session->snapshot().raw_input_utf8, "ক");
     EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
 }
-
 
 TEST(LayoutInputSessionTest, DoesNotUseUsFallbackWhenLayoutTranslationReturnsNoText) {
     TestStatelessLayout layout;

@@ -147,8 +147,7 @@ std::string transliterate_khipro(std::string_view input) {
                 previous_was_consonant = false;
                 previous_was_vowel = false;
                 last_joiner_offset = std::string::npos;
-            } else if (previous_was_consonant
-                       && last_joiner_offset != std::string::npos) {
+            } else if (previous_was_consonant && last_joiner_offset != std::string::npos) {
                 output.erase(last_joiner_offset, std::string_view("্").size());
                 last_joiner_offset = std::string::npos;
             } else {
@@ -268,9 +267,8 @@ std::string transliterate_khipro(std::string_view input) {
         }
 
         if (mapping->kind == MappingKind::vowel) {
-            const bool force_split =
-                !mapping->forced_dependent.empty() && next_offset < input.size()
-                && input[next_offset] == 'f';
+            const bool force_split = !mapping->forced_dependent.empty()
+                                     && next_offset < input.size() && input[next_offset] == 'f';
             if (mapping->key == "o" && previous_was_consonant
                 && begins_with_consonant(input, next_offset)) {
                 previous_was_consonant = false;

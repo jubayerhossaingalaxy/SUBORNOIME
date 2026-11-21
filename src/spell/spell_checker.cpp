@@ -1,3 +1,5 @@
+#include "suborno/spell/spell_checker.hpp"
+
 #include <algorithm>
 #include <numeric>
 #include <stdexcept>
@@ -7,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "suborno/spell/spell_checker.hpp"
 #include "suborno/unicode/bengali.hpp"
 
 namespace bengali {
@@ -84,8 +85,7 @@ std::vector<std::string> bengali_replacement_graphemes() {
     return result;
 }
 
-std::vector<std::string> replacement_graphemes_for(
-    const std::vector<std::string>& graphemes) {
+std::vector<std::string> replacement_graphemes_for(const std::vector<std::string>& graphemes) {
     const bool is_ascii_latin_word =
         !graphemes.empty()
         && std::all_of(graphemes.begin(), graphemes.end(), [](const std::string& grapheme) {
@@ -104,8 +104,7 @@ std::vector<std::string> replacement_graphemes_for(
     std::vector<std::string> result;
     result.reserve(26);
     for (char letter = 'a'; letter <= 'z'; ++letter) {
-        const char replacement =
-            uppercase_word ? static_cast<char>(letter - ('a' - 'A')) : letter;
+        const char replacement = uppercase_word ? static_cast<char>(letter - ('a' - 'A')) : letter;
         result.emplace_back(1, replacement);
     }
     return result;
@@ -181,17 +180,16 @@ SpellingResult SpellChecker::check(const std::string& word) const {
         }
     }
 
-    std::sort(scored.begin(), scored.end(), [](const ScoredCandidate& left,
-                                               const ScoredCandidate& right) {
-        if (left.score != right.score) {
-            return left.score > right.score;
-        }
-        return left.word < right.word;
-    });
+    std::sort(scored.begin(),
+              scored.end(),
+              [](const ScoredCandidate& left, const ScoredCandidate& right) {
+                  if (left.score != right.score) {
+                      return left.score > right.score;
+                  }
+                  return left.word < right.word;
+              });
 
-    for (std::size_t index = 0;
-         index < scored.size() && index < kMaximumSuggestions;
-         ++index) {
+    for (std::size_t index = 0; index < scored.size() && index < kMaximumSuggestions; ++index) {
         result.suggestions.push_back({scored[index].word,
                                       scored[index].word,
                                       "spell:" + scored[index].word,
@@ -235,8 +233,7 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
     }
 
     // Transpositions
-    for (std::size_t i = 0;
-         i + 1 < graphemes.size() && edits.size() < kMaximumGeneratedEdits;
+    for (std::size_t i = 0; i + 1 < graphemes.size() && edits.size() < kMaximumGeneratedEdits;
          ++i) {
         std::string candidate;
         for (std::size_t j = 0; j < graphemes.size(); ++j) {
@@ -253,9 +250,7 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
 
     // Interleave insertions and substitutions by position so both typo types
     // remain reachable within the first bounded dictionary lookup pass.
-    for (std::size_t i = 0;
-         i < graphemes.size() && edits.size() < kMaximumGeneratedEdits;
-         ++i) {
+    for (std::size_t i = 0; i < graphemes.size() && edits.size() < kMaximumGeneratedEdits; ++i) {
         for (const auto& replacement : replacements) {
             if (edits.size() >= kMaximumGeneratedEdits) {
                 break;
@@ -301,8 +296,7 @@ std::vector<std::string> SpellChecker::generate_edits(const std::string& word) c
 double SpellChecker::edit_distance(const std::string& a, const std::string& b) const {
     auto graphemes_a = suborno::unicode::split_graphemes(a);
     auto graphemes_b = suborno::unicode::split_graphemes(b);
-    if (graphemes_a.size() > kMaximumWordGraphemes
-        || graphemes_b.size() > kMaximumWordGraphemes) {
+    if (graphemes_a.size() > kMaximumWordGraphemes || graphemes_b.size() > kMaximumWordGraphemes) {
         throw std::length_error("Spell-check word exceeds the configured grapheme limit");
     }
 
@@ -319,9 +313,8 @@ double SpellChecker::edit_distance(const std::string& a, const std::string& b) c
         for (std::size_t j = 1; j <= graphemes_b.size(); ++j) {
             const std::size_t substitution_cost =
                 graphemes_a[i - 1] == graphemes_b[j - 1] ? 0U : 1U;
-            current[j] = std::min({previous[j] + 1,
-                                   current[j - 1] + 1,
-                                   previous[j - 1] + substitution_cost});
+            current[j] = std::min(
+                {previous[j] + 1, current[j - 1] + 1, previous[j - 1] + substitution_cost});
         }
         previous.swap(current);
     }

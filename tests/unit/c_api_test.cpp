@@ -1,8 +1,7 @@
 #include <array>
+#include <gtest/gtest.h>
 #include <memory>
 #include <string>
-
-#include <gtest/gtest.h>
 
 #include "suborno/suborno.h"
 
@@ -26,14 +25,13 @@ TEST(CApiTest, CreatesGenericInputSessionAndCommitsBengaliText) {
     std::size_t committed_size = 0;
     const int commit_status =
         suborno_session_commit(session.get(), &committed_text, &committed_size);
-    std::unique_ptr<char, decltype(&suborno_string_free)> committed(
-        committed_text, &suborno_string_free);
+    std::unique_ptr<char, decltype(&suborno_string_free)> committed(committed_text,
+                                                                    &suborno_string_free);
 
     ASSERT_EQ(commit_status, SUBORNO_STATUS_UPDATED);
     ASSERT_NE(committed, nullptr);
     EXPECT_EQ(std::string(committed.get(), committed_size), "আমি");
 }
-
 
 TEST(CApiTest, SessionKeepsItsEngineAliveAfterEngineHandleIsDestroyed) {
     std::unique_ptr<SUBORNO_Engine, decltype(&suborno_engine_destroy)> engine(

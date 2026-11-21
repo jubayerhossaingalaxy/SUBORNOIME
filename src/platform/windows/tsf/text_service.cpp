@@ -4,8 +4,8 @@
 
 #include "suborno/platform/windows/tsf/text_service.hpp"
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <memory>
 #include <new>
@@ -116,9 +116,9 @@ std::optional<suborno::layout::PhysicalKey> physical_key_from_virtual_key(
 }
 
 bool logical_text_from_keyboard_layout(UINT virtual_key,
-                                           UINT scan_code,
-                                           bool ignore_caps_lock,
-                                           std::string& output) {
+                                       UINT scan_code,
+                                       bool ignore_caps_lock,
+                                       std::string& output) {
     std::array<BYTE, 256> keyboard_state{};
     if (::GetKeyboardState(keyboard_state.data()) == FALSE) {
         return false;
@@ -130,12 +130,12 @@ bool logical_text_from_keyboard_layout(UINT virtual_key,
     std::array<wchar_t, 8> translated{};
     const HKL keyboard_layout = ::GetKeyboardLayout(0);
     const int translated_count = ::ToUnicodeEx(virtual_key,
-                                                scan_code,
-                                                keyboard_state.data(),
-                                                translated.data(),
-                                                static_cast<int>(translated.size()),
-                                                0x4,
-                                                keyboard_layout);
+                                               scan_code,
+                                               keyboard_state.data(),
+                                               translated.data(),
+                                               static_cast<int>(translated.size()),
+                                               0x4,
+                                               keyboard_layout);
     if (translated_count <= 0) {
         return true;
     }
@@ -168,8 +168,10 @@ bool logical_text_from_keyboard_layout(UINT virtual_key,
     return true;
 }
 
-std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(
-    WPARAM virtual_key, LPARAM lparam, bool ignore_caps_lock, bool capture_logical_text) {
+std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(WPARAM virtual_key,
+                                                                    LPARAM lparam,
+                                                                    bool ignore_caps_lock,
+                                                                    bool capture_logical_text) {
     const auto physical_key = physical_key_from_virtual_key(virtual_key);
     if (!physical_key.has_value()) {
         return std::nullopt;
@@ -186,13 +188,13 @@ std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(
         .previous_key_state = message_data.previous_key_state,
         .key_down = message_data.key_down,
     };
-    if (capture_logical_text && event.key_down && !event.modifiers.control
-        && !event.modifiers.alt && !event.modifiers.windows) {
-        event.logical_text_available = logical_text_from_keyboard_layout(
-            static_cast<UINT>(virtual_key),
-            message_data.scan_code,
-            ignore_caps_lock,
-            event.logical_text_utf8);
+    if (capture_logical_text && event.key_down && !event.modifiers.control && !event.modifiers.alt
+        && !event.modifiers.windows) {
+        event.logical_text_available =
+            logical_text_from_keyboard_layout(static_cast<UINT>(virtual_key),
+                                              message_data.scan_code,
+                                              ignore_caps_lock,
+                                              event.logical_text_utf8);
     }
     return event;
 }
@@ -435,11 +437,11 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
         const bool composing = found != m_contexts.end() && found->second.session != nullptr
                                && !found->second.session->snapshot().raw_input_utf8.empty();
         const auto& input_settings = m_engine->settings().input;
-        auto key_event = key_event_from_virtual_key(
-            wParam,
-            lParam,
-            input_settings.ignore_caps_lock_state_in_bangla,
-            m_engine->active_layout_kind() != layout::LayoutKind::fixed);
+        auto key_event =
+            key_event_from_virtual_key(wParam,
+                                       lParam,
+                                       input_settings.ignore_caps_lock_state_in_bangla,
+                                       m_engine->active_layout_kind() != layout::LayoutKind::fixed);
         apply_input_settings(key_event, m_engine->settings());
         const bool printable =
             key_event.has_value()
@@ -606,19 +608,19 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         }
 
         const auto& input_settings = m_engine->settings().input;
-        auto key_event = key_event_from_virtual_key(
-            wParam,
-            lParam,
-            input_settings.ignore_caps_lock_state_in_bangla,
-            m_engine->active_layout_kind() != layout::LayoutKind::fixed);
+        auto key_event =
+            key_event_from_virtual_key(wParam,
+                                       lParam,
+                                       input_settings.ignore_caps_lock_state_in_bangla,
+                                       m_engine->active_layout_kind() != layout::LayoutKind::fixed);
         apply_input_settings(key_event, m_engine->settings());
-        const bool starts_phonetic_input =
-            key_event.has_value() && !key_event->logical_text_utf8.empty()
-            && key_event->logical_text_utf8.size() == 1
-            && ((key_event->logical_text_utf8.front() >= 'A'
-                 && key_event->logical_text_utf8.front() <= 'Z')
-                || (key_event->logical_text_utf8.front() >= 'a'
-                    && key_event->logical_text_utf8.front() <= 'z'));
+        const bool starts_phonetic_input = key_event.has_value()
+                                           && !key_event->logical_text_utf8.empty()
+                                           && key_event->logical_text_utf8.size() == 1
+                                           && ((key_event->logical_text_utf8.front() >= 'A'
+                                                && key_event->logical_text_utf8.front() <= 'Z')
+                                               || (key_event->logical_text_utf8.front() >= 'a'
+                                                   && key_event->logical_text_utf8.front() <= 'z'));
         const bool fixed_or_compositional =
             m_engine->active_layout_kind() != layout::LayoutKind::phonetic;
         const bool should_append_key =
@@ -773,8 +775,9 @@ STDMETHODIMP SubornoTextService::OnCompositionTerminated(TfEditCookie,
     return S_OK;
 }
 
-HRESULT SubornoTextService::_UpdateCandidateUI(
-    ITfContext* context, ContextState& state, const layout::CompositionSnapshot& snapshot) {
+HRESULT SubornoTextService::_UpdateCandidateUI(ITfContext* context,
+                                               ContextState& state,
+                                               const layout::CompositionSnapshot& snapshot) {
     if (m_uiElementMgr == nullptr || !m_engine->settings().interface.show_candidate_window
         || snapshot.candidates.size() < 2) {
         return _EndCandidateUI(state);
@@ -785,8 +788,12 @@ HRESULT SubornoTextService::_UpdateCandidateUI(
             context,
             snapshot.candidates,
             snapshot.selected_candidate_index,
-            [this, context](UINT index) { return _FinalizeCandidate(context, index); },
-            [this, context]() { return _AbortCandidate(context); });
+            [this, context](UINT index) {
+                return _FinalizeCandidate(context, index);
+            },
+            [this, context]() {
+                return _AbortCandidate(context);
+            });
         if (created == nullptr) {
             return E_OUTOFMEMORY;
         }

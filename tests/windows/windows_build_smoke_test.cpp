@@ -10,10 +10,9 @@
 #include <wil/com.h>
 #include <wil/resource.h>
 
-#include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
-
 #include "suborno/dictionary/dictionary.hpp"
 #include "suborno/platform/windows/app_paths.hpp"
+#include "suborno/platform/windows/tsf/candidate_list_ui_element.hpp"
 #include "suborno/platform/windows/tsf/guids.hpp"
 extern "C" _Check_return_ HRESULT WINAPI DllCanUnloadNow();
 extern "C" _Check_return_ HRESULT WINAPI DllGetClassObject(_In_ REFCLSID class_id,
@@ -252,7 +251,6 @@ TEST(WindowsTsfContractTest, RegistersAndUnregistersTheLanguageProfile) {
     EXPECT_EQ(DllUnregisterServer(), S_OK);
 }
 
-
 TEST(CandidateListUIElementTest, SupportsDefaultAndHostDefinedCandidatePages) {
     std::vector<suborno::layout::Candidate> candidates;
     for (std::size_t index = 0; index < 10; ++index) {
@@ -263,8 +261,8 @@ TEST(CandidateListUIElementTest, SupportsDefaultAndHostDefinedCandidatePages) {
         });
     }
 
-    auto* element = new suborno::platform::windows::CandidateListUIElement(
-        nullptr, candidates, 0, {}, {});
+    auto* element =
+        new suborno::platform::windows::CandidateListUIElement(nullptr, candidates, 0, {}, {});
 
     UINT page_count = 0;
     EXPECT_EQ(element->GetPageIndex(nullptr, 0, &page_count), S_OK);
@@ -299,8 +297,8 @@ TEST(CandidateListUIElementTest, ExposesCandidateStringsAndSelectionThroughTsfCo
         {.text = "আমি", .normalized_text = "ami", .stable_id = "candidate:ami"},
         {.text = "আমরা", .normalized_text = "amra", .stable_id = "candidate:amra"},
     };
-    auto* element = new suborno::platform::windows::CandidateListUIElement(
-        nullptr, candidates, 1, {}, {});
+    auto* element =
+        new suborno::platform::windows::CandidateListUIElement(nullptr, candidates, 1, {}, {});
 
     UINT count = 0;
     EXPECT_EQ(element->GetCount(&count), S_OK);
@@ -319,7 +317,7 @@ TEST(CandidateListUIElementTest, ExposesCandidateStringsAndSelectionThroughTsfCo
     GUID element_guid{};
     EXPECT_EQ(element->GetGUID(&element_guid), S_OK);
     EXPECT_TRUE(::IsEqualGUID(element_guid,
-                             suborno::platform::windows::kSubornoCandidateListUIElementGuid));
+                              suborno::platform::windows::kSubornoCandidateListUIElementGuid));
 
     UINT page_count = 0;
     EXPECT_EQ(element->GetPageIndex(nullptr, 0, &page_count), S_OK);

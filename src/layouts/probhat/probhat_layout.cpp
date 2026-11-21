@@ -112,30 +112,88 @@ bool ascii_key_to_event(char value, layout::KeyEvent& event) noexcept {
     }
 
     switch (static_cast<unsigned char>(value)) {
-    case 45: event.scan_code = 0x0C; return true;  // -
-    case 95: event.scan_code = 0x0C; event.modifiers.shift = true; return true;  // _
-    case 61: event.scan_code = 0x0D; return true;  // =
-    case 43: event.scan_code = 0x0D; event.modifiers.shift = true; return true;  // +
-    case 91: event.scan_code = 0x1A; return true;  // [
-    case 123: event.scan_code = 0x1A; event.modifiers.shift = true; return true;  // {
-    case 93: event.scan_code = 0x1B; return true;  // ]
-    case 125: event.scan_code = 0x1B; event.modifiers.shift = true; return true;  // }
-    case 59: event.scan_code = 0x27; return true;  // ;
-    case 58: event.scan_code = 0x27; event.modifiers.shift = true; return true;  // :
-    case 39: event.scan_code = 0x28; return true;  // '
-    case 34: event.scan_code = 0x28; event.modifiers.shift = true; return true;  // "
-    case 96: event.scan_code = 0x29; return true;  // grave
-    case 126: event.scan_code = 0x29; event.modifiers.shift = true; return true;  // ~
-    case 92: event.scan_code = 0x2B; return true;  // backslash
-    case 124: event.scan_code = 0x2B; event.modifiers.shift = true; return true;  // |
-    case 44: event.scan_code = 0x33; return true;  // ,
-    case 60: event.scan_code = 0x33; event.modifiers.shift = true; return true;  // <
-    case 46: event.scan_code = 0x34; return true;  // .
-    case 62: event.scan_code = 0x34; event.modifiers.shift = true; return true;  // >
-    case 47: event.scan_code = 0x35; return true;  // /
-    case 63: event.scan_code = 0x35; event.modifiers.shift = true; return true;  // ?
-    case 32: event.scan_code = 0x39; return true;  // space
-    default: return false;
+    case 45:
+        event.scan_code = 0x0C;
+        return true;  // -
+    case 95:
+        event.scan_code = 0x0C;
+        event.modifiers.shift = true;
+        return true;  // _
+    case 61:
+        event.scan_code = 0x0D;
+        return true;  // =
+    case 43:
+        event.scan_code = 0x0D;
+        event.modifiers.shift = true;
+        return true;  // +
+    case 91:
+        event.scan_code = 0x1A;
+        return true;  // [
+    case 123:
+        event.scan_code = 0x1A;
+        event.modifiers.shift = true;
+        return true;  // {
+    case 93:
+        event.scan_code = 0x1B;
+        return true;  // ]
+    case 125:
+        event.scan_code = 0x1B;
+        event.modifiers.shift = true;
+        return true;  // }
+    case 59:
+        event.scan_code = 0x27;
+        return true;  // ;
+    case 58:
+        event.scan_code = 0x27;
+        event.modifiers.shift = true;
+        return true;  // :
+    case 39:
+        event.scan_code = 0x28;
+        return true;  // '
+    case 34:
+        event.scan_code = 0x28;
+        event.modifiers.shift = true;
+        return true;  // "
+    case 96:
+        event.scan_code = 0x29;
+        return true;  // grave
+    case 126:
+        event.scan_code = 0x29;
+        event.modifiers.shift = true;
+        return true;  // ~
+    case 92:
+        event.scan_code = 0x2B;
+        return true;  // backslash
+    case 124:
+        event.scan_code = 0x2B;
+        event.modifiers.shift = true;
+        return true;  // |
+    case 44:
+        event.scan_code = 0x33;
+        return true;  // ,
+    case 60:
+        event.scan_code = 0x33;
+        event.modifiers.shift = true;
+        return true;  // <
+    case 46:
+        event.scan_code = 0x34;
+        return true;  // .
+    case 62:
+        event.scan_code = 0x34;
+        event.modifiers.shift = true;
+        return true;  // >
+    case 47:
+        event.scan_code = 0x35;
+        return true;  // /
+    case 63:
+        event.scan_code = 0x35;
+        event.modifiers.shift = true;
+        return true;  // ?
+    case 32:
+        event.scan_code = 0x39;
+        return true;  // space
+    default:
+        return false;
     }
 }
 
@@ -161,9 +219,9 @@ bool ends_with_bengali_consonant(std::string_view text) {
     } else if ((lead & 0xE0U) == 0xC0U && last_grapheme.size() - start >= 2) {
         code_point = static_cast<char32_t>(((lead & 0x1FU) << 6U) | (bytes[start + 1] & 0x3FU));
     } else if ((lead & 0xF0U) == 0xE0U && last_grapheme.size() - start >= 3) {
-        code_point = static_cast<char32_t>(((lead & 0x0FU) << 12U)
-                                           | ((bytes[start + 1] & 0x3FU) << 6U)
-                                           | (bytes[start + 2] & 0x3FU));
+        code_point =
+            static_cast<char32_t>(((lead & 0x0FU) << 12U) | ((bytes[start + 1] & 0x3FU) << 6U)
+                                  | (bytes[start + 2] & 0x3FU));
     } else {
         return false;
     }
@@ -191,14 +249,13 @@ std::string output_for_event(const layout::KeyEvent& event, bool after_consonant
     if (event.scan_code > std::numeric_limits<std::uint8_t>::max()) {
         return {};
     }
-    const ProbhatKeyMapping* mapping =
-        find_mapping(static_cast<std::uint8_t>(event.scan_code));
+    const ProbhatKeyMapping* mapping = find_mapping(static_cast<std::uint8_t>(event.scan_code));
     if (mapping == nullptr) {
         return {};
     }
     if (after_consonant && !mapping->unshifted_dependent.empty()) {
         return std::string(event.modifiers.shift ? mapping->shifted_dependent
-                                                  : mapping->unshifted_dependent);
+                                                 : mapping->unshifted_dependent);
     }
     return std::string(event.modifiers.shift ? mapping->shifted : mapping->unshifted);
 }

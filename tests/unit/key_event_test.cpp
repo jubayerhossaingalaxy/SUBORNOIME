@@ -52,7 +52,6 @@ TEST(KeyEventTest, DoesNotTreatModifierShortcutsAsText) {
 
 }  // namespace
 
-
 TEST(KeyEventTest, DecodesWindowsRepeatScanCodeAndExtendedKeyBits) {
     const auto decoded = suborno::layout::decode_key_message_lparam(0xC0340003U);
 
@@ -72,7 +71,6 @@ TEST(KeyEventTest, DecodesFirstKeyDownMessage) {
     EXPECT_FALSE(decoded.previous_key_state);
     EXPECT_TRUE(decoded.key_down);
 }
-
 
 TEST(KeyEventTest, DistinguishesUnavailableLogicalTextFromAnEmptyTranslation) {
     suborno::layout::KeyEvent event{

@@ -19,8 +19,7 @@ CandidateEngine::CandidateEngine(const suborno::layout::InputLayout& layout,
     : CandidateEngine(layout, &dictionary) {}
 
 std::vector<suborno::layout::Candidate> CandidateEngine::make_candidates(
-    std::string_view input,
-    std::size_t candidate_limit) const {
+    std::string_view input, std::size_t candidate_limit) const {
     std::vector<suborno::layout::Candidate> result;
     if (candidate_limit == 0) {
         return result;
@@ -29,32 +28,31 @@ std::vector<suborno::layout::Candidate> CandidateEngine::make_candidates(
     std::unordered_set<std::string> seen;
     const std::string input_text(input);
 
-    const auto append_dictionary_matches = [&](const std::string& query,
-                                                double score,
-                                                const char* rationale) {
-        if (dictionary_ == nullptr || result.size() >= candidate_limit) {
-            return;
-        }
-
-        const auto matches = dictionary_->find_matches(query, candidate_limit);
-        for (const std::string& word : matches) {
-            if (result.size() >= candidate_limit) {
-                break;
+    const auto append_dictionary_matches =
+        [&](const std::string& query, double score, const char* rationale) {
+            if (dictionary_ == nullptr || result.size() >= candidate_limit) {
+                return;
             }
 
-            const std::string normalized_word = suborno::unicode::normalize_nfc(word);
-            if (seen.insert(normalized_word).second) {
-                result.push_back({
-                    .text = word,
-                    .normalized_text = normalized_word,
-                    .stable_id = "system-dictionary:" + normalized_word,
-                    .source = suborno::layout::CandidateSource::system_dictionary,
-                    .score = score,
-                    .rationale = rationale,
-                });
+            const auto matches = dictionary_->find_matches(query, candidate_limit);
+            for (const std::string& word : matches) {
+                if (result.size() >= candidate_limit) {
+                    break;
+                }
+
+                const std::string normalized_word = suborno::unicode::normalize_nfc(word);
+                if (seen.insert(normalized_word).second) {
+                    result.push_back({
+                        .text = word,
+                        .normalized_text = normalized_word,
+                        .stable_id = "system-dictionary:" + normalized_word,
+                        .source = suborno::layout::CandidateSource::system_dictionary,
+                        .score = score,
+                        .rationale = rationale,
+                    });
+                }
             }
-        }
-    };
+        };
 
     if (dictionary_ != nullptr) {
         const std::string normalized_input =

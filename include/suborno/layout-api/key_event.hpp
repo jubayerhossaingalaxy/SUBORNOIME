@@ -86,8 +86,7 @@ struct KeyMessageData {
     bool key_down = true;
 };
 
-[[nodiscard]] constexpr KeyMessageData decode_key_message_lparam(
-    std::uint32_t lparam) noexcept {
+[[nodiscard]] constexpr KeyMessageData decode_key_message_lparam(std::uint32_t lparam) noexcept {
     return {
         .repeat_count = static_cast<std::uint16_t>(lparam & 0xFFFFU),
         .scan_code = static_cast<std::uint8_t>((lparam >> 16U) & 0xFFU),

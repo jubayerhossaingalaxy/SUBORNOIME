@@ -94,7 +94,6 @@ TEST(PersonalDictionaryTest, PrefixSearchTreatsLikeWildcardsLiterally) {
     std::remove(db_path.c_str());
 }
 
-
 TEST(PersonalDictionaryTest, LimitsFindMatchesAtTheSqlQueryBoundary) {
     const std::string db_path = temporary_database_path("suborno_personal_query_limit_test.sqlite");
     std::remove(db_path.c_str());
@@ -112,7 +111,6 @@ TEST(PersonalDictionaryTest, LimitsFindMatchesAtTheSqlQueryBoundary) {
 
     std::remove(db_path.c_str());
 }
-
 
 TEST(PersonalDictionaryTest, PinningAndRemovingSystemWordPreservesSystemDictionaryEntry) {
     const std::string db_path = temporary_database_path("suborno_personal_system_pin_test.sqlite");

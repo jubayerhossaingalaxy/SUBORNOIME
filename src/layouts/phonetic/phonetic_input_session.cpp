@@ -108,8 +108,7 @@ CommitResult PhoneticInputSession::commit_candidate(std::size_t index) {
     }
 
     const suborno::candidates::CandidateEngine candidate_engine(*layout_, dictionary_);
-    const auto candidates =
-        candidate_engine.make_candidates(raw_input_, options_.candidate_limit);
+    const auto candidates = candidate_engine.make_candidates(raw_input_, options_.candidate_limit);
     if (index >= candidates.size()) {
         return {
             .text_utf8 = {},
@@ -194,8 +193,7 @@ CompositionSnapshot PhoneticInputSession::snapshot() const {
     }
     if (!parsed.pending) {
         const suborno::candidates::CandidateEngine candidate_engine(*layout_, dictionary_);
-        result.candidates =
-            candidate_engine.make_candidates(raw_input_, options_.candidate_limit);
+        result.candidates = candidate_engine.make_candidates(raw_input_, options_.candidate_limit);
         if (selected_candidate_index_ >= result.candidates.size()) {
             selected_candidate_index_ =
                 result.candidates.empty() ? 0 : result.candidates.size() - 1;

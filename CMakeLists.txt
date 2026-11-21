@@ -345,6 +345,7 @@ if(BUILD_TESTING)
     if(WIN32)
         add_executable(suborno_windows_tests
             tests/windows/windows_build_smoke_test.cpp
+            tests/windows/input_scope_test.cpp
             src/platform/windows/app_paths.cpp
             src/platform/windows/tsf/guids.cpp
             src/platform/windows/tsf/candidate_list_ui_element.cpp

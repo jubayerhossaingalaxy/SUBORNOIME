@@ -19,6 +19,9 @@
 #include "suborno/layout-api/key_event.hpp"
 #include "suborno/platform/windows/app_paths.hpp"
 #include "suborno/platform/windows/key_translation.hpp"
+#include <oleauto.h>
+
+#include "suborno/platform/windows/tsf/input_scope.hpp"
 #include "suborno/platform/windows/tsf/text_edit_session.hpp"
 
 namespace suborno::platform::windows {
@@ -193,7 +196,124 @@ std::optional<std::size_t> candidate_index_from_virtual_key(WPARAM virtual_key) 
     return static_cast<std::size_t>(*character - '1');
 }
 
+class InputScopeQueryEditSession final : public ITfEditSession {
+  public:
+    explicit InputScopeQueryEditSession(ITfContext* context)
+        : context_(context) {}
+
+    bool sensitive() const noexcept {
+        return sensitive_;
+    }
+
+    STDMETHOD(QueryInterface)(REFIID riid, void** object) override {
+        if (object == nullptr) {
+            return E_POINTER;
+        }
+        *object = nullptr;
+        if (riid != IID_IUnknown && riid != IID_ITfEditSession) {
+            return E_NOINTERFACE;
+        }
+        *object = static_cast<ITfEditSession*>(this);
+        AddRef();
+        return S_OK;
+    }
+
+    STDMETHOD_(ULONG, AddRef)() override {
+        return static_cast<ULONG>(::InterlockedIncrement(&reference_count_));
+    }
+
+    STDMETHOD_(ULONG, Release)() override {
+        const ULONG count = static_cast<ULONG>(::InterlockedDecrement(&reference_count_));
+        if (count == 0) {
+            delete this;
+        }
+        return count;
+    }
+
+    STDMETHOD(DoEditSession)(TfEditCookie edit_cookie) override {
+        wil::com_ptr<ITfReadOnlyProperty> property;
+        HRESULT result = context_->GetAppProperty(GUID_PROP_INPUTSCOPE, property.put());
+        if (FAILED(result)) {
+            return S_OK;
+        }
+
+        TF_SELECTION selection{};
+        ULONG fetched = 0;
+        result = context_->GetSelection(
+            edit_cookie, TF_DEFAULT_SELECTION, 1, &selection, &fetched);
+        if (FAILED(result) || fetched != 1 || selection.range == nullptr) {
+            if (selection.range != nullptr) {
+                selection.range->Release();
+            }
+            return S_OK;
+        }
+
+        wil::com_ptr<ITfRange> range;
+        range.attach(selection.range);
+        VARIANT value;
+        ::VariantInit(&value);
+        result = property->GetValue(edit_cookie, range.get(), &value);
+        if (result == S_OK && value.vt == VT_UNKNOWN && value.punkVal != nullptr) {
+            wil::com_ptr<ITfInputScope> input_scope;
+            result = value.punkVal->QueryInterface(IID_PPV_ARGS(input_scope.put()));
+            if (SUCCEEDED(result)) {
+                InputScope* scopes = nullptr;
+                UINT count = 0;
+                result = input_scope->GetInputScopes(&scopes, &count);
+                if (SUCCEEDED(result)) {
+                    for (UINT index = 0; index < count; ++index) {
+                        if (is_sensitive_input_scope_type(scopes[index])) {
+                            sensitive_ = true;
+                            break;
+                        }
+                    }
+                }
+                ::CoTaskMemFree(scopes);
+            }
+        }
+        ::VariantClear(&value);
+        return S_OK;
+    }
+
+  private:
+    ~InputScopeQueryEditSession() = default;
+
+    volatile LONG reference_count_ = 1;
+    wil::com_ptr<ITfContext> context_;
+    bool sensitive_ = false;
+};
+
 }  // namespace
+
+HRESULT query_sensitive_input_scope(ITfContext* context,
+                                    TfClientId client_id,
+                                    bool& sensitive) noexcept {
+    sensitive = false;
+    if (context == nullptr || client_id == TF_CLIENTID_NULL) {
+        return E_INVALIDARG;
+    }
+
+    auto* session = new (std::nothrow) InputScopeQueryEditSession(context);
+    if (session == nullptr) {
+        return E_OUTOFMEMORY;
+    }
+
+    HRESULT session_result = E_FAIL;
+    const HRESULT request_result =
+        context->RequestEditSession(client_id, session, TF_ES_SYNC | TF_ES_READ, &session_result);
+    const bool detected_sensitive_scope = session->sensitive();
+    session->Release();
+
+    if (FAILED(request_result)) {
+        return request_result;
+    }
+    if (FAILED(session_result)) {
+        return session_result;
+    }
+
+    sensitive = detected_sensitive_scope;
+    return S_OK;
+}
 
 SubornoTextService::SubornoTextService() {
     com::module_lifetime().object_created();
@@ -437,7 +557,26 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
                                          && wParam >= VK_NUMPAD0 && wParam <= VK_NUMPAD9;
         const bool starts_composition =
             fixed_or_compositional ? printable : (starts_phonetic_input || starts_numpad_input);
-        *pbEaten = (composing || starts_composition) && (composing || wParam != VK_SPACE);
+        const bool should_eat =
+            (composing || starts_composition) && (composing || wParam != VK_SPACE);
+        if (should_eat) {
+            auto [state_it, inserted] = m_contexts.try_emplace(pContext);
+            if (inserted) {
+                state_it->second.context = pContext;
+            }
+            ContextState& state = state_it->second;
+            if (!state.input_scope_checked || state.sensitive_input_scope) {
+                bool sensitive = false;
+                const HRESULT scope_result =
+                    query_sensitive_input_scope(pContext, m_clientId, sensitive);
+                state.input_scope_checked = SUCCEEDED(scope_result);
+                state.sensitive_input_scope = SUCCEEDED(scope_result) && sensitive;
+            }
+            if (state.sensitive_input_scope) {
+                return S_OK;
+            }
+        }
+        *pbEaten = should_eat;
         return S_OK;
     } catch (const std::bad_alloc&) {
         return E_OUTOFMEMORY;
@@ -614,6 +753,17 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         const bool should_append_key = key_event.has_value()
                                        && (composing || fixed_or_compositional
                                            || starts_phonetic_input || starts_numpad_input);
+        if (should_append_key && !composing
+            && (!state.input_scope_checked || state.sensitive_input_scope)) {
+            bool sensitive = false;
+            const HRESULT scope_result =
+                query_sensitive_input_scope(pContext, m_clientId, sensitive);
+            state.input_scope_checked = SUCCEEDED(scope_result);
+            state.sensitive_input_scope = SUCCEEDED(scope_result) && sensitive;
+        }
+        if (state.sensitive_input_scope) {
+            return S_OK;
+        }
         if (should_append_key) {
             const layout::InputStatus input_status = state.session->append_key(*key_event);
             if (input_status == layout::InputStatus::invalid_utf8
@@ -716,6 +866,11 @@ STDMETHODIMP SubornoTextService::OnPreservedKey(ITfContext*, REFGUID, BOOL* pbEa
 }
 
 STDMETHODIMP SubornoTextService::OnSetFocus(ITfDocumentMgr*, ITfDocumentMgr*) {
+    for (auto& [context, state] : m_contexts) {
+        static_cast<void>(context);
+        state.input_scope_checked = false;
+        state.sensitive_input_scope = false;
+    }
     return S_OK;
 }
 
@@ -779,6 +934,8 @@ STDMETHODIMP SubornoTextService::OnCompositionTerminated(TfEditCookie,
             if (state.session != nullptr) {
                 state.session->reset();
             }
+            state.input_scope_checked = false;
+            state.sensitive_input_scope = false;
             break;
         }
     }
@@ -917,8 +1074,12 @@ HRESULT SubornoTextService::_FinishComposition(ITfContext* context,
     } else if (!text.empty()) {
         result = _CommitString(context, text);
     }
-    if (SUCCEEDED(result) && state.session != nullptr) {
-        state.session->reset();
+    if (SUCCEEDED(result)) {
+        state.input_scope_checked = false;
+        state.sensitive_input_scope = false;
+        if (state.session != nullptr) {
+            state.session->reset();
+        }
     }
     return result;
 }

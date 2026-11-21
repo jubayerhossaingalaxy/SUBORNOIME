@@ -23,9 +23,9 @@ std::string read_dictionary_metadata(sqlite3* database, const char* key) {
         database, "SELECT value FROM dictionary_metadata WHERE key = ?", -1, &statement, nullptr);
     if (prepare_result != SQLITE_OK) {
         throw DictionaryError(
-            DictionaryErrorCategory::prepare,
-            prepare_result,
-            sqlite3_errmsg(database));
+                              DictionaryErrorCategory::prepare,
+                              prepare_result,
+                              sqlite3_errmsg(database));
     }
 
     if (sqlite3_bind_text(statement, 1, key, -1, SQLITE_STATIC) != SQLITE_OK) {
@@ -45,9 +45,9 @@ std::string read_dictionary_metadata(sqlite3* database, const char* key) {
     } else if (step_result != SQLITE_DONE) {
         sqlite3_finalize(statement);
         throw DictionaryError(
-            DictionaryErrorCategory::step,
-            step_result,
-            sqlite3_errmsg(database));
+                              DictionaryErrorCategory::step,
+                              step_result,
+                              sqlite3_errmsg(database));
     }
 
     sqlite3_finalize(statement);
@@ -120,7 +120,8 @@ void commit_dictionary_transaction(sqlite3* database) {
 
 class DictionaryTransaction final {
   public:
-    explicit DictionaryTransaction(sqlite3* database) : database_(database) {
+    explicit DictionaryTransaction(sqlite3* database)
+        : database_(database) {
         begin_dictionary_transaction(database_);
     }
 

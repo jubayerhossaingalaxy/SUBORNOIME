@@ -28,7 +28,8 @@ struct PhoneticTokenDefinition {
 class RuleBasedPhoneticLayout : public layout::StatelessPhoneticLayout {
   public:
     explicit RuleBasedPhoneticLayout(std::span<const PhoneticTokenDefinition> tokens,
-                                     bool accent_key_enabled = false);
+                                     bool accent_key_enabled = false,
+                                     std::string_view profile_id = "rule-phonetic");
 
     std::string transliterate(const std::string& input) const override;
     std::vector<layout::Candidate> generate_candidates(const std::string& input) const override;

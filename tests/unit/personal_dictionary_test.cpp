@@ -211,6 +211,27 @@ TEST(PersonalDictionaryTest, RecordsNewWordsAsLearnedPersonalEntries) {
     std::remove(db_path.c_str());
 }
 
+TEST(PersonalDictionaryTest, LearnedSystemWordsAppearInPersonalListAndCanBeRemoved) {
+    const std::string db_path =
+        temporary_database_path("suborno_learned_system_word_lifecycle_test.sqlite");
+    std::remove(db_path.c_str());
+
+    suborno::dictionary::Dictionary dictionary(db_path);
+    dictionary.add_entry("বাংলা", "bangla", 10);
+    dictionary.record_commit("বাংলা", "bangla");
+
+    EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 1);
+    EXPECT_EQ(dictionary.list_user_words(), std::vector<std::string>{"বাংলা"});
+
+    dictionary.remove_user_word("বাংলা");
+
+    EXPECT_EQ(dictionary.get_user_frequency("বাংলা"), 0);
+    EXPECT_TRUE(dictionary.list_user_words().empty());
+    EXPECT_EQ(dictionary.find_matches("bangla"), std::vector<std::string>{"বাংলা"});
+
+    std::remove(db_path.c_str());
+}
+
 TEST(PersonalDictionaryTest, LearnedFrequencyChangesDictionaryRanking) {
     const std::string db_path = temporary_database_path("suborno_personal_learned_rank_test.sqlite");
     std::remove(db_path.c_str());

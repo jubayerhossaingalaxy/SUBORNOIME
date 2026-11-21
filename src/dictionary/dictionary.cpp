@@ -537,7 +537,7 @@ void Dictionary::remove_user_word(const std::string& word) {
 std::vector<std::string> Dictionary::list_user_words() const {
     const std::string query =
         "SELECT word FROM dictionary_entries "
-        "WHERE source = 'user' OR user_pinned = 1 "
+        "WHERE source = 'user' OR user_pinned = 1 OR user_frequency > 0 "
         "ORDER BY user_frequency DESC, word ASC";
     sqlite3_stmt* stmt = nullptr;
     const int prepare_rc = sqlite3_prepare_v2(impl_->db, query.c_str(), -1, &stmt, nullptr);
@@ -565,8 +565,7 @@ std::vector<std::string> Dictionary::list_user_words() const {
 
 int Dictionary::get_user_frequency(const std::string& word) const {
     const std::string query =
-        "SELECT user_frequency FROM dictionary_entries "
-        "WHERE word = ? AND (source = 'user' OR user_pinned = 1)";
+        "SELECT user_frequency FROM dictionary_entries WHERE word = ?";
     sqlite3_stmt* stmt = nullptr;
     const int prepare_rc = sqlite3_prepare_v2(impl_->db, query.c_str(), -1, &stmt, nullptr);
     if (prepare_rc != SQLITE_OK) {

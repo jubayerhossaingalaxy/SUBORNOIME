@@ -93,10 +93,10 @@ TEST(SettingsTest, MigratesLegacyVersionOneSettingsToCurrentDefaults) {
         std::filesystem::temp_directory_path() / "suborno_settings_v1_migration_test.conf";
     {
         std::ofstream output(path, std::ios::trunc);
-        output << "version=1\\n"
-               << "active_layout=probhat\\n"
-               << "candidate_limit=12\\n"
-               << "learning_enabled=false\\n";
+        output << "version=1\n"
+               << "active_layout=probhat\n"
+               << "candidate_limit=12\n"
+               << "learning_enabled=false\n";
     }
 
     suborno::settings::SettingsStore store(path);
@@ -141,11 +141,11 @@ TEST(SettingsTest, RejectsInvalidDesktopRangesShortcutsAndDuplicateKeys) {
 
     {
         std::ofstream output(path, std::ios::trunc);
-        output << "version=2\\n"
-               << "active_layout=suborno-phonetic\\n"
-               << "active_layout=probhat\\n"
-               << "candidate_limit=16\\n"
-               << "learning_enabled=true\\n";
+        output << "version=2\n"
+               << "active_layout=suborno-phonetic\n"
+               << "active_layout=probhat\n"
+               << "candidate_limit=16\n"
+               << "learning_enabled=true\n";
     }
     EXPECT_EQ(suborno::settings::SettingsStore(path).load().status,
               suborno::settings::SettingsStatus::invalid_format);

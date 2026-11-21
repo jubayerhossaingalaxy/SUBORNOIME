@@ -36,6 +36,9 @@ current-head CI evidence and the applicable real-world acceptance checks.
   state, and CAPLOKALTGR is applied only within those layers; regression tests added.
 - The Windows key-translation boundary now recognizes the KLC OEM_102 and numpad
   decimal virtual keys so their scan-code mappings are reachable; Windows tests added.
+- TSF key-test classification now probes the active fixed/compositional input session;
+  unsupported combinations pass through and commit an existing preedit instead of
+  being swallowed. Hosted interactive verification remains pending.
 - Unicode 18 assigned Bengali-block inventory and General_Category metadata were
   expanded; reserved and Assamese-specific U+09F0/U+09F1 code points are excluded.
 - ICU i18n is explicitly linked because grapheme segmentation uses

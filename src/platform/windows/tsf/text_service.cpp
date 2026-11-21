@@ -7,11 +7,13 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <string_view>
 
 #include "../com/module_lifetime.hpp"
 #include "suborno/core/engine.hpp"
+#include "suborno/layout-api/key_event.hpp"
 #include "suborno/platform/windows/app_paths.hpp"
 #include "suborno/platform/windows/tsf/text_edit_session.hpp"
 
@@ -47,7 +49,81 @@ std::wstring utf8_to_utf16(const std::string& utf8) {
 bool is_modifier_key(WPARAM key) noexcept {
     return key == VK_SHIFT || key == VK_CONTROL || key == VK_MENU || key == VK_CAPITAL
            || key == VK_LSHIFT || key == VK_RSHIFT || key == VK_LCONTROL || key == VK_RCONTROL
-           || key == VK_LMENU || key == VK_RMENU;
+           || key == VK_LMENU || key == VK_RMENU || key == VK_LWIN || key == VK_RWIN;
+}
+
+suborno::layout::KeyModifiers current_key_modifiers() noexcept {
+    return {
+        .shift = (::GetKeyState(VK_SHIFT) & 0x8000) != 0,
+        .caps_lock = (::GetKeyState(VK_CAPITAL) & 0x0001) != 0,
+        .num_lock = (::GetKeyState(VK_NUMLOCK) & 0x0001) != 0,
+        .control = (::GetKeyState(VK_CONTROL) & 0x8000) != 0,
+        .alt = (::GetKeyState(VK_MENU) & 0x8000) != 0,
+        .windows = (::GetKeyState(VK_LWIN) & 0x8000) != 0
+                   || (::GetKeyState(VK_RWIN) & 0x8000) != 0,
+    };
+}
+
+std::optional<suborno::layout::PhysicalKey> physical_key_from_virtual_key(
+    WPARAM virtual_key) noexcept {
+    if (virtual_key >= 'A' && virtual_key <= 'Z') {
+        const auto key = static_cast<std::uint8_t>(
+            static_cast<std::uint8_t>(suborno::layout::PhysicalKey::letter_a)
+            + static_cast<std::uint8_t>(virtual_key - 'A'));
+        return static_cast<suborno::layout::PhysicalKey>(key);
+    }
+    if (virtual_key >= '0' && virtual_key <= '9') {
+        return static_cast<suborno::layout::PhysicalKey>(static_cast<std::uint8_t>(virtual_key));
+    }
+    if (virtual_key >= VK_NUMPAD0 && virtual_key <= VK_NUMPAD9) {
+        const auto key = static_cast<std::uint8_t>(
+            static_cast<std::uint8_t>(suborno::layout::PhysicalKey::numpad_0)
+            + static_cast<std::uint8_t>(virtual_key - VK_NUMPAD0));
+        return static_cast<suborno::layout::PhysicalKey>(key);
+    }
+
+    using suborno::layout::PhysicalKey;
+    switch (virtual_key) {
+    case VK_OEM_1:
+        return PhysicalKey::semicolon;
+    case VK_OEM_PLUS:
+        return PhysicalKey::equal;
+    case VK_OEM_COMMA:
+        return PhysicalKey::comma;
+    case VK_OEM_MINUS:
+        return PhysicalKey::minus;
+    case VK_OEM_PERIOD:
+        return PhysicalKey::period;
+    case VK_OEM_2:
+        return PhysicalKey::slash;
+    case VK_OEM_3:
+        return PhysicalKey::grave;
+    case VK_OEM_4:
+        return PhysicalKey::left_bracket;
+    case VK_OEM_5:
+        return PhysicalKey::backslash;
+    case VK_OEM_6:
+        return PhysicalKey::right_bracket;
+    case VK_OEM_7:
+        return PhysicalKey::apostrophe;
+    case VK_SPACE:
+        return PhysicalKey::space;
+    default:
+        return std::nullopt;
+    }
+}
+
+std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(WPARAM virtual_key) noexcept {
+    const auto physical_key = physical_key_from_virtual_key(virtual_key);
+    if (!physical_key.has_value()) {
+        return std::nullopt;
+    }
+    return suborno::layout::KeyEvent{*physical_key, current_key_modifiers()};
+}
+
+bool has_text_modifier_chord() noexcept {
+    const auto modifiers = current_key_modifiers();
+    return modifiers.control || modifiers.alt || modifiers.windows;
 }
 
 }  // namespace
@@ -229,11 +305,18 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
     if (pContext == nullptr || m_engine == nullptr || is_modifier_key(wParam)) {
         return S_OK;
     }
+    if (has_text_modifier_chord()) {
+        return S_OK;
+    }
+
     try {
         const auto found = m_contexts.find(pContext);
         const bool composing = found != m_contexts.end() && found->second.session != nullptr
                                && !found->second.session->snapshot().raw_input_utf8.empty();
-        *pbEaten = (wParam >= 'A' && wParam <= 'Z') || composing;
+        const auto key_event = key_event_from_virtual_key(wParam);
+        const bool printable =
+            key_event.has_value() && suborno::layout::key_event_to_ascii(*key_event).has_value();
+        *pbEaten = printable || composing;
         return S_OK;
     } catch (const std::bad_alloc&) {
         return E_OUTOFMEMORY;
@@ -261,6 +344,9 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
     if (pContext == nullptr || m_engine == nullptr) {
         return E_INVALIDARG;
     }
+    if (is_modifier_key(wParam) || has_text_modifier_chord()) {
+        return S_OK;
+    }
 
     try {
         auto [found, inserted] = m_contexts.try_emplace(pContext);
@@ -275,36 +361,10 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             return E_UNEXPECTED;
         }
 
-        if (wParam >= 'A' && wParam <= 'Z') {
-            const bool shifted = (::GetKeyState(VK_SHIFT) & 0x8000) != 0;
-            const bool caps_locked = (::GetKeyState(VK_CAPITAL) & 0x0001) != 0;
-            char character = static_cast<char>(wParam);
-            if (shifted != caps_locked) {
-                character = static_cast<char>(character + ('a' - 'A'));
-            }
-            const layouts::InputStatus input_status =
-                state.session->append_utf8(std::string_view(&character, 1));
-            if (input_status == layouts::InputStatus::invalid_utf8
-                || input_status == layouts::InputStatus::input_limit) {
-                return S_OK;
-            }
-            const std::wstring preedit = utf8_to_utf16(state.session->snapshot().preedit_utf8);
-            if (preedit.empty()) {
-                return E_FAIL;
-            }
-            const HRESULT hr = _UpdateComposition(pContext, state, preedit);
-            if (SUCCEEDED(hr)) {
-                *pbEaten = TRUE;
-            }
-            return hr;
-        }
-
         const auto snapshot = state.session->snapshot();
-        if (snapshot.raw_input_utf8.empty()) {
-            return S_OK;
-        }
+        const bool composing = !snapshot.raw_input_utf8.empty();
 
-        if (wParam == VK_BACK) {
+        if (composing && wParam == VK_BACK) {
             state.session->backspace();
             const auto updated = state.session->snapshot();
             const HRESULT hr =
@@ -316,7 +376,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
             return hr;
         }
-        if (wParam == VK_ESCAPE) {
+        if (composing && wParam == VK_ESCAPE) {
             state.session->reset();
             const HRESULT hr = _FinishComposition(pContext, state, {});
             if (SUCCEEDED(hr)) {
@@ -324,16 +384,15 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
             return hr;
         }
-        if (wParam >= '1' && wParam <= '9') {
+        if (composing && wParam >= '1' && wParam <= '9') {
             const std::size_t candidate_index = static_cast<std::size_t>(wParam - '1');
-            const auto candidates = snapshot.candidates;
-            if (candidate_index >= candidates.size()) {
+            if (candidate_index >= snapshot.candidates.size()) {
                 return S_OK;
             }
             const auto committed = state.session->commit_candidate(candidate_index);
             const std::wstring text = utf8_to_utf16(committed.text_utf8);
-            if (text.empty()) {
-                return E_FAIL;
+            if (!committed.text_utf8.empty() && text.empty()) {
+                return E_INVALIDARG;
             }
             const HRESULT hr = _FinishComposition(pContext, state, text);
             if (SUCCEEDED(hr)) {
@@ -341,23 +400,55 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             }
             return hr;
         }
+        if (composing && wParam == VK_SPACE) {
+            const auto committed = state.session->commit();
+            const std::wstring text = utf8_to_utf16(committed.text_utf8);
+            if (!committed.text_utf8.empty() && text.empty()) {
+                return E_INVALIDARG;
+            }
+            std::wstring with_space = text;
+            with_space.push_back(L' ');
+            const HRESULT hr = _FinishComposition(pContext, state, with_space);
+            if (SUCCEEDED(hr)) {
+                *pbEaten = TRUE;
+            }
+            return hr;
+        }
 
-        std::wstring committed;
-        if (wParam == VK_SPACE) {
-            const auto result = state.session->commit();
-            committed = utf8_to_utf16(result.text_utf8);
-            if (committed.empty()) {
+        const auto key_event = key_event_from_virtual_key(wParam);
+        const bool starts_phonetic_input = wParam >= 'A' && wParam <= 'Z';
+        if (key_event.has_value() && (composing || starts_phonetic_input)) {
+            const layouts::InputStatus input_status = state.session->append_key(*key_event);
+            if (input_status == layout::InputStatus::invalid_utf8
+                || input_status == layout::InputStatus::input_limit
+                || input_status == layout::InputStatus::empty) {
+                return S_OK;
+            }
+            const auto updated = state.session->snapshot();
+            const std::wstring preedit = utf8_to_utf16(updated.preedit_utf8);
+            if (preedit.empty()) {
                 return E_FAIL;
             }
-            committed.push_back(L' ');
-        } else {
-            committed = utf8_to_utf16(state.session->commit().text_utf8);
+            const HRESULT hr = _UpdateComposition(pContext, state, preedit);
+            if (SUCCEEDED(hr)) {
+                *pbEaten = TRUE;
+            }
+            return hr;
         }
-        const HRESULT hr = _FinishComposition(pContext, state, committed);
+
+        if (!composing) {
+            return S_OK;
+        }
+
+        const auto committed = state.session->commit();
+        const std::wstring text = utf8_to_utf16(committed.text_utf8);
+        if (!committed.text_utf8.empty() && text.empty()) {
+            return E_INVALIDARG;
+        }
+        const HRESULT hr = _FinishComposition(pContext, state, text);
         if (FAILED(hr)) {
             return hr;
         }
-        *pbEaten = wParam == VK_SPACE;
         return S_OK;
     } catch (const std::bad_alloc&) {
         return E_OUTOFMEMORY;

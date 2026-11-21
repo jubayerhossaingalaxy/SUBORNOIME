@@ -1,0 +1,49 @@
+name: One-shot C++ formatting repair
+
+on:
+  push:
+    branches:
+      - optimize/remove-unused-icu-i18n
+    paths:
+      - .github/workflows/one-shot-format-repair.yml
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: optimize/remove-unused-icu-i18n
+          fetch-depth: 0
+
+      - name: Install pinned LLVM formatter
+        run: scripts/install-llvm-23-ubuntu.sh
+
+      - name: Apply repository formatting policy
+        run: |
+          mapfile -d '' sources < <(
+            find include src tests benchmarks -type f \
+              \( -name '*.h' -o -name '*.hpp' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' \) \
+              -print0
+          )
+          (("${#sources[@]}")) || { echo 'No C++ sources found.' >&2; exit 1; }
+          clang-format-23 -i "${sources[@]}"
+          scripts/check-format-ubuntu.sh
+
+      - name: Commit formatting and remove this temporary workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add include src tests benchmarks
+          git rm -- .github/workflows/one-shot-format-repair.yml
+          git commit -m 'style(cpp): apply pinned clang-format policy'
+          git push origin HEAD:refs/heads/optimize/remove-unused-icu-i18n
+          gh workflow run ci.yml --ref optimize/remove-unused-icu-i18n

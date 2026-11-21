@@ -59,6 +59,13 @@ InputStatus PhoneticInputSession::backspace() {
     }
 
     const auto graphemes = suborno::unicode::split_graphemes(raw_input_);
+    if (graphemes.empty()) {
+        raw_input_.clear();
+        selected_candidate_index_ = 0;
+        options_.learning_enabled = pending_learning_enabled_;
+        return InputStatus::empty;
+    }
+
     std::string updated_input = raw_input_;
     updated_input.resize(updated_input.size() - graphemes.back().size());
     const auto parsed = suborno::layouts::phonetic::detail::parse_primary(updated_input, false);

@@ -50,6 +50,7 @@ suborno::layout::InputStatus LayoutInputSession::backspace() {
     if (graphemes.empty()) {
         raw_input_.clear();
         selected_candidate_index_ = 0;
+        options_.learning_enabled = pending_learning_enabled_;
         return suborno::layout::InputStatus::empty;
     }
 

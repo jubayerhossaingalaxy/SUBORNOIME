@@ -4,6 +4,7 @@
 #define NOMINMAX
 #endif
 
+#include <Windows.h>
 #include <inputscope.h>
 #include <msctf.h>
 

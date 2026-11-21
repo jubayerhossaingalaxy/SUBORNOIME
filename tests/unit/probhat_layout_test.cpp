@@ -76,6 +76,10 @@ TEST(ProbhatLayoutTest, AppliesCapsLockOnlyToKeysMarkedInTheKlc) {
 
     session->reset();
     EXPECT_EQ(session->append_key(event(0x33, false, true)), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, ",");
+
+    session->reset();
+    EXPECT_EQ(session->append_key(event(0x33, true, false)), suborno::layout::InputStatus::updated);
     EXPECT_EQ(session->snapshot().preedit_utf8, "ৃ");
 }
 

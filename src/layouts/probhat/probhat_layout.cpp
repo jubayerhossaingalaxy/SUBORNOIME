@@ -15,65 +15,68 @@
 namespace suborno::layouts {
 namespace {
 
+constexpr std::uint8_t kProbhatCapLok = 0x01;
+constexpr std::uint8_t kProbhatCapLokAltGr = 0x04;
+
 struct ProbhatKeyMapping {
     std::uint32_t scan_code;
     std::string_view unshifted;
     std::string_view shifted;
-    bool caps_lock_toggles_shift;
+    std::uint8_t caps_flags;
 };
 
 // Base, Shift, and CapsLock layers follow the MIT-licensed Probhat KLC table.
 constexpr ProbhatKeyMapping kProbhatMappings[] = {
-    {0x02, "১", "!", false},
-    {0x03, "২", "@", false},
-    {0x04, "৩", "#", false},
-    {0x05, "৪", "৳", false},
-    {0x06, "৫", "%", false},
-    {0x07, "৬", "^", false},
-    {0x08, "৭", "ঞ", false},
-    {0x09, "৮", "ৎ", false},
-    {0x0A, "৯", "(", false},
-    {0x0B, "০", ")", false},
-    {0x0C, "-", "_", false},
-    {0x0D, "=", "+", false},
-    {0x10, "দ", "ধ", true},
-    {0x11, "ূ", "ঊ", true},
-    {0x12, "ী", "ঈ", true},
-    {0x13, "র", "ড়", true},
-    {0x14, "ট", "ঠ", true},
-    {0x15, "এ", "ঐ", true},
-    {0x16, "ু", "উ", true},
-    {0x17, "ি", "ই", true},
-    {0x18, "ও", "ঔ", true},
-    {0x19, "প", "ফ", true},
-    {0x1A, "ে", "ৈ", false},
-    {0x1B, "ো", "ৌ", false},
-    {0x1E, "া", "অ", true},
-    {0x1F, "স", "ষ", true},
-    {0x20, "ড", "ঢ", true},
-    {0x21, "ত", "থ", true},
-    {0x22, "গ", "ঘ", true},
-    {0x23, "হ", "ঃ", true},
-    {0x24, "জ", "ঝ", true},
-    {0x25, "ক", "খ", true},
-    {0x26, "ল", "ং", true},
-    {0x27, ";", ":", false},
-    {0x28, "'", "\"", false},
-    {0x29, "\x60", "~", false},
-    {0x2B, "\\", "|", false},
-    {0x2C, "য়", "য", true},
-    {0x2D, "শ", "ঢ়", true},
-    {0x2E, "চ", "ছ", true},
-    {0x2F, "আ", "ঋ", true},
-    {0x30, "ব", "ভ", true},
-    {0x31, "ন", "ণ", true},
-    {0x32, "ম", "ঙ", true},
-    {0x33, ",", "ৃ", true},
-    {0x34, "।", "ঁ", false},
-    {0x35, "্", "?", false},
-    {0x39, " ", " ", false},
-    {0x53, ".", ".", false},
-    {0x56, "\\", "|", false},
+    {0x02, "১", "!", 0x00},
+    {0x03, "২", "@", 0x00},
+    {0x04, "৩", "#", 0x00},
+    {0x05, "৪", "৳", 0x00},
+    {0x06, "৫", "%", 0x00},
+    {0x07, "৬", "^", 0x00},
+    {0x08, "৭", "ঞ", 0x00},
+    {0x09, "৮", "ৎ", 0x00},
+    {0x0A, "৯", "(", 0x00},
+    {0x0B, "০", ")", 0x00},
+    {0x0C, "-", "_", 0x00},
+    {0x0D, "=", "+", 0x00},
+    {0x10, "দ", "ধ", 0x05},
+    {0x11, "ূ", "ঊ", 0x05},
+    {0x12, "ী", "ঈ", 0x05},
+    {0x13, "র", "ড়", 0x01},
+    {0x14, "ট", "ঠ", 0x05},
+    {0x15, "এ", "ঐ", 0x05},
+    {0x16, "ু", "উ", 0x05},
+    {0x17, "ি", "ই", 0x05},
+    {0x18, "ও", "ঔ", 0x05},
+    {0x19, "প", "ফ", 0x05},
+    {0x1A, "ে", "ৈ", 0x00},
+    {0x1B, "ো", "ৌ", 0x00},
+    {0x1E, "া", "অ", 0x05},
+    {0x1F, "স", "ষ", 0x01},
+    {0x20, "ড", "ঢ", 0x05},
+    {0x21, "ত", "থ", 0x01},
+    {0x22, "গ", "ঘ", 0x01},
+    {0x23, "হ", "ঃ", 0x01},
+    {0x24, "জ", "ঝ", 0x01},
+    {0x25, "ক", "খ", 0x01},
+    {0x26, "ল", "ং", 0x05},
+    {0x27, ";", ":", 0x00},
+    {0x28, "'", "\"", 0x00},
+    {0x29, "\x60", "~", 0x00},
+    {0x2B, "\\", "|", 0x00},
+    {0x2C, "য়", "য", 0x05},
+    {0x2D, "শ", "ঢ়", 0x01},
+    {0x2E, "চ", "ছ", 0x01},
+    {0x2F, "আ", "ঋ", 0x01},
+    {0x30, "ব", "ভ", 0x01},
+    {0x31, "ন", "ণ", 0x05},
+    {0x32, "ম", "ঙ", 0x01},
+    {0x33, ",", "ৃ", 0x04},
+    {0x34, "।", "ঁ", 0x00},
+    {0x35, "্", "?", 0x00},
+    {0x39, " ", " ", 0x00},
+    {0x53, ".", ".", 0x00},
+    {0x56, "\\", "|", 0x00},
 };
 
 const ProbhatKeyMapping* find_mapping(std::uint32_t scan_code) noexcept {
@@ -145,9 +148,9 @@ std::string output_for_event(const layout::KeyEvent& event) {
         return {};
     }
 
+    const bool caplok_enabled = (mapping->caps_flags & kProbhatCapLok) != 0;
     const bool shift_active =
-        event.modifiers.shift
-        != (mapping->caps_lock_toggles_shift && event.modifiers.caps_lock);
+        event.modifiers.shift != (caplok_enabled && event.modifiers.caps_lock);
     return std::string(shift_active ? mapping->shifted : mapping->unshifted);
 }
 

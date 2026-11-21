@@ -28,5 +28,7 @@ uses literal visible output for those layers; full dead-key composition is not c
 
 ## Test coverage
 
-Unit tests cover base/Shift pairs, CapsLock flags, literal vowel-sign concatenation,
-punctuation/currency, scan-code precedence, unmapped numpad keys, and grapheme-safe backspace.
+Unit tests cover base/Shift pairs, ordinary CAPLOK behavior, CAPLOKALTGR non-effect
+without AltGr, literal vowel-sign concatenation, punctuation/currency, scan-code
+precedence, unmapped numpad keys, and grapheme-safe backspace. AltGr/dead-key
+compatibility remains incomplete.

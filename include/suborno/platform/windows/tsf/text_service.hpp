@@ -69,7 +69,7 @@ class SubornoTextService final : public ITfTextInputProcessor,
         std::string session_layout_id;
         bool session_needs_refresh = false;
         bool input_scope_checked = false;
-        bool sensitive_input_scope = false;
+        bool input_scope_blocks_capture = false;
         wil::com_ptr<ITfComposition> composition;
         wil::com_ptr<CandidateListUIElement> candidate_ui_element;
         DWORD candidate_ui_element_id = 0;

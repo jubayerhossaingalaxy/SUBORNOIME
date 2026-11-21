@@ -28,6 +28,22 @@ constexpr bool may_capture_text_from_input_scope(HRESULT query_result, bool sens
     return query_result == S_OK && !sensitive;
 }
 
+enum class InputScopeCaptureDecision {
+    allow_capture,
+    pass_through,
+    cancel_composition,
+};
+
+constexpr InputScopeCaptureDecision decide_input_scope_capture(HRESULT query_result,
+                                                               bool sensitive,
+                                                               bool composing) noexcept {
+    if (may_capture_text_from_input_scope(query_result, sensitive)) {
+        return InputScopeCaptureDecision::allow_capture;
+    }
+    return composing ? InputScopeCaptureDecision::cancel_composition
+                     : InputScopeCaptureDecision::pass_through;
+}
+
 HRESULT query_sensitive_input_scope(ITfContext* context,
                                     TfClientId client_id,
                                     bool& sensitive) noexcept;

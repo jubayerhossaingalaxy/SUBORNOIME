@@ -286,7 +286,7 @@ class InputScopeQueryEditSession final : public ITfEditSession {
             return S_FALSE;
         }
         for (UINT index = 0; index < count; ++index) {
-            if (is_sensitive_input_scope_type(scopes[index])) {
+            if (is_input_scope_blocks_capture_type(scopes[index])) {
                 sensitive_ = true;
                 break;
             }
@@ -306,7 +306,7 @@ class InputScopeQueryEditSession final : public ITfEditSession {
 
 }  // namespace
 
-HRESULT query_sensitive_input_scope(ITfContext* context,
+HRESULT query_input_scope_blocks_capture(ITfContext* context,
                                     TfClientId client_id,
                                     bool& sensitive) noexcept {
     sensitive = false;
@@ -482,11 +482,13 @@ STDMETHODIMP SubornoTextService::Deactivate() {
                 first_error = ui_result;
             }
             if (state.session != nullptr && state.composition != nullptr) {
-                std::string text_utf8;
-                text_utf8 = state.session->commit().text_utf8;
-                const std::wstring text = utf8_to_utf16(text_utf8);
-                if (!text_utf8.empty() && text.empty() && SUCCEEDED(first_error)) {
-                    first_error = E_INVALIDARG;
+                std::wstring text;
+                if (!state.input_scope_blocks_capture) {
+                    const std::string text_utf8 = state.session->commit().text_utf8;
+                    text = utf8_to_utf16(text_utf8);
+                    if (!text_utf8.empty() && text.empty() && SUCCEEDED(first_error)) {
+                        first_error = E_INVALIDARG;
+                    }
                 }
                 const HRESULT finish_result = _FinishComposition(context, state, text);
                 if (FAILED(finish_result) && SUCCEEDED(first_error)) {
@@ -601,14 +603,19 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
             ContextState& state = state_it->second;
             bool sensitive = false;
             const HRESULT scope_result =
-                query_sensitive_input_scope(pContext, m_clientId, sensitive);
-            if (!may_capture_text_from_input_scope(scope_result, sensitive)) {
+                query_input_scope_blocks_capture(pContext, m_clientId, sensitive);
+            const InputScopeCaptureDecision capture_decision =
+                decide_input_scope_capture(scope_result, sensitive, composing);
+            if (capture_decision != InputScopeCaptureDecision::allow_capture) {
                 state.input_scope_checked = false;
-                state.sensitive_input_scope = scope_result == S_OK && sensitive;
+                state.input_scope_blocks_capture = true;
+                if (capture_decision == InputScopeCaptureDecision::cancel_composition) {
+                    *pbEaten = TRUE;
+                }
                 return S_OK;
             }
             state.input_scope_checked = true;
-            state.sensitive_input_scope = false;
+            state.input_scope_blocks_capture = false;
         }
         *pbEaten = should_eat;
         return S_OK;
@@ -788,19 +795,26 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
                                        && (composing || fixed_or_compositional
                                            || starts_phonetic_input || starts_numpad_input);
         if (should_append_key && !composing
-            && (!state.input_scope_checked || state.sensitive_input_scope)) {
+            && (!state.input_scope_checked || state.input_scope_blocks_capture)) {
             bool sensitive = false;
             const HRESULT scope_result =
-                query_sensitive_input_scope(pContext, m_clientId, sensitive);
+                query_input_scope_blocks_capture(pContext, m_clientId, sensitive);
             if (!may_capture_text_from_input_scope(scope_result, sensitive)) {
                 state.input_scope_checked = false;
-                state.sensitive_input_scope = scope_result == S_OK && sensitive;
+                state.input_scope_blocks_capture = scope_result == S_OK && sensitive;
                 return S_OK;
             }
             state.input_scope_checked = true;
-            state.sensitive_input_scope = false;
+            state.input_scope_blocks_capture = false;
         }
-        if (state.sensitive_input_scope) {
+        if (state.input_scope_blocks_capture) {
+            const HRESULT cancellation_result = _FinishComposition(pContext, state, {});
+            if (SUCCEEDED(cancellation_result) && state.composition == nullptr
+                && state.session->snapshot().raw_input_utf8.empty()) {
+                *pbEaten = FALSE;
+                return S_OK;
+            }
+            *pbEaten = TRUE;
             return S_OK;
         }
         if (should_append_key) {
@@ -911,7 +925,7 @@ STDMETHODIMP SubornoTextService::OnSetFocus(ITfDocumentMgr*, ITfDocumentMgr*) {
     for (auto& [context, state] : m_contexts) {
         static_cast<void>(context);
         state.input_scope_checked = false;
-        state.sensitive_input_scope = false;
+        state.input_scope_blocks_capture = false;
     }
     return S_OK;
 }
@@ -946,11 +960,15 @@ STDMETHODIMP SubornoTextService::OnPopContext(ITfContext* pContext) {
     HRESULT result = _EndCandidateUI(found->second);
     try {
         if (found->second.session != nullptr && found->second.composition != nullptr) {
-            const auto committed = found->second.session->commit();
-            const std::wstring text = utf8_to_utf16(committed.text_utf8);
-            if (!committed.text_utf8.empty() && text.empty()) {
-                result = E_INVALIDARG;
-            } else {
+            std::wstring text;
+            if (!found->second.input_scope_blocks_capture) {
+                const auto committed = found->second.session->commit();
+                text = utf8_to_utf16(committed.text_utf8);
+                if (!committed.text_utf8.empty() && text.empty()) {
+                    result = E_INVALIDARG;
+                }
+            }
+            if (SUCCEEDED(result)) {
                 result = _FinishComposition(pContext, found->second, text);
             }
         }
@@ -977,7 +995,7 @@ STDMETHODIMP SubornoTextService::OnCompositionTerminated(TfEditCookie,
                 state.session->reset();
             }
             state.input_scope_checked = false;
-            state.sensitive_input_scope = false;
+            state.input_scope_blocks_capture = false;
             break;
         }
     }
@@ -1103,27 +1121,24 @@ HRESULT SubornoTextService::_FinishComposition(ITfContext* context,
                                                ContextState& state,
                                                const std::wstring& text) {
     const HRESULT ui_result = _EndCandidateUI(state);
-    if (FAILED(ui_result)) {
-        return ui_result;
-    }
-    HRESULT result = S_OK;
+    HRESULT finish_result = S_OK;
     if (state.composition != nullptr) {
-        result =
-            TextCompositionEditSession::Finish(context, m_clientId, state.composition.get(), text);
-        if (SUCCEEDED(result)) {
+        finish_result = TextCompositionEditSession::Finish(
+            context, m_clientId, state.composition.get(), text);
+        if (SUCCEEDED(finish_result)) {
             state.composition.reset();
         }
     } else if (!text.empty()) {
-        result = _CommitString(context, text);
+        finish_result = _CommitString(context, text);
     }
-    if (SUCCEEDED(result)) {
+    if (SUCCEEDED(finish_result)) {
         state.input_scope_checked = false;
-        state.sensitive_input_scope = false;
+        state.input_scope_blocks_capture = false;
         if (state.session != nullptr) {
             state.session->reset();
         }
     }
-    return result;
+    return FAILED(finish_result) ? finish_result : ui_result;
 }
 
 HRESULT SubornoTextService::_CommitString(ITfContext* pContext, const std::wstring& text) {

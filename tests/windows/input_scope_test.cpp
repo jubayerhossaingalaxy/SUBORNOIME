@@ -27,3 +27,19 @@ TEST(InputScopeTest, CapturesTextOnlyWhenTheScopeWasReadAndIsNotSensitive) {
     EXPECT_FALSE(may_capture_text_from_input_scope(S_FALSE, false));
     EXPECT_FALSE(may_capture_text_from_input_scope(E_FAIL, false));
 }
+
+TEST(InputScopeTest, CancelsExistingCompositionWhenCaptureMustFailClosed) {
+    using suborno::platform::windows::InputScopeCaptureDecision;
+    using suborno::platform::windows::decide_input_scope_capture;
+
+    EXPECT_EQ(decide_input_scope_capture(S_OK, false, true),
+              InputScopeCaptureDecision::allow_capture);
+    EXPECT_EQ(decide_input_scope_capture(S_OK, true, true),
+              InputScopeCaptureDecision::cancel_composition);
+    EXPECT_EQ(decide_input_scope_capture(E_FAIL, false, true),
+              InputScopeCaptureDecision::cancel_composition);
+    EXPECT_EQ(decide_input_scope_capture(S_OK, true, false),
+              InputScopeCaptureDecision::pass_through);
+    EXPECT_EQ(decide_input_scope_capture(E_FAIL, false, false),
+              InputScopeCaptureDecision::pass_through);
+}

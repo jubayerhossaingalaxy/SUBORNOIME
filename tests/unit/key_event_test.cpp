@@ -37,6 +37,13 @@ TEST(KeyEventTest, MapsPunctuationAndShiftedVariants) {
     EXPECT_EQ(key_event_to_ascii({PhysicalKey::backslash, {.shift = true}}), '|');
 }
 
+TEST(KeyEventTest, IdentifiesNumericKeypadPhysicalKeys) {
+    EXPECT_TRUE(suborno::layout::is_numpad_key(PhysicalKey::numpad_0));
+    EXPECT_TRUE(suborno::layout::is_numpad_key(PhysicalKey::numpad_9));
+    EXPECT_FALSE(suborno::layout::is_numpad_key(PhysicalKey::digit_0));
+    EXPECT_FALSE(suborno::layout::is_numpad_key(PhysicalKey::letter_a));
+}
+
 TEST(KeyEventTest, DoesNotTreatModifierShortcutsAsText) {
     EXPECT_FALSE(key_event_to_ascii({PhysicalKey::letter_a, {.control = true}}).has_value());
     EXPECT_FALSE(key_event_to_ascii({PhysicalKey::letter_a, {.alt = true}}).has_value());

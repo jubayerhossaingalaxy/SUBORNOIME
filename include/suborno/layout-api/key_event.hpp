@@ -97,6 +97,13 @@ struct KeyMessageData {
     };
 }
 
+[[nodiscard]] constexpr bool is_numpad_key(PhysicalKey key) noexcept {
+    const auto value = static_cast<std::uint8_t>(key);
+    const auto first = static_cast<std::uint8_t>(PhysicalKey::numpad_0);
+    const auto last = static_cast<std::uint8_t>(PhysicalKey::numpad_9);
+    return value >= first && value <= last;
+}
+
 struct KeyEvent {
     PhysicalKey key = PhysicalKey::unknown;
     KeyModifiers modifiers;

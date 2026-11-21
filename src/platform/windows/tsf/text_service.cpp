@@ -188,6 +188,21 @@ std::optional<suborno::layout::KeyEvent> key_event_from_virtual_key(WPARAM virtu
     return event;
 }
 
+void apply_input_settings(std::optional<suborno::layout::KeyEvent>& event,
+                          const suborno::settings::EngineSettings& settings) noexcept {
+    if (!event.has_value()) {
+        return;
+    }
+
+    if (settings.input.ignore_caps_lock_state_in_bangla) {
+        event->modifiers.caps_lock = false;
+    }
+    if (!settings.input.map_numpad_to_bangla_numbers
+        && suborno::layout::is_numpad_key(event->key)) {
+        event.reset();
+    }
+}
+
 bool has_text_modifier_chord() noexcept {
     const auto modifiers = current_key_modifiers();
     return modifiers.control || modifiers.alt || modifiers.windows;
@@ -393,7 +408,8 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
         const auto found = m_contexts.find(pContext);
         const bool composing = found != m_contexts.end() && found->second.session != nullptr
                                && !found->second.session->snapshot().raw_input_utf8.empty();
-        const auto key_event = key_event_from_virtual_key(wParam, lParam);
+        auto key_event = key_event_from_virtual_key(wParam, lParam);
+        apply_input_settings(key_event, m_engine->settings());
         const bool printable =
             key_event.has_value()
             && (key_event->logical_text_available
@@ -483,7 +499,10 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             return hr;
         }
         if (composing) {
-            const auto candidate_index = candidate_index_from_virtual_key(wParam);
+            const auto candidate_index =
+                m_engine->settings().input.select_candidate_using_number_keys
+                    ? candidate_index_from_virtual_key(wParam)
+                    : std::nullopt;
             if (candidate_index.has_value() && *candidate_index < snapshot.candidates.size()) {
                 const auto committed = state.session->commit_candidate(*candidate_index);
                 const std::wstring text = utf8_to_utf16(committed.text_utf8);
@@ -512,7 +531,8 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
             return hr;
         }
 
-        const auto key_event = key_event_from_virtual_key(wParam, lParam);
+        auto key_event = key_event_from_virtual_key(wParam, lParam);
+        apply_input_settings(key_event, m_engine->settings());
         const bool starts_phonetic_input =
             key_event.has_value() && !key_event->logical_text_utf8.empty()
             && key_event->logical_text_utf8.size() == 1

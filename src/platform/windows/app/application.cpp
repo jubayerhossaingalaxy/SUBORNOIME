@@ -229,8 +229,11 @@ void report_error(HWND owner, const wchar_t* message, HRESULT result, bool show_
     }
 
     wchar_t text[512]{};
-    swprintf_s(
-        text, _countof(text), L"%s (HRESULT: 0x%08lX)\n", message, static_cast<unsigned long>(result));
+    swprintf_s(text,
+               _countof(text),
+               L"%s (HRESULT: 0x%08lX)\n",
+               message,
+               static_cast<unsigned long>(result));
     ::OutputDebugStringW(text);
 }
 
@@ -264,13 +267,18 @@ class Application final {
         window_class.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
         window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
         if (window_class.hIcon == nullptr) {
-            report_error(nullptr, L"Suborno's application icon could not be loaded.", E_FAIL, !smoke_test_);
+            report_error(nullptr,
+                         L"Suborno's application icon could not be loaded.",
+                         E_FAIL,
+                         !smoke_test_);
             return smoke_test_ ? smoke_test_exit_code(E_FAIL) : 1;
         }
         if (::RegisterClassExW(&window_class) == 0) {
             const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
-            report_error(
-                nullptr, L"Suborno's application window could not be registered.", error, !smoke_test_);
+            report_error(nullptr,
+                         L"Suborno's application window could not be registered.",
+                         error,
+                         !smoke_test_);
             return smoke_test_ ? smoke_test_exit_code(error) : 1;
         }
 
@@ -288,8 +296,10 @@ class Application final {
                                     this);
         if (window_ == nullptr) {
             const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
-            report_error(
-                nullptr, L"Suborno's application window could not be created.", error, !smoke_test_);
+            report_error(nullptr,
+                         L"Suborno's application window could not be created.",
+                         error,
+                         !smoke_test_);
             ::UnregisterClassW(kWindowClass, instance_);
             return smoke_test_ ? smoke_test_exit_code(error) : 1;
         }
@@ -825,7 +835,10 @@ int run(HINSTANCE instance, PWSTR command_line, int show_command) {
     HANDLE instance_mutex = ::CreateMutexW(nullptr, TRUE, L"Local\\Suborno.Desktop.Application");
     if (instance_mutex == nullptr) {
         const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
-        report_error(nullptr, L"Suborno could not establish its single-instance lock.", error, !smoke_test);
+        report_error(nullptr,
+                     L"Suborno could not establish its single-instance lock.",
+                     error,
+                     !smoke_test);
         return smoke_test ? smoke_test_exit_code(error) : 1;
     }
     if (::GetLastError() == ERROR_ALREADY_EXISTS) {
@@ -844,7 +857,10 @@ int run(HINSTANCE instance, PWSTR command_line, int show_command) {
 
     const HRESULT com_result = ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(com_result)) {
-        report_error(nullptr, L"Suborno could not initialize Windows services.", com_result, !smoke_test);
+        report_error(nullptr,
+                     L"Suborno could not initialize Windows services.",
+                     com_result,
+                     !smoke_test);
         ::ReleaseMutex(instance_mutex);
         ::CloseHandle(instance_mutex);
         return smoke_test ? smoke_test_exit_code(com_result) : 1;
@@ -860,7 +876,10 @@ int run(HINSTANCE instance, PWSTR command_line, int show_command) {
         report_error(nullptr, L"Suborno could not access its user data.", E_FAIL, !smoke_test);
         exit_code = smoke_test ? smoke_test_exit_code(E_FAIL) : 1;
     } catch (const std::exception&) {
-        report_error(nullptr, L"Suborno could not initialize its input engine.", E_FAIL, !smoke_test);
+        report_error(nullptr,
+                     L"Suborno could not initialize its input engine.",
+                     E_FAIL,
+                     !smoke_test);
         exit_code = smoke_test ? smoke_test_exit_code(E_FAIL) : 1;
     }
 

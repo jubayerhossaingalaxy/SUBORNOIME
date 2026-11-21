@@ -1,5 +1,3 @@
-#include "suborno/spell/spell_checker.hpp"
-
 #include <algorithm>
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -7,6 +5,7 @@
 #include <string>
 
 #include "suborno/dictionary/dictionary.hpp"
+#include "suborno/spell/spell_checker.hpp"
 
 namespace {
 
@@ -51,7 +50,8 @@ TEST(SpellCheckerTest, UnknownWordGetsSuggestions) {
 }
 
 TEST(SpellCheckerTest, CorrectsMissingRomanPhoneticLetters) {
-    const std::string db_path = temporary_database_path("suborno_spell_missing_roman_letter_test.sqlite");
+    const std::string db_path =
+        temporary_database_path("suborno_spell_missing_roman_letter_test.sqlite");
     std::remove(db_path.c_str());
 
     suborno::dictionary::Dictionary dictionary(db_path);
@@ -69,7 +69,8 @@ TEST(SpellCheckerTest, CorrectsMissingRomanPhoneticLetters) {
 }
 
 TEST(SpellCheckerTest, CorrectsSubstitutedRomanPhoneticLetters) {
-    const std::string db_path = temporary_database_path("suborno_spell_substituted_roman_letter_test.sqlite");
+    const std::string db_path =
+        temporary_database_path("suborno_spell_substituted_roman_letter_test.sqlite");
     std::remove(db_path.c_str());
 
     suborno::dictionary::Dictionary dictionary(db_path);

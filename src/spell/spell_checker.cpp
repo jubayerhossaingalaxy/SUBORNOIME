@@ -1,14 +1,13 @@
-#include "suborno/spell/spell_checker.hpp"
-
 #include <algorithm>
 #include <numeric>
 #include <stdexcept>
-#include <utility>
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
+#include "suborno/spell/spell_checker.hpp"
 #include "suborno/unicode/bengali.hpp"
 
 namespace bengali {

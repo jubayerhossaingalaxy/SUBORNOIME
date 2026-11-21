@@ -73,7 +73,12 @@ constexpr std::array kAvroTokens{
     PhoneticTokenDefinition{"w", PhoneticTokenKind::consonant, "ব", {}},
 
     PhoneticTokenDefinition{"ng", PhoneticTokenKind::sign, "ং", {}},
-    PhoneticTokenDefinition{"t" "\x60" "\x60", PhoneticTokenKind::sign, "ৎ", {}},
+    PhoneticTokenDefinition{"t"
+                            "\x60"
+                            "\x60",
+                            PhoneticTokenKind::sign,
+                            "ৎ",
+                            {}},
     PhoneticTokenDefinition{":", PhoneticTokenKind::sign, "ঃ", {}},
     PhoneticTokenDefinition{"^", PhoneticTokenKind::sign, "ঁ", {}},
     PhoneticTokenDefinition{".", PhoneticTokenKind::sign, "।", {}},

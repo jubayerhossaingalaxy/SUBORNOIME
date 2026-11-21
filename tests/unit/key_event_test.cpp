@@ -13,8 +13,7 @@ TEST(KeyEventTest, AppliesShiftAndCapsLockAsAnXor) {
     EXPECT_EQ(key_event_to_ascii({PhysicalKey::letter_a, {}}), 'a');
     EXPECT_EQ(key_event_to_ascii({PhysicalKey::letter_a, {.shift = true}}), 'A');
     EXPECT_EQ(key_event_to_ascii({PhysicalKey::letter_a, {.caps_lock = true}}), 'A');
-    EXPECT_EQ(
-        key_event_to_ascii({PhysicalKey::letter_a, {.shift = true, .caps_lock = true}}), 'a');
+    EXPECT_EQ(key_event_to_ascii({PhysicalKey::letter_a, {.shift = true, .caps_lock = true}}), 'a');
 }
 
 TEST(KeyEventTest, MapsShiftedNumberRowCharacters) {

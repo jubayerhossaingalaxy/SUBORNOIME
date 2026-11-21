@@ -1,7 +1,6 @@
 #include "suborno/layouts/phonetic/borno_phonetic_layout.hpp"
 
 #include <gtest/gtest.h>
-
 #include <stdexcept>
 
 TEST(BornoPhoneticLayoutTest, ConvertsIndependentAndDependentVowels) {

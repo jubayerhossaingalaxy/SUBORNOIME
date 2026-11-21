@@ -304,8 +304,7 @@ CompositionSnapshot PhoneticInputSession::snapshot() const {
 namespace suborno::layout {
 
 std::unique_ptr<InputSession> PhoneticLayout::create_session(
-    suborno::dictionary::Dictionary* dictionary,
-    InputSessionOptions options) const {
+    suborno::dictionary::Dictionary* dictionary, InputSessionOptions options) const {
     if (dictionary != nullptr) {
         return std::make_unique<suborno::layouts::PhoneticInputSession>(
             *this, *dictionary, options);
@@ -314,11 +313,9 @@ std::unique_ptr<InputSession> PhoneticLayout::create_session(
 }
 
 std::unique_ptr<InputSession> StatelessPhoneticLayout::create_session(
-    suborno::dictionary::Dictionary* dictionary,
-    InputSessionOptions options) const {
+    suborno::dictionary::Dictionary* dictionary, InputSessionOptions options) const {
     if (dictionary != nullptr) {
-        return std::make_unique<suborno::layouts::LayoutInputSession>(
-            *this, *dictionary, options);
+        return std::make_unique<suborno::layouts::LayoutInputSession>(*this, *dictionary, options);
     }
     return std::make_unique<suborno::layouts::LayoutInputSession>(*this, options);
 }

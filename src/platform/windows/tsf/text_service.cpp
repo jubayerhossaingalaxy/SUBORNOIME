@@ -59,8 +59,7 @@ suborno::layout::KeyModifiers current_key_modifiers() noexcept {
         .num_lock = (::GetKeyState(VK_NUMLOCK) & 0x0001) != 0,
         .control = (::GetKeyState(VK_CONTROL) & 0x8000) != 0,
         .alt = (::GetKeyState(VK_MENU) & 0x8000) != 0,
-        .windows = (::GetKeyState(VK_LWIN) & 0x8000) != 0
-                   || (::GetKeyState(VK_RWIN) & 0x8000) != 0,
+        .windows = (::GetKeyState(VK_LWIN) & 0x8000) != 0 || (::GetKeyState(VK_RWIN) & 0x8000) != 0,
     };
 }
 
@@ -331,10 +330,8 @@ STDMETHODIMP SubornoTextService::OnTestKeyDown(ITfContext* pContext,
         const bool starts_phonetic_input = wParam >= 'A' && wParam <= 'Z';
         const bool fixed_or_compositional =
             m_engine->active_layout_kind() != suborno::layout::LayoutKind::phonetic;
-        const bool starts_composition =
-            fixed_or_compositional ? printable : starts_phonetic_input;
-        *pbEaten = (composing || starts_composition)
-                   && (composing || wParam != VK_SPACE);
+        const bool starts_composition = fixed_or_compositional ? printable : starts_phonetic_input;
+        *pbEaten = (composing || starts_composition) && (composing || wParam != VK_SPACE);
         return S_OK;
     } catch (const std::bad_alloc&) {
         return E_OUTOFMEMORY;
@@ -440,8 +437,7 @@ STDMETHODIMP SubornoTextService::OnKeyDown(ITfContext* pContext,
         const bool fixed_or_compositional =
             m_engine->active_layout_kind() != layout::LayoutKind::phonetic;
         const bool should_append_key =
-            key_event.has_value() && (composing || fixed_or_compositional
-                                      || starts_phonetic_input);
+            key_event.has_value() && (composing || fixed_or_compositional || starts_phonetic_input);
         if (should_append_key) {
             const layout::InputStatus input_status = state.session->append_key(*key_event);
             if (input_status == layout::InputStatus::invalid_utf8

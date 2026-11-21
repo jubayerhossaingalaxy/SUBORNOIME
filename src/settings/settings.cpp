@@ -33,8 +33,8 @@ bool valid_theme_id(const std::string& theme_id) {
     }
     for (const unsigned char character : theme_id) {
         const bool allowed = (character >= 'a' && character <= 'z')
-                             || (character >= '0' && character <= '9')
-                             || character == '-' || character == '_';
+                             || (character >= '0' && character <= '9') || character == '-'
+                             || character == '_';
         if (!allowed) {
             return false;
         }
@@ -190,8 +190,7 @@ bool valid_switching_shortcut(const std::string& shortcut) {
 bool validate(const EngineSettings& settings) {
     return valid_layout_id(settings.active_layout_id) && settings.candidate_limit > 0
            && settings.candidate_limit <= 100 && valid_theme_id(settings.interface.theme_id)
-           && settings.topbar.idle_opacity_percent <= 100
-           && settings.topbar.idle_time_seconds >= 1
+           && settings.topbar.idle_opacity_percent <= 100 && settings.topbar.idle_time_seconds >= 1
            && settings.topbar.idle_time_seconds <= 3600
            && valid_switching_shortcut(settings.input.layout_switch_shortcut)
            && !start_mode_name(settings.general.start_mode).empty()
@@ -454,8 +453,8 @@ SettingsStatus SettingsStore::save(const EngineSettings& settings) const {
            << (settings.interface.show_candidate_window ? "true" : "false") << '\n'
            << "next_word_prediction_enabled="
            << (settings.interface.next_word_prediction_enabled ? "true" : "false") << '\n'
-           << "candidate_orientation="
-           << orientation_name(settings.interface.candidate_orientation) << '\n'
+           << "candidate_orientation=" << orientation_name(settings.interface.candidate_orientation)
+           << '\n'
            << "candidate_fixed_height="
            << (settings.interface.candidate_fixed_height ? "true" : "false") << '\n'
            << "use_os_default_bangla_font="
@@ -466,12 +465,12 @@ SettingsStatus SettingsStore::save(const EngineSettings& settings) const {
            << "follow_mouse_pointer_if_caret_tracking_fails="
            << (settings.interface.follow_mouse_pointer_if_caret_tracking_fails ? "true" : "false")
            << '\n'
-           << "idle_dimming_enabled="
-           << (settings.topbar.idle_dimming_enabled ? "true" : "false") << '\n'
+           << "idle_dimming_enabled=" << (settings.topbar.idle_dimming_enabled ? "true" : "false")
+           << '\n'
            << "idle_opacity_percent=" << settings.topbar.idle_opacity_percent << '\n'
            << "idle_time_seconds=" << settings.topbar.idle_time_seconds << '\n'
-           << "remember_topbar_position="
-           << (settings.topbar.remember_position ? "true" : "false") << '\n'
+           << "remember_topbar_position=" << (settings.topbar.remember_position ? "true" : "false")
+           << '\n'
            << "layout_switch_shortcut=" << settings.input.layout_switch_shortcut << '\n'
            << "disable_encoding_shortcut="
            << (settings.input.disable_encoding_shortcut ? "true" : "false") << '\n'

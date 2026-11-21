@@ -12,12 +12,12 @@ namespace {
 constexpr double kInputDictionaryScore = 0.9;
 
 void append_dictionary_matches(std::vector<suborno::layout::Candidate>& candidates,
-                              std::unordered_set<std::string>& seen,
-                              const suborno::dictionary::Dictionary& dictionary,
-                              const std::string& query,
-                              double score,
-                              const char* rationale,
-                              std::size_t candidate_limit) {
+                               std::unordered_set<std::string>& seen,
+                               const suborno::dictionary::Dictionary& dictionary,
+                               const std::string& query,
+                               double score,
+                               const char* rationale,
+                               std::size_t candidate_limit) {
     for (const std::string& word : dictionary.find_matches(query)) {
         if (candidates.size() >= candidate_limit) {
             break;
@@ -185,10 +185,8 @@ suborno::layout::CommitResult LayoutInputSession::commit_candidate(std::size_t i
     const auto& candidate = candidates[index];
     const std::string committed = candidate.text;
     if (dictionary_ != nullptr && options_.learning_enabled && !committed.empty()) {
-        dictionary_->record_commit(committed,
-                                   candidate.normalized_text.empty()
-                                       ? committed
-                                       : candidate.normalized_text);
+        dictionary_->record_commit(
+            committed, candidate.normalized_text.empty() ? committed : candidate.normalized_text);
     }
 
     raw_input_.clear();
@@ -241,14 +239,12 @@ suborno::layout::CompositionSnapshot LayoutInputSession::snapshot() const {
         return result;
     }
 
-    result.preedit_utf8 =
-        suborno::unicode::normalize_nfc(input_layout_->transliterate(raw_input_));
+    result.preedit_utf8 = suborno::unicode::normalize_nfc(input_layout_->transliterate(raw_input_));
     result.status = suborno::layout::InputStatus::updated;
     result.candidates = make_candidates(raw_input_);
 
     if (selected_candidate_index_ >= result.candidates.size()) {
-        selected_candidate_index_ =
-            result.candidates.empty() ? 0 : result.candidates.size() - 1;
+        selected_candidate_index_ = result.candidates.empty() ? 0 : result.candidates.size() - 1;
     }
     result.selected_candidate_index = selected_candidate_index_;
     return result;
@@ -259,11 +255,9 @@ suborno::layout::CompositionSnapshot LayoutInputSession::snapshot() const {
 namespace suborno::layout {
 
 std::unique_ptr<InputSession> StatelessInputLayout::create_session(
-    suborno::dictionary::Dictionary* dictionary,
-    InputSessionOptions options) const {
+    suborno::dictionary::Dictionary* dictionary, InputSessionOptions options) const {
     if (dictionary != nullptr) {
-        return std::make_unique<suborno::layouts::LayoutInputSession>(
-            *this, *dictionary, options);
+        return std::make_unique<suborno::layouts::LayoutInputSession>(*this, *dictionary, options);
     }
     return std::make_unique<suborno::layouts::LayoutInputSession>(*this, options);
 }

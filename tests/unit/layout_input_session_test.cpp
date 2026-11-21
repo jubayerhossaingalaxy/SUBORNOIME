@@ -85,11 +85,9 @@ TEST(LayoutInputSessionTest, AcceptsPhysicalKeysThroughTheSharedSessionContract)
     auto session = layout.create_session(nullptr, {});
     ASSERT_NE(session, nullptr);
 
-    EXPECT_EQ(session->append_key(
-                  {suborno::layout::PhysicalKey::letter_a, {.shift = true}}),
+    EXPECT_EQ(session->append_key({suborno::layout::PhysicalKey::letter_a, {.shift = true}}),
               suborno::layout::InputStatus::updated);
-    EXPECT_EQ(session->append_key(
-                  {suborno::layout::PhysicalKey::semicolon, {.shift = true}}),
+    EXPECT_EQ(session->append_key({suborno::layout::PhysicalKey::semicolon, {.shift = true}}),
               suborno::layout::InputStatus::updated);
     EXPECT_EQ(session->snapshot().raw_input_utf8, "A:");
 }
@@ -99,8 +97,7 @@ TEST(LayoutInputSessionTest, DoesNotTurnShortcutChordsIntoCompositionText) {
     auto session = layout.create_session(nullptr, {});
     ASSERT_NE(session, nullptr);
 
-    EXPECT_EQ(session->append_key(
-                  {suborno::layout::PhysicalKey::letter_a, {.control = true}}),
+    EXPECT_EQ(session->append_key({suborno::layout::PhysicalKey::letter_a, {.control = true}}),
               suborno::layout::InputStatus::empty);
     EXPECT_TRUE(session->snapshot().raw_input_utf8.empty());
 }

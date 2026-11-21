@@ -1,7 +1,6 @@
 #include "suborno/layouts/phonetic/avro_phonetic_layout.hpp"
 
 #include <gtest/gtest.h>
-
 #include <stdexcept>
 #include <string>
 

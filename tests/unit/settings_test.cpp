@@ -22,8 +22,7 @@ TEST(SettingsTest, SavesAndLoadsVersionedSettings) {
     settings.interface.theme_id = "suborno-glass";
     settings.interface.show_candidate_window = false;
     settings.interface.next_word_prediction_enabled = true;
-    settings.interface.candidate_orientation =
-        suborno::settings::CandidateOrientation::horizontal;
+    settings.interface.candidate_orientation = suborno::settings::CandidateOrientation::horizontal;
     settings.interface.candidate_fixed_height = false;
     settings.interface.use_os_default_bangla_font = false;
     settings.interface.enable_sliding_effect = false;

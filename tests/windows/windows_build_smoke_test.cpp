@@ -29,11 +29,10 @@ bool is_process_elevated() noexcept {
 
     TOKEN_ELEVATION elevation{};
     DWORD returned_size = 0;
-    const BOOL queried = ::GetTokenInformation(
-        token, TokenElevation, &elevation, sizeof(elevation), &returned_size);
+    const BOOL queried =
+        ::GetTokenInformation(token, TokenElevation, &elevation, sizeof(elevation), &returned_size);
     ::CloseHandle(token);
-    return queried != FALSE && returned_size == sizeof(elevation)
-           && elevation.TokenIsElevated != 0;
+    return queried != FALSE && returned_size == sizeof(elevation) && elevation.TokenIsElevated != 0;
 }
 
 class ComApartment final {

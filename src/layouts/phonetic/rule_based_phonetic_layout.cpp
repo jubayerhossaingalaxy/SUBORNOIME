@@ -47,8 +47,7 @@ TokenMatch match_token(std::span<const PhoneticTokenDefinition> tokens,
                        std::size_t offset) {
     TokenMatch best;
     for (const PhoneticTokenDefinition& token : tokens) {
-        if (token.input.size() <= input.size() - offset
-            && token.input.size() > best.length
+        if (token.input.size() <= input.size() - offset && token.input.size() > best.length
             && input.compare(offset, token.input.size(), token.input) == 0) {
             best = {&token, token.input.size()};
         }
@@ -137,8 +136,7 @@ void append_escaped_grapheme(std::string_view input,
         return;
     }
 
-    const auto graphemes =
-        suborno::unicode::split_graphemes(std::string(input.substr(offset + 1)));
+    const auto graphemes = suborno::unicode::split_graphemes(std::string(input.substr(offset + 1)));
     if (graphemes.empty()) {
         output.push_back('\\');
         ++offset;
@@ -152,10 +150,9 @@ void append_escaped_grapheme(std::string_view input,
 
 }  // namespace
 
-RuleBasedPhoneticLayout::RuleBasedPhoneticLayout(
-    std::span<const PhoneticTokenDefinition> tokens,
-    bool accent_key_enabled,
-    std::string_view profile_id)
+RuleBasedPhoneticLayout::RuleBasedPhoneticLayout(std::span<const PhoneticTokenDefinition> tokens,
+                                                 bool accent_key_enabled,
+                                                 std::string_view profile_id)
     : tokens_(tokens),
       accent_key_enabled_(accent_key_enabled),
       profile_id_(profile_id) {
@@ -203,11 +200,9 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
             continue;
         }
 
-        if (const ControlToken* control = match_control(input, offset);
-            control != nullptr) {
+        if (const ControlToken* control = match_control(input, offset); control != nullptr) {
             const bool has_consonant = state == CompositionState::consonant_run;
-            const bool valid_nukta =
-                control->input == "./" && has_consonant && nukta_eligible;
+            const bool valid_nukta = control->input == "./" && has_consonant && nukta_eligible;
             const bool valid_halant = control->input == ",," && has_consonant;
             const bool valid_joiner =
                 (control->input == ",." || control->input == ",..") && has_consonant;
@@ -228,8 +223,7 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
         }
 
         const auto byte = static_cast<unsigned char>(input[offset]);
-        if (byte >= static_cast<unsigned char>('0')
-            && byte <= static_cast<unsigned char>('9')) {
+        if (byte >= static_cast<unsigned char>('0') && byte <= static_cast<unsigned char>('9')) {
             output.append(kBanglaDigits[byte - static_cast<unsigned char>('0')]);
             state = CompositionState::boundary;
             nukta_eligible = false;
@@ -242,8 +236,7 @@ std::string RuleBasedPhoneticLayout::transliterate(const std::string& input) con
         if (match.definition != nullptr) {
             bool consumed_accent = false;
             if (match.definition->kind == PhoneticTokenKind::vowel && accent_key_enabled_
-                && offset + match.length < input.size()
-                && input[offset + match.length] == '`') {
+                && offset + match.length < input.size() && input[offset + match.length] == '`') {
                 output.append(match.definition->dependent_output);
                 state = CompositionState::after_vowel;
                 nukta_eligible = false;

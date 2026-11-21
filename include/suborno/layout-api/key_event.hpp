@@ -82,8 +82,7 @@ struct KeyEvent {
     KeyModifiers modifiers;
 };
 
-[[nodiscard]] constexpr std::optional<char> key_event_to_ascii(
-    const KeyEvent& event) noexcept {
+[[nodiscard]] constexpr std::optional<char> key_event_to_ascii(const KeyEvent& event) noexcept {
     if (event.modifiers.control || event.modifiers.alt || event.modifiers.windows) {
         return std::nullopt;
     }

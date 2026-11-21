@@ -136,8 +136,8 @@ HRESULT executable_path(std::wstring& path) {
     if (length >= static_cast<DWORD>(buffer.size())) {
         // Path exceeds buffer size; try a larger allocation
         std::vector<wchar_t> larger_buffer(length + 1);
-        const DWORD larger_length =
-            ::GetModuleFileNameW(nullptr, larger_buffer.data(), static_cast<DWORD>(larger_buffer.size()));
+        const DWORD larger_length = ::GetModuleFileNameW(
+            nullptr, larger_buffer.data(), static_cast<DWORD>(larger_buffer.size()));
         if (larger_length == 0) {
             return HRESULT_FROM_WIN32(::GetLastError());
         }
@@ -269,10 +269,8 @@ class Application final {
         window_class.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
         window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
         if (window_class.hIcon == nullptr) {
-            report_error(nullptr,
-                         L"Suborno's application icon could not be loaded.",
-                         E_FAIL,
-                         !smoke_test_);
+            report_error(
+                nullptr, L"Suborno's application icon could not be loaded.", E_FAIL, !smoke_test_);
             return smoke_test_ ? smoke_test_exit_code(E_FAIL) : 1;
         }
         if (::RegisterClassExW(&window_class) == 0) {
@@ -864,10 +862,8 @@ int run(HINSTANCE instance, PWSTR command_line, int show_command) {
     HANDLE instance_mutex = ::CreateMutexW(nullptr, TRUE, L"Local\\Suborno.Desktop.Application");
     if (instance_mutex == nullptr) {
         const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
-        report_error(nullptr,
-                     L"Suborno could not establish its single-instance lock.",
-                     error,
-                     !smoke_test);
+        report_error(
+            nullptr, L"Suborno could not establish its single-instance lock.", error, !smoke_test);
         return smoke_test ? smoke_test_exit_code(error) : 1;
     }
     if (::GetLastError() == ERROR_ALREADY_EXISTS) {
@@ -886,10 +882,8 @@ int run(HINSTANCE instance, PWSTR command_line, int show_command) {
 
     const HRESULT com_result = ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(com_result)) {
-        report_error(nullptr,
-                     L"Suborno could not initialize Windows services.",
-                     com_result,
-                     !smoke_test);
+        report_error(
+            nullptr, L"Suborno could not initialize Windows services.", com_result, !smoke_test);
         ::ReleaseMutex(instance_mutex);
         ::CloseHandle(instance_mutex);
         return smoke_test ? smoke_test_exit_code(com_result) : 1;
@@ -905,10 +899,8 @@ int run(HINSTANCE instance, PWSTR command_line, int show_command) {
         report_error(nullptr, L"Suborno could not access its user data.", E_FAIL, !smoke_test);
         exit_code = smoke_test ? smoke_test_exit_code(E_FAIL) : 1;
     } catch (const std::exception&) {
-        report_error(nullptr,
-                     L"Suborno could not initialize its input engine.",
-                     E_FAIL,
-                     !smoke_test);
+        report_error(
+            nullptr, L"Suborno could not initialize its input engine.", E_FAIL, !smoke_test);
         exit_code = smoke_test ? smoke_test_exit_code(E_FAIL) : 1;
     }
 

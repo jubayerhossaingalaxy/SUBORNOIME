@@ -76,7 +76,8 @@ TEST(PersonalDictionaryTest, RejectsNewerSchemaWithoutMutatingTheDatabase) {
 
 TEST(PersonalDictionaryTest, OpensDatabaseAtUnicodeFilesystemPath) {
     const std::filesystem::path database_path =
-        std::filesystem::temp_directory_path() / std::filesystem::u8path(u8"সুবর্ণ_dictionary.sqlite");
+        std::filesystem::temp_directory_path()
+        / std::filesystem::u8path(u8"সুবর্ণ_dictionary.sqlite");
     std::error_code remove_error;
     std::filesystem::remove(database_path, remove_error);
 

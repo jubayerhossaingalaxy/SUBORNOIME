@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 #include "suborno/unicode/bengali.hpp"
 
@@ -85,8 +86,23 @@ TEST(UnicodeUtilitiesTest, BengaliInventoryMatchesTheSupportedBanglaCharacterSet
     EXPECT_EQ(find_character("৴"), "No");
     EXPECT_EQ(find_character("৾"), "Mn");
 
+    std::unordered_set<std::string> unique_characters;
+    for (const auto& item : inventory) {
+        EXPECT_TRUE(unique_characters.insert(item.character).second);
+    }
+
     EXPECT_EQ(count_character("ৰ"), 0);
     EXPECT_EQ(count_character("ৱ"), 0);
+}
+
+TEST(UnicodeUtilitiesTest, RecognizesOnlyAssignedBanglaCodepoints) {
+    EXPECT_TRUE(suborno::unicode::is_bengali_codepoint(0x0980U));
+    EXPECT_TRUE(suborno::unicode::is_bengali_codepoint(0x0985U));
+    EXPECT_TRUE(suborno::unicode::is_bengali_codepoint(0x09FEU));
+    EXPECT_FALSE(suborno::unicode::is_bengali_codepoint(0x0984U));
+    EXPECT_FALSE(suborno::unicode::is_bengali_codepoint(0x09F0U));
+    EXPECT_FALSE(suborno::unicode::is_bengali_codepoint(0x09F1U));
+    EXPECT_FALSE(suborno::unicode::is_bengali_codepoint(0x09FFU));
 }
 
 TEST(UnicodeUtilitiesTest, SplitsExtendedGraphemeClusters) {

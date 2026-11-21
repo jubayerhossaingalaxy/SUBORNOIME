@@ -15,7 +15,7 @@ curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 30 --m
     -o "${cmake_installer}"
 printf '%s  %s\n' "${CMAKE_SHA256}" "${cmake_installer}" | sha256sum --check
 
-curl -fsSL \
+curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 30 --max-time 600 \
     "https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/ninja-linux.zip" \
     -o "${ninja_archive}"
 printf '%s  %s\n' "${NINJA_SHA256}" "${ninja_archive}" | sha256sum --check

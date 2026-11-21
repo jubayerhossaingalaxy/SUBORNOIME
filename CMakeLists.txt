@@ -30,6 +30,20 @@ add_library(suborno_layout_registry STATIC
 target_include_directories(suborno_layout_registry PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(suborno_layout_registry PUBLIC suborno_layout_api suborno_unicode)
 
+add_library(suborno_dictionary STATIC src/dictionary/dictionary.cpp)
+target_include_directories(suborno_dictionary PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(suborno_dictionary PUBLIC unofficial::sqlite3::sqlite3)
+
+add_library(suborno_layout_sessions STATIC
+    src/layouts/layout_input_session.cpp
+)
+target_include_directories(suborno_layout_sessions PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_link_libraries(suborno_layout_sessions PUBLIC
+    suborno_layout_api
+    suborno_unicode
+    suborno_dictionary
+)
+
 add_library(suborno_phonetic STATIC
     src/layouts/phonetic/suborno_phonetic_layout.cpp
     src/layouts/phonetic/borno_phonetic_layout.cpp
@@ -72,20 +86,6 @@ target_include_directories(suborno_candidates PUBLIC "${PROJECT_SOURCE_DIR}/incl
 target_link_libraries(suborno_candidates PUBLIC
     suborno_layout_api
     suborno_phonetic
-    suborno_unicode
-    suborno_dictionary
-)
-
-add_library(suborno_dictionary STATIC src/dictionary/dictionary.cpp)
-target_include_directories(suborno_dictionary PUBLIC "${PROJECT_SOURCE_DIR}/include")
-target_link_libraries(suborno_dictionary PUBLIC unofficial::sqlite3::sqlite3)
-
-add_library(suborno_layout_sessions STATIC
-    src/layouts/layout_input_session.cpp
-)
-target_include_directories(suborno_layout_sessions PUBLIC "${PROJECT_SOURCE_DIR}/include")
-target_link_libraries(suborno_layout_sessions PUBLIC
-    suborno_layout_api
     suborno_unicode
     suborno_dictionary
 )

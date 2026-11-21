@@ -203,7 +203,6 @@ bool validate(const EngineSettings& settings) {
 bool parse_settings_value(EngineSettings& settings,
                           const std::string& key,
                           const std::string& value) {
-    bool boolean_value = false;
     std::size_t numeric_value = 0;
 
     if (key == "active_layout") {

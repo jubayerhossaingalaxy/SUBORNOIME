@@ -90,7 +90,7 @@ HRESULT unregister_inproc_server(REFCLSID class_id) {
 
     const LONG delete_result = ::SHDeleteKeyW(HKEY_CLASSES_ROOT, class_key.c_str());
     if (delete_result == ERROR_FILE_NOT_FOUND || delete_result == ERROR_PATH_NOT_FOUND) {
-        return S_FALSE;
+        return S_OK;
     }
     return delete_result == ERROR_SUCCESS ? S_OK : HRESULT_FROM_WIN32(delete_result);
 }

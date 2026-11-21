@@ -121,7 +121,16 @@ TEST(ProbhatLayoutTest, MapsDigitsSignsAndPunctuation) {
 
     EXPECT_EQ(layout.transliterate("1234567890"), "১২৩৪৫৬৭৮৯০");
     EXPECT_EQ(layout.transliterate("4"), "৪");
+    EXPECT_EQ(layout.transliterate("!"), "!");
+    EXPECT_EQ(layout.transliterate("@"), "@");
+    EXPECT_EQ(layout.transliterate("#"), "#");
     EXPECT_EQ(layout.transliterate("$"), "৳");
+    EXPECT_EQ(layout.transliterate("%"), "%");
+    EXPECT_EQ(layout.transliterate("^"), "^");
+    EXPECT_EQ(layout.transliterate("&"), "ঞ");
+    EXPECT_EQ(layout.transliterate("*"), "ৎ");
+    EXPECT_EQ(layout.transliterate("("), "(");
+    EXPECT_EQ(layout.transliterate(")"), ")");
     EXPECT_EQ(layout.transliterate("."), "।");
     EXPECT_EQ(layout.transliterate(">"), "ঁ");
     EXPECT_EQ(layout.transliterate("/"), "্");

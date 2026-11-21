@@ -40,6 +40,7 @@ class LayoutInputSession final : public layout::InputSession {
     const layout::InputLayout* input_layout_ = nullptr;
     dictionary::Dictionary* dictionary_ = nullptr;
     layout::InputSessionOptions options_;
+    bool pending_learning_enabled_ = false;
     std::string raw_input_;
     mutable std::size_t selected_candidate_index_ = 0;
 };

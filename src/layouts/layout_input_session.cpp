@@ -10,14 +10,16 @@ namespace suborno::layouts {
 LayoutInputSession::LayoutInputSession(const suborno::layout::InputLayout& input_layout,
                                        suborno::layout::InputSessionOptions options)
     : input_layout_(&input_layout),
-      options_(options) {}
+      options_(options),
+      pending_learning_enabled_(options.learning_enabled) {}
 
 LayoutInputSession::LayoutInputSession(const suborno::layout::InputLayout& input_layout,
                                        suborno::dictionary::Dictionary& dictionary,
                                        suborno::layout::InputSessionOptions options)
     : input_layout_(&input_layout),
       dictionary_(&dictionary),
-      options_(options) {}
+      options_(options),
+      pending_learning_enabled_(options.learning_enabled) {}
 
 suborno::layout::InputStatus LayoutInputSession::append_utf8(std::string_view input) {
     if (!suborno::unicode::is_valid_utf8(input)) {
@@ -55,8 +57,11 @@ suborno::layout::InputStatus LayoutInputSession::backspace() {
     updated_input.resize(updated_input.size() - graphemes.back().size());
     raw_input_ = std::move(updated_input);
     selected_candidate_index_ = 0;
-    return raw_input_.empty() ? suborno::layout::InputStatus::empty
-                              : suborno::layout::InputStatus::updated;
+    if (raw_input_.empty()) {
+        options_.learning_enabled = pending_learning_enabled_;
+        return suborno::layout::InputStatus::empty;
+    }
+    return suborno::layout::InputStatus::updated;
 }
 
 std::vector<suborno::layout::Candidate> LayoutInputSession::make_candidates(
@@ -86,6 +91,7 @@ suborno::layout::CommitResult LayoutInputSession::commit() {
 
     raw_input_.clear();
     selected_candidate_index_ = 0;
+    options_.learning_enabled = pending_learning_enabled_;
     return {
         .text_utf8 = committed,
         .status = suborno::layout::InputStatus::updated,
@@ -93,7 +99,10 @@ suborno::layout::CommitResult LayoutInputSession::commit() {
 }
 
 void LayoutInputSession::set_learning_enabled(bool enabled) noexcept {
-    options_.learning_enabled = enabled;
+    pending_learning_enabled_ = enabled;
+    if (raw_input_.empty() || !enabled) {
+        options_.learning_enabled = enabled;
+    }
 }
 
 suborno::layout::CommitResult LayoutInputSession::commit_candidate(std::size_t index) {
@@ -123,6 +132,7 @@ suborno::layout::CommitResult LayoutInputSession::commit_candidate(std::size_t i
 
     raw_input_.clear();
     selected_candidate_index_ = 0;
+    options_.learning_enabled = pending_learning_enabled_;
     return {
         .text_utf8 = committed,
         .status = suborno::layout::InputStatus::updated,
@@ -161,6 +171,7 @@ std::size_t LayoutInputSession::selected_candidate_index() const noexcept {
 void LayoutInputSession::reset() noexcept {
     raw_input_.clear();
     selected_candidate_index_ = 0;
+    options_.learning_enabled = pending_learning_enabled_;
 }
 
 suborno::layout::CompositionSnapshot LayoutInputSession::snapshot() const {

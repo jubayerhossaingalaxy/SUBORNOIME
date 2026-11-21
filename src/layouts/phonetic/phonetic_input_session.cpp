@@ -19,14 +19,16 @@ PhoneticInputSession::PhoneticInputSession() {
 PhoneticInputSession::PhoneticInputSession(const suborno::layout::PhoneticLayout& layout,
                                            InputSessionOptions options)
     : layout_(&layout),
-      options_(options) {}
+      options_(options),
+      pending_learning_enabled_(options.learning_enabled) {}
 
 PhoneticInputSession::PhoneticInputSession(const suborno::layout::PhoneticLayout& layout,
                                            suborno::dictionary::Dictionary& dictionary,
                                            InputSessionOptions options)
     : layout_(&layout),
       dictionary_(&dictionary),
-      options_(options) {}
+      options_(options),
+      pending_learning_enabled_(options.learning_enabled) {}
 
 InputStatus PhoneticInputSession::append_utf8(std::string_view input) {
     if (!suborno::unicode::is_valid_utf8(input)) {
@@ -63,6 +65,7 @@ InputStatus PhoneticInputSession::backspace() {
     raw_input_ = std::move(updated_input);
     selected_candidate_index_ = 0;
     if (raw_input_.empty()) {
+        options_.learning_enabled = pending_learning_enabled_;
         return InputStatus::empty;
     }
     if (parsed.pending) {
@@ -92,6 +95,7 @@ CommitResult PhoneticInputSession::commit() {
     }
     raw_input_.clear();
     selected_candidate_index_ = 0;
+    options_.learning_enabled = pending_learning_enabled_;
     return {
         .text_utf8 = committed,
         .status =
@@ -100,7 +104,10 @@ CommitResult PhoneticInputSession::commit() {
 }
 
 void PhoneticInputSession::set_learning_enabled(bool enabled) noexcept {
-    options_.learning_enabled = enabled;
+    pending_learning_enabled_ = enabled;
+    if (raw_input_.empty() || !enabled) {
+        options_.learning_enabled = enabled;
+    }
 }
 
 CommitResult PhoneticInputSession::commit_candidate(std::size_t index) {
@@ -132,6 +139,7 @@ CommitResult PhoneticInputSession::commit_candidate(std::size_t index) {
     }
     raw_input_.clear();
     selected_candidate_index_ = 0;
+    options_.learning_enabled = pending_learning_enabled_;
     return {
         .text_utf8 = committed,
         .status =
@@ -175,6 +183,7 @@ std::size_t PhoneticInputSession::selected_candidate_index() const noexcept {
 void PhoneticInputSession::reset() noexcept {
     raw_input_.clear();
     selected_candidate_index_ = 0;
+    options_.learning_enabled = pending_learning_enabled_;
 }
 
 CompositionSnapshot PhoneticInputSession::snapshot() const {

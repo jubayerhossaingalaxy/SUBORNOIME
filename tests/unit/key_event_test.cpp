@@ -88,6 +88,12 @@ TEST(KeyEventTest, DoesNotTreatModifierShortcutsAsText) {
     EXPECT_FALSE(key_event_to_ascii({PhysicalKey::letter_a, {.windows = true}}).has_value());
 }
 
+TEST(KeyEventTest, RecognizesAltGrAsPrintableInsteadOfAControlShortcut) {
+    EXPECT_EQ(key_event_to_ascii(
+                  {PhysicalKey::letter_a, {.control = true, .alt = true, .alt_graph = true}}),
+              'a');
+}
+
 }  // namespace
 
 TEST(KeyEventTest, DecodesWindowsRepeatScanCodeAndExtendedKeyBits) {

@@ -268,4 +268,14 @@ std::unique_ptr<InputSession> StatelessInputLayout::create_session(
     return std::make_unique<suborno::layouts::LayoutInputSession>(*this, options);
 }
 
+std::unique_ptr<InputSession> StatelessPhoneticLayout::create_session(
+    suborno::dictionary::Dictionary* dictionary,
+    InputSessionOptions options) const {
+    if (dictionary != nullptr) {
+        return std::make_unique<suborno::layouts::LayoutInputSession>(
+            *this, *dictionary, options);
+    }
+    return std::make_unique<suborno::layouts::LayoutInputSession>(*this, options);
+}
+
 }  // namespace suborno::layout

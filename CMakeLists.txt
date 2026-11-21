@@ -321,6 +321,7 @@ if(BUILD_TESTING)
         tests/unit/personal_dictionary_test.cpp
     )
     target_include_directories(suborno_unit_tests PRIVATE "${PROJECT_SOURCE_DIR}/src")
+    target_compile_definitions(suborno_unit_tests PRIVATE SUBORNO_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
     target_link_libraries(suborno_unit_tests PRIVATE suborno_core GTest::gtest_main suborno_spell)
     if(MSVC AND SUBORNO_ENABLE_MSVC_ANALYSIS)
         suborno_mark_dependency_headers_external(suborno_unit_tests GTest::gtest)

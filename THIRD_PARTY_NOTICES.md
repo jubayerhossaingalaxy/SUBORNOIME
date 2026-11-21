@@ -69,6 +69,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+## Bundled Bengali system wordlist
+
+- Project: [Sanjidh090/bangla-wordlist](https://github.com/Sanjidh090/bangla-wordlist)
+- Upstream revision: `d3095ea05e5adcd55144e851d6aa1bb489af2e34`
+- Upstream file: `words.txt` (Git blob `5a09ef7229911375ec70c5d3d7666cc9348752e2`)
+- License: Unlicense public-domain dedication; the original license text is shipped as
+  `assets/dictionaries/UNLICENSE-Sanjidh090.txt`.
+- Dataset verification: 454,649 non-empty, unique entries; all observed code points are
+  in the Bengali Unicode block; no U+09F0/U+09F1 entries were present.
+- Packaging: the original UTF-8 list is split at line boundaries into four files without
+  changing word contents or order. The first import normalizes the database copy to NFC
+  and records the pinned corpus version in SQLite so concurrent or later app starts do
+  not import the same corpus again.
+- Limitations: this is a broad wordlist, not a curated normative dictionary. It includes
+  inflected forms and proper names and provides no Latin transliterations, definitions,
+  POS tags, or word-frequency evidence. Spell accuracy and ranking still require a
+  linguistically reviewed evaluation corpus.
+
+The dataset's Unlicense notice is reproduced unmodified in the shipped
+`UNLICENSE-Sanjidh090.txt` file.
+
 ## License review
 
 The listed licenses are permissive or public-domain-style. The ICU License

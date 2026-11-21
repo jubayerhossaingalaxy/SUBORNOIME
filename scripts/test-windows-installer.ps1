@@ -91,6 +91,18 @@ function Assert-SharedResourceDirectories {
             throw "Machine-wide resource directory is missing: $resourceDirectory"
         }
     }
+    foreach ($dictionaryFile in @(
+        'bn-wordlist-unlicense-v1-part-01.txt',
+        'bn-wordlist-unlicense-v1-part-02.txt',
+        'bn-wordlist-unlicense-v1-part-03.txt',
+        'bn-wordlist-unlicense-v1-part-04.txt',
+        'UNLICENSE-Sanjidh090.txt'
+    )) {
+        $dictionaryPath = Join-Path $programDataDirectory "dictionaries\$dictionaryFile"
+        if (-not (Test-Path -LiteralPath $dictionaryPath -PathType Leaf)) {
+            throw "The bundled Bengali system dictionary file is missing: $dictionaryPath"
+        }
+    }
     if (Test-Path -LiteralPath (Join-Path $commonFilesDirectory 'Suborno')) {
         throw 'Suborno unexpectedly installed files under Common Files.'
     }

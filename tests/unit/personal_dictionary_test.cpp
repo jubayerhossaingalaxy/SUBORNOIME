@@ -1,8 +1,10 @@
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <sqlite3.h>
 #include <string>
+#include <vector>
 
 #include "suborno/dictionary/dictionary.hpp"
 
@@ -403,6 +405,45 @@ TEST(PersonalDictionaryTest, LearnedFrequencyChangesDictionaryRanking) {
     ASSERT_EQ(matches.size(), 2U);
     EXPECT_EQ(matches.front(), "শেখাশব্দ");
     EXPECT_EQ(dictionary.get_user_frequency("শেখাশব্দ"), 5);
+
+    std::remove(db_path.c_str());
+}
+
+TEST(PersonalDictionaryTest, ImportsBundledBengaliWordlistExactlyOnce) {
+    const std::filesystem::path dictionary_assets =
+        std::filesystem::path(SUBORNO_SOURCE_DIR) / "assets" / "dictionaries";
+    const std::vector<std::filesystem::path> word_lists{
+        dictionary_assets / "bn-wordlist-unlicense-v1-part-01.txt",
+        dictionary_assets / "bn-wordlist-unlicense-v1-part-02.txt",
+        dictionary_assets / "bn-wordlist-unlicense-v1-part-03.txt",
+        dictionary_assets / "bn-wordlist-unlicense-v1-part-04.txt"};
+    for (const auto& word_list : word_lists) {
+        ASSERT_TRUE(std::filesystem::is_regular_file(word_list)) << word_list.string();
+    }
+
+    const std::string db_path =
+        temporary_database_path("suborno_bundled_bengali_wordlist_import_test.sqlite");
+    std::remove(db_path.c_str());
+
+    {
+        suborno::dictionary::Dictionary dictionary(db_path);
+        const auto start = std::chrono::steady_clock::now();
+        EXPECT_EQ(dictionary.import_word_lists_if_needed(word_lists, "sanjidh090-bn-wordlist-d3095ea-v1"), 454649U);
+        const auto elapsed = std::chrono::steady_clock::now() - start;
+        RecordProperty(
+            "bundled_wordlist_import_ms",
+            std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
+
+        EXPECT_EQ(dictionary.find_matches("বাংলা"), std::vector<std::string>{"বাংলা"});
+        EXPECT_EQ(dictionary.find_matches("বাংলাদেশ"), std::vector<std::string>{"বাংলাদেশ"});
+        EXPECT_EQ(dictionary.import_word_lists_if_needed(word_lists, "sanjidh090-bn-wordlist-d3095ea-v1"), 0U);
+
+        dictionary.add_user_word("নিজস্ব", "nijoshsho");
+        dictionary.clear_user_entries();
+        EXPECT_TRUE(dictionary.list_user_words().empty());
+        EXPECT_TRUE(dictionary.find_matches("nijoshsho").empty());
+        EXPECT_EQ(dictionary.find_matches("বাংলা"), std::vector<std::string>{"বাংলা"});
+    }
 
     std::remove(db_path.c_str());
 }

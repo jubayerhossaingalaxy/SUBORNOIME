@@ -384,6 +384,19 @@ STDMETHODIMP SubornoTextService::Activate(ITfThreadMgr* pThreadMgr, TfClientId c
         core::EngineConfig config;
         config.settings_path = user_data / L"settings.ini";
         config.dictionary_path = user_data / L"dictionaries" / L"user_candidates.db";
+        std::filesystem::path shared_dictionaries;
+        path_result = get_shared_dictionaries_directory(shared_dictionaries);
+        if (FAILED(path_result)) {
+            m_threadMgr.reset();
+            m_clientId = TF_CLIENTID_NULL;
+            return path_result;
+        }
+        config.dictionary_word_lists = {
+            shared_dictionaries / L"bn-wordlist-unlicense-v1-part-01.txt",
+            shared_dictionaries / L"bn-wordlist-unlicense-v1-part-02.txt",
+            shared_dictionaries / L"bn-wordlist-unlicense-v1-part-03.txt",
+            shared_dictionaries / L"bn-wordlist-unlicense-v1-part-04.txt"};
+        config.dictionary_corpus_version = "sanjidh090-bn-wordlist-d3095ea-v1";
         m_engine = std::make_unique<core::Engine>(config);
     } catch (const std::bad_alloc&) {
         m_threadMgr.reset();

@@ -363,6 +363,17 @@ class Application final {
                 return result;
             }
             config.dictionary_path = dictionary_path;
+            std::filesystem::path shared_dictionaries;
+            result = get_shared_dictionaries_directory(shared_dictionaries);
+            if (FAILED(result)) {
+                return result;
+            }
+            config.dictionary_word_lists = {
+                shared_dictionaries / L"bn-wordlist-unlicense-v1-part-01.txt",
+                shared_dictionaries / L"bn-wordlist-unlicense-v1-part-02.txt",
+                shared_dictionaries / L"bn-wordlist-unlicense-v1-part-03.txt",
+                shared_dictionaries / L"bn-wordlist-unlicense-v1-part-04.txt"};
+            config.dictionary_corpus_version = "sanjidh090-bn-wordlist-d3095ea-v1";
             engine_ = std::make_unique<suborno::core::Engine>(config);
             const auto loaded = engine_->load_settings();
             if (loaded.status != suborno::settings::SettingsStatus::ok) {

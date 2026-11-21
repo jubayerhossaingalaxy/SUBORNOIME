@@ -196,20 +196,23 @@ if(WIN32)
     endif()
 
     find_package(wil CONFIG REQUIRED)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
     enable_language(RC)
 
-    set(SUBORNO_ICON_FILE "${CMAKE_CURRENT_BINARY_DIR}/suborno.ico")
-    execute_process(
-        COMMAND "${Python3_EXECUTABLE}"
-                "${PROJECT_SOURCE_DIR}/src/platform/windows/resources/generate_icon.py"
-                "${SUBORNO_ICON_FILE}"
-        RESULT_VARIABLE icon_result
-        ERROR_VARIABLE icon_error
+    add_executable(suborno_icon_generator EXCLUDE_FROM_ALL
+        tools/icon_generator.cpp
     )
-    if(NOT "${icon_result}" STREQUAL "0")
-        message(FATAL_ERROR "Could not generate the Suborno application icon: ${icon_error}")
-    endif()
+    suborno_configure_target(suborno_icon_generator)
+
+    set(SUBORNO_ICON_FILE "${CMAKE_CURRENT_BINARY_DIR}/suborno.ico")
+    add_custom_command(
+        OUTPUT "${SUBORNO_ICON_FILE}"
+        COMMAND "$<TARGET_FILE:suborno_icon_generator>" "${SUBORNO_ICON_FILE}"
+        DEPENDS suborno_icon_generator
+                "${PROJECT_SOURCE_DIR}/tools/icon_generator.cpp"
+        COMMENT "Generating native Suborno Windows icon"
+        VERBATIM
+    )
+    add_custom_target(suborno_generate_icon DEPENDS "${SUBORNO_ICON_FILE}")
     configure_file(
         "${PROJECT_SOURCE_DIR}/src/platform/windows/resources/version.hpp.in"
         "${CMAKE_CURRENT_BINARY_DIR}/suborno_version.hpp"

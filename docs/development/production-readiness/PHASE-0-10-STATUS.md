@@ -34,6 +34,8 @@ current-head CI evidence and the applicable real-world acceptance checks.
   the documented `bybohar` vector produces `ব্যবহার`; a regression test was added.
 - Probhat KLC Ctrl+Alt and Shift+Ctrl+Alt output layers now use the Windows Right-Alt
   state, and CAPLOKALTGR is applied only within those layers; regression tests added.
+- The Windows key-translation boundary now recognizes the KLC OEM_102 and numpad
+  decimal virtual keys so their scan-code mappings are reachable; Windows tests added.
 - Unicode 18 assigned Bengali-block inventory and General_Category metadata were
   expanded; reserved and Assamese-specific U+09F0/U+09F1 code points are excluded.
 - ICU i18n is explicitly linked because grapheme segmentation uses

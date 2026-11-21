@@ -138,6 +138,31 @@ Dictionary::Dictionary(const std::string& database_path)
 Dictionary::~Dictionary() = default;
 
 void Dictionary::initialize_schema() {
+    sqlite3_stmt* metadata_stmt = nullptr;
+    const int metadata_prepare_rc = sqlite3_prepare_v2(
+        impl_->db,
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='dictionary_metadata' LIMIT 1",
+        -1,
+        &metadata_stmt,
+        nullptr);
+    if (metadata_prepare_rc != SQLITE_OK) {
+        throw DictionaryError(DictionaryErrorCategory::schema,
+                              metadata_prepare_rc,
+                              "Unable to inspect dictionary metadata table");
+    }
+    const int metadata_step_rc = sqlite3_step(metadata_stmt);
+    sqlite3_finalize(metadata_stmt);
+    if (metadata_step_rc == SQLITE_ROW && schema_version() > 3) {
+        throw DictionaryError(DictionaryErrorCategory::schema,
+                              SQLITE_SCHEMA,
+                              "Dictionary database schema is newer than this engine");
+    }
+    if (metadata_step_rc != SQLITE_ROW && metadata_step_rc != SQLITE_DONE) {
+        throw DictionaryError(DictionaryErrorCategory::step,
+                              metadata_step_rc,
+                              "Unable to inspect dictionary metadata table");
+    }
+
     const char* sql =
         "CREATE TABLE IF NOT EXISTS dictionary_metadata ("
         "  key TEXT PRIMARY KEY,"

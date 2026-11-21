@@ -55,6 +55,7 @@ enum class PhysicalKey : std::uint8_t {
     numpad_7,
     numpad_8,
     numpad_9,
+    numpad_decimal = 144,
     semicolon = 160,
     equal,
     comma,
@@ -163,6 +164,10 @@ struct KeyEvent {
             return std::nullopt;
         }
         return static_cast<char>('0' + (value - first_numpad));
+    }
+
+    if (event.key == PhysicalKey::numpad_decimal) {
+        return '.';
     }
 
     const bool shift = event.modifiers.shift;

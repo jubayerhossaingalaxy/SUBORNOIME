@@ -465,7 +465,8 @@ void Dictionary::remove_user_word(const std::string& word) {
         const int step_rc = sqlite3_step(stmt);
         sqlite3_finalize(stmt);
         if (step_rc != SQLITE_DONE) {
-            throw DictionaryError(DictionaryErrorCategory::step, step_rc, sqlite3_errmsg(impl_->db));
+            throw DictionaryError(
+                DictionaryErrorCategory::step, step_rc, sqlite3_errmsg(impl_->db));
         }
     };
 

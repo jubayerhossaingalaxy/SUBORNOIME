@@ -19,8 +19,8 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 120
     env:
-      VCPKG_ROOT: ${{ github.workspace }}\\.vcpkg
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\\.vcpkg-binary-cache
+      VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\.vcpkg-binary-cache
       VCPKG_MAX_CONCURRENCY: 2
     steps:
       - name: Checkout
@@ -37,7 +37,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Unable to fetch the pinned vcpkg baseline." }
           git -C "$env:VCPKG_ROOT" checkout --detach 0df93a05b9de080129e653ec4776d7e14a1b2e4f
           if ($LASTEXITCODE -ne 0) { throw "Unable to check out the pinned vcpkg baseline." }
-          & "$env:VCPKG_ROOT\\bootstrap-vcpkg.bat" -disableMetrics
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat" -disableMetrics
           if ($LASTEXITCODE -ne 0) { throw "vcpkg bootstrap failed." }
 
       - name: Configure custom ICU data

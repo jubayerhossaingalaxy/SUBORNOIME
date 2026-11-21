@@ -154,6 +154,16 @@ TEST(EngineTest, CreatesSessionsThroughStatelessInputLayoutFactory) {
     EXPECT_EQ(session->snapshot().preedit_utf8, "ক");
 }
 
+TEST(EngineTest, RegistersAndCreatesBornoPhoneticSessions) {
+    suborno::core::Engine engine;
+    ASSERT_TRUE(engine.set_active_layout("borno-phonetic"));
+
+    auto session = engine.create_session();
+    ASSERT_NE(session, nullptr);
+    EXPECT_EQ(session->append_utf8("ami"), suborno::layout::InputStatus::updated);
+    EXPECT_EQ(session->snapshot().preedit_utf8, "আমি");
+}
+
 TEST(EngineTest, CandidateEngineAddsDictionaryExactMatches) {
     const std::string db_path = temporary_database_path("suborno_candidate_engine_test.sqlite");
     std::remove(db_path.c_str());

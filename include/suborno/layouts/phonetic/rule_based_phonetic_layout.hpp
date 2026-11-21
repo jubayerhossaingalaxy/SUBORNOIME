@@ -37,6 +37,7 @@ class RuleBasedPhoneticLayout : public layout::StatelessPhoneticLayout {
   private:
     std::span<const PhoneticTokenDefinition> tokens_;
     bool accent_key_enabled_ = false;
+    std::string_view profile_id_;
 };
 
 }  // namespace suborno::layouts::phonetic

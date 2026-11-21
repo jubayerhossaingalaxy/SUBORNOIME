@@ -4,7 +4,7 @@
 
 namespace {
 
-suborno::layout::KeyEvent event(std::uint32_t scan_code,
+suborno::layout::KeyEvent event(std::uint16_t scan_code,
                                 bool shift = false,
                                 bool caps_lock = false) {
     return {

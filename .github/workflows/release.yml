@@ -149,8 +149,12 @@ jobs:
           "$hash  Suborno-Setup-x64.exe" | Set-Content -Encoding ascii "$installer.sha256"
           $signature = Get-AuthenticodeSignature -LiteralPath $installer
           Write-Host "Installer Authenticode status: $($signature.Status)"
-          if ($signature.Status -ne 'Valid') {
-            throw "A public release requires a valid Authenticode signature; got $($signature.Status)."
+          if ($env:GITHUB_REF -like 'refs/tags/*') {
+            if ($signature.Status -ne 'Valid') {
+              throw "A public release requires a valid Authenticode signature; got $($signature.Status)."
+            }
+          } elseif ($signature.Status -notin @('Valid', 'NotSigned')) {
+            throw "Unexpected installer signature status: $($signature.Status)"
           }
 
       - name: Upload installer for manual testing

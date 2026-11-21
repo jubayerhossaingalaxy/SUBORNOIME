@@ -222,6 +222,23 @@ void show_error(HWND owner, const wchar_t* message, HRESULT result) {
     ::MessageBoxW(owner, text, L"Suborno", MB_OK | MB_ICONERROR);
 }
 
+void report_error(HWND owner, const wchar_t* message, HRESULT result, bool show_dialog) {
+    if (show_dialog) {
+        show_error(owner, message, result);
+        return;
+    }
+
+    wchar_t text[512]{};
+    swprintf_s(
+        text, _countof(text), L"%s (HRESULT: 0x%08lX)\n", message, static_cast<unsigned long>(result));
+    ::OutputDebugStringW(text);
+}
+
+int smoke_test_exit_code(HRESULT result) noexcept {
+    const DWORD code = HRESULT_CODE(result);
+    return code == ERROR_SUCCESS ? 1 : static_cast<int>(code);
+}
+
 class Application final {
   public:
     Application(HINSTANCE instance, bool startup, bool smoke_test)
@@ -233,8 +250,8 @@ class Application final {
     int run(int show_command) {
         HRESULT result = initialize();
         if (FAILED(result)) {
-            show_error(nullptr, L"Suborno could not load its settings.", result);
-            return 1;
+            report_error(nullptr, L"Suborno could not load its settings.", result, !smoke_test_);
+            return smoke_test_ ? smoke_test_exit_code(result) : 1;
         }
 
         WNDCLASSEXW window_class{};
@@ -247,14 +264,14 @@ class Application final {
         window_class.hCursor = ::LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
         window_class.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
         if (window_class.hIcon == nullptr) {
-            show_error(nullptr, L"Suborno's application icon could not be loaded.", E_FAIL);
-            return 1;
+            report_error(nullptr, L"Suborno's application icon could not be loaded.", E_FAIL, !smoke_test_);
+            return smoke_test_ ? smoke_test_exit_code(E_FAIL) : 1;
         }
         if (::RegisterClassExW(&window_class) == 0) {
-            show_error(nullptr,
-                       L"Suborno's application window could not be registered.",
-                       HRESULT_FROM_WIN32(::GetLastError()));
-            return 1;
+            const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
+            report_error(
+                nullptr, L"Suborno's application window could not be registered.", error, !smoke_test_);
+            return smoke_test_ ? smoke_test_exit_code(error) : 1;
         }
 
         window_ = ::CreateWindowExW(0,
@@ -270,11 +287,11 @@ class Application final {
                                     instance_,
                                     this);
         if (window_ == nullptr) {
-            show_error(nullptr,
-                       L"Suborno's application window could not be created.",
-                       HRESULT_FROM_WIN32(::GetLastError()));
+            const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
+            report_error(
+                nullptr, L"Suborno's application window could not be created.", error, !smoke_test_);
             ::UnregisterClassW(kWindowClass, instance_);
-            return 1;
+            return smoke_test_ ? smoke_test_exit_code(error) : 1;
         }
         if (smoke_test_) {
             ::DestroyWindow(window_);
@@ -800,12 +817,16 @@ class Application final {
 }  // namespace
 
 int run(HINSTANCE instance, PWSTR command_line, int show_command) {
+    const bool startup =
+        command_line != nullptr && std::wcsstr(command_line, L"--startup") != nullptr;
+    const bool smoke_test =
+        command_line != nullptr && std::wcsstr(command_line, L"--smoke-test") != nullptr;
+
     HANDLE instance_mutex = ::CreateMutexW(nullptr, TRUE, L"Local\\Suborno.Desktop.Application");
     if (instance_mutex == nullptr) {
-        show_error(nullptr,
-                   L"Suborno could not establish its single-instance lock.",
-                   HRESULT_FROM_WIN32(::GetLastError()));
-        return 1;
+        const HRESULT error = HRESULT_FROM_WIN32(::GetLastError());
+        report_error(nullptr, L"Suborno could not establish its single-instance lock.", error, !smoke_test);
+        return smoke_test ? smoke_test_exit_code(error) : 1;
     }
     if (::GetLastError() == ERROR_ALREADY_EXISTS) {
         for (int attempt = 0; attempt < 20; ++attempt) {
@@ -823,26 +844,24 @@ int run(HINSTANCE instance, PWSTR command_line, int show_command) {
 
     const HRESULT com_result = ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(com_result)) {
-        show_error(nullptr, L"Suborno could not initialize Windows services.", com_result);
+        report_error(nullptr, L"Suborno could not initialize Windows services.", com_result, !smoke_test);
         ::ReleaseMutex(instance_mutex);
         ::CloseHandle(instance_mutex);
-        return 1;
+        return smoke_test ? smoke_test_exit_code(com_result) : 1;
     }
-
-    const bool startup =
-        command_line != nullptr && std::wcsstr(command_line, L"--startup") != nullptr;
-    const bool smoke_test =
-        command_line != nullptr && std::wcsstr(command_line, L"--smoke-test") != nullptr;
     int exit_code = 1;
     try {
         Application application(instance, startup, smoke_test);
         exit_code = application.run(show_command);
     } catch (const std::bad_alloc&) {
-        show_error(nullptr, L"Suborno ran out of memory.", E_OUTOFMEMORY);
+        report_error(nullptr, L"Suborno ran out of memory.", E_OUTOFMEMORY, !smoke_test);
+        exit_code = smoke_test ? smoke_test_exit_code(E_OUTOFMEMORY) : 1;
     } catch (const std::filesystem::filesystem_error&) {
-        show_error(nullptr, L"Suborno could not access its user data.", E_FAIL);
+        report_error(nullptr, L"Suborno could not access its user data.", E_FAIL, !smoke_test);
+        exit_code = smoke_test ? smoke_test_exit_code(E_FAIL) : 1;
     } catch (const std::exception&) {
-        show_error(nullptr, L"Suborno could not initialize its input engine.", E_FAIL);
+        report_error(nullptr, L"Suborno could not initialize its input engine.", E_FAIL, !smoke_test);
+        exit_code = smoke_test ? smoke_test_exit_code(E_FAIL) : 1;
     }
 
     ::CoUninitialize();

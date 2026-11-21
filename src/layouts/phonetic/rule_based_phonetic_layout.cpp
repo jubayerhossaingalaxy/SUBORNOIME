@@ -87,7 +87,7 @@ void append_consonant(const PhoneticTokenDefinition& token,
     if (state == CompositionState::consonant_run) {
         output.append(kVirama);
     }
-    output.append(token.output);
+    output.append(token.dependent_output.empty() ? token.output : token.dependent_output);
     state = CompositionState::consonant_run;
     nukta_eligible = token.nukta_eligible;
 }
@@ -152,11 +152,13 @@ void append_escaped_grapheme(std::string_view input,
 
 RuleBasedPhoneticLayout::RuleBasedPhoneticLayout(
     std::span<const PhoneticTokenDefinition> tokens,
-    bool accent_key_enabled)
+    bool accent_key_enabled,
+    std::string_view profile_id)
     : tokens_(tokens),
-      accent_key_enabled_(accent_key_enabled) {
-    if (tokens_.empty()) {
-        throw std::invalid_argument("A phonetic layout must define at least one token");
+      accent_key_enabled_(accent_key_enabled),
+      profile_id_(profile_id) {
+    if (tokens_.empty() || profile_id_.empty()) {
+        throw std::invalid_argument("A phonetic layout requires tokens and a profile identifier");
     }
 
     for (std::size_t index = 0; index < tokens_.size(); ++index) {
@@ -279,7 +281,7 @@ std::vector<suborno::layout::Candidate> RuleBasedPhoneticLayout::generate_candid
     return {{
         .text = output,
         .normalized_text = output,
-        .stable_id = "rule-phonetic:" + output,
+        .stable_id = std::string(profile_id_) + ":" + output,
         .source = suborno::layout::CandidateSource::layout,
         .score = 1.0,
         .rationale = "phonetic rule output",

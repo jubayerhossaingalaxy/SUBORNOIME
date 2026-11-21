@@ -299,3 +299,17 @@ CompositionSnapshot PhoneticInputSession::snapshot() const {
 }
 
 }  // namespace suborno::layouts
+
+namespace suborno::layout {
+
+std::unique_ptr<InputSession> PhoneticLayout::create_session(
+    suborno::dictionary::Dictionary* dictionary,
+    InputSessionOptions options) const {
+    if (dictionary != nullptr) {
+        return std::make_unique<suborno::layouts::PhoneticInputSession>(
+            *this, *dictionary, options);
+    }
+    return std::make_unique<suborno::layouts::PhoneticInputSession>(*this, options);
+}
+
+}  // namespace suborno::layout

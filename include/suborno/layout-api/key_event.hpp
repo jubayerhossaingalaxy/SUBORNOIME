@@ -7,6 +7,7 @@
 namespace suborno::layout {
 
 enum class PhysicalKey : std::uint8_t {
+    unknown = 0,
     letter_a = 'a',
     letter_b = 'b',
     letter_c = 'c',
@@ -77,7 +78,7 @@ struct KeyModifiers {
 };
 
 struct KeyEvent {
-    PhysicalKey key = PhysicalKey::space;
+    PhysicalKey key = PhysicalKey::unknown;
     KeyModifiers modifiers;
 };
 

@@ -1095,6 +1095,14 @@ HRESULT SubornoTextService::_FinalizeCandidate(ITfContext* context, UINT index) 
     }
 
     ContextState& state = found->second;
+    bool sensitive = false;
+    const HRESULT scope_result = query_sensitive_input_scope(context, m_clientId, sensitive);
+    if (!may_capture_text_from_input_scope(scope_result, sensitive)) {
+        state.input_scope_checked = false;
+        state.input_scope_blocks_capture = true;
+        return _FinishComposition(context, state, {});
+    }
+
     const layout::CommitResult committed = state.session->commit_candidate(index);
     if (committed.status != layout::InputStatus::updated) {
         return E_INVALIDARG;

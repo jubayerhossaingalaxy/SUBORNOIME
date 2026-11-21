@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <gtest/gtest.h>
+#include <sqlite3.h>
 #include <string>
 
 #include "suborno/dictionary/dictionary.hpp"
@@ -11,6 +12,67 @@ std::string temporary_database_path(const char* filename) {
 }
 
 }  // namespace
+
+TEST(PersonalDictionaryTest, RejectsNewerSchemaWithoutMutatingTheDatabase) {
+    const std::string db_path = temporary_database_path("suborno_dictionary_future_schema_test.sqlite");
+    std::remove(db_path.c_str());
+
+    sqlite3* database = nullptr;
+    ASSERT_EQ(sqlite3_open(db_path.c_str(), &database), SQLITE_OK);
+    ASSERT_NE(database, nullptr);
+
+    const char* create_future_schema =
+        "CREATE TABLE dictionary_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);"
+        "INSERT INTO dictionary_metadata(key, value) VALUES('schema_version', '4');"
+        "CREATE TABLE dictionary_entries ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "word TEXT NOT NULL UNIQUE,"
+        "normalized TEXT NOT NULL,"
+        "frequency INTEGER NOT NULL DEFAULT 1);";
+    ASSERT_EQ(sqlite3_exec(database, create_future_schema, nullptr, nullptr, nullptr), SQLITE_OK);
+    ASSERT_EQ(sqlite3_close(database), SQLITE_OK);
+
+    EXPECT_THROW(
+        {
+            suborno::dictionary::Dictionary dictionary(db_path);
+        },
+        suborno::dictionary::DictionaryError);
+
+    ASSERT_EQ(sqlite3_open(db_path.c_str(), &database), SQLITE_OK);
+    ASSERT_NE(database, nullptr);
+
+    sqlite3_stmt* version_stmt = nullptr;
+    ASSERT_EQ(sqlite3_prepare_v2(
+                  database,
+                  "SELECT value FROM dictionary_metadata WHERE key='schema_version'",
+                  -1,
+                  &version_stmt,
+                  nullptr),
+              SQLITE_OK);
+    ASSERT_EQ(sqlite3_step(version_stmt), SQLITE_ROW);
+    EXPECT_STREQ(reinterpret_cast<const char*>(sqlite3_column_text(version_stmt, 0)), "4");
+    EXPECT_EQ(sqlite3_finalize(version_stmt), SQLITE_OK);
+
+    sqlite3_stmt* column_stmt = nullptr;
+    ASSERT_EQ(sqlite3_prepare_v2(
+                  database, "PRAGMA table_info(dictionary_entries)", -1, &column_stmt, nullptr),
+              SQLITE_OK);
+    bool has_source_column = false;
+    int step_result = SQLITE_OK;
+    while ((step_result = sqlite3_step(column_stmt)) == SQLITE_ROW) {
+        const auto* column_name = sqlite3_column_text(column_stmt, 1);
+        if (column_name != nullptr
+            && std::string(reinterpret_cast<const char*>(column_name)) == "source") {
+            has_source_column = true;
+        }
+    }
+    EXPECT_EQ(step_result, SQLITE_DONE);
+    EXPECT_FALSE(has_source_column);
+    EXPECT_EQ(sqlite3_finalize(column_stmt), SQLITE_OK);
+
+    EXPECT_EQ(sqlite3_close(database), SQLITE_OK);
+    std::remove(db_path.c_str());
+}
 
 TEST(PersonalDictionaryTest, AddAndListUserWords) {
     const std::string db_path = temporary_database_path("suborno_personal_add_test.sqlite");

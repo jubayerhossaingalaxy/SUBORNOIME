@@ -45,6 +45,7 @@ enum ControlId : UINT {
     kIgnoreCapsLockCheck = 1008,
     kSelectCandidateKeysCheck = 1009,
     kShowCandidateWindowCheck = 1010,
+    kLearningEnabledCheck = 1011,
 };
 
 enum MenuId : UINT {
@@ -294,7 +295,7 @@ class Application final {
                                     CW_USEDEFAULT,
                                     CW_USEDEFAULT,
                                     600,
-                                    560,
+                                    600,
                                     nullptr,
                                     nullptr,
                                     instance_,
@@ -566,21 +567,31 @@ class Application final {
                                                    500,
                                                    26,
                                                    kSelectCandidateKeysCheck);
+        learning_check_ = add_control(0,
+                                       L"BUTTON",
+                                       L"Learn committed words on this device (opt-in)",
+                                       BS_AUTOCHECKBOX,
+                                       24,
+                                       308,
+                                       500,
+                                       26,
+                                       kLearningEnabledCheck);
         if (show_candidate_window_check_ == nullptr || map_numpad_check_ == nullptr
-            || ignore_caps_lock_check_ == nullptr || select_candidate_keys_check_ == nullptr) {
+            || ignore_caps_lock_check_ == nullptr || select_candidate_keys_check_ == nullptr
+            || learning_check_ == nullptr) {
             return false;
         }
         refresh_input_settings_controls();
 
-        add_control(0, L"STATIC", L"Typing help", SS_LEFT, 24, 318, 520, 24, 0);
-        help_label_ = add_control(0, L"STATIC", L"", SS_LEFT, 24, 344, 520, 38, 0);
+        add_control(0, L"STATIC", L"Typing help", SS_LEFT, 24, 342, 520, 24, 0);
+        help_label_ = add_control(0, L"STATIC", L"", SS_LEFT, 24, 368, 520, 38, 0);
 
         add_control(0,
                     L"BUTTON",
                     L"Windows input settings",
                     BS_PUSHBUTTON,
                     24,
-                    390,
+                    414,
                     190,
                     32,
                     kOpenInputSettings);
@@ -589,18 +600,18 @@ class Application final {
                                    L"Hide to notification area",
                                    BS_PUSHBUTTON,
                                    228,
-                                   390,
+                                   414,
                                    220,
                                    32,
                                    kHideButton);
 
-        add_control(0, L"STATIC", L"About Suborno", SS_LEFT, 24, 436, 520, 22, 0);
+        add_control(0, L"STATIC", L"About Suborno", SS_LEFT, 24, 460, 520, 22, 0);
         add_control(0,
                     L"STATIC",
                     L"Suborno Bengali Input Method  " SUBORNO_VERSION_WIDE,
                     SS_LEFT,
                     24,
-                    462,
+                    486,
                     520,
                     24,
                     0);
@@ -609,7 +620,7 @@ class Application final {
                                             L"Uninstall Suborno",
                                             BS_PUSHBUTTON,
                                             24,
-                                            494,
+                                            518,
                                             220,
                                             30,
                                             kAppsSettingsButton);
@@ -624,7 +635,7 @@ class Application final {
                && hide_button_ != nullptr && apps_settings_button_ != nullptr
                && show_candidate_window_check_ != nullptr && map_numpad_check_ != nullptr
                && ignore_caps_lock_check_ != nullptr && select_candidate_keys_check_ != nullptr
-               && help_label_ != nullptr;
+               && learning_check_ != nullptr && help_label_ != nullptr;
     }
 
     void refresh_input_settings_controls() {
@@ -647,6 +658,10 @@ class Application final {
                        BM_SETCHECK,
                        input.select_candidate_using_number_keys ? BST_CHECKED : BST_UNCHECKED,
                        0);
+        ::SendMessageW(learning_check_,
+                       BM_SETCHECK,
+                       settings.learning_enabled ? BST_CHECKED : BST_UNCHECKED,
+                       0);
     }
 
     void save_input_settings() {
@@ -659,6 +674,8 @@ class Application final {
             ::SendMessageW(ignore_caps_lock_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
         settings.input.select_candidate_using_number_keys =
             ::SendMessageW(select_candidate_keys_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
+        settings.learning_enabled =
+            ::SendMessageW(learning_check_, BM_GETCHECK, 0, 0) == BST_CHECKED;
 
         const auto result = engine_->save_settings(settings);
         if (result != suborno::settings::SettingsStatus::ok) {
@@ -712,7 +729,7 @@ class Application final {
             return;
         }
         if ((id == kShowCandidateWindowCheck || id == kMapNumpadCheck || id == kIgnoreCapsLockCheck
-             || id == kSelectCandidateKeysCheck)
+             || id == kSelectCandidateKeysCheck || id == kLearningEnabledCheck)
             && notification == BN_CLICKED) {
             save_input_settings();
             return;
@@ -941,6 +958,7 @@ class Application final {
     HWND map_numpad_check_ = nullptr;
     HWND ignore_caps_lock_check_ = nullptr;
     HWND select_candidate_keys_check_ = nullptr;
+    HWND learning_check_ = nullptr;
     HWND hide_button_ = nullptr;
     HWND apps_settings_button_ = nullptr;
     bool startup_ = false;

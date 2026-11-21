@@ -29,11 +29,15 @@
    corpus validation remains outstanding for malformed UTF-8, combining sequences,
    ZWJ/ZWNJ, cursor movement and grapheme-aware deletion.
 6. **Dictionary and language quality:** Full dictionary corpus provenance,
-   license clearance, ranking evaluation, spell-correction integration,
-   next-word prediction and explicit learning controls remain outstanding.
+   license clearance, ranking evaluation, spell-correction integration and
+   next-word prediction remain outstanding. Personal learning now defaults OFF,
+   migrates older settings to OFF, and has a desktop opt-in; password/PIN/private
+   InputScope pass-through is implemented but still requires interactive host-app
+   verification.
 7. **Windows TSF:** Hosted MSVC CI is necessary but not sufficient. Interactive
-   activation, composition, candidate UI, keyboard navigation and compatibility
-   must be tested in Notepad, Office and browsers.
+   activation, composition, candidate UI, keyboard navigation, InputScope
+   pass-through and compatibility must be tested in Notepad, Office, browsers and
+   password/PIN entry controls.
 8. **Desktop UX:** Full General/Interface/Input settings, Topbar, themes,
    on-screen keyboard, accessibility and per-monitor DPI behavior remain
    incomplete.
